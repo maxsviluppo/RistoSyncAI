@@ -808,27 +808,32 @@ export default function App() {
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                                 {categoryItems.map(item => (
-                                                    <div key={item.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 hover:border-slate-500 transition-all group flex flex-col gap-3 shadow-lg hover:shadow-xl relative overflow-hidden">
+                                                    <div key={item.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 hover:border-slate-500 transition-all group flex flex-col gap-3 shadow-lg hover:shadow-xl">
                                                         <div className="flex items-start gap-4">
                                                             <div className="w-20 h-20 bg-slate-900 rounded-xl border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
-                                                                {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <Utensils size={24} className="text-slate-600" />}
+                                                                {item.image ? <img src={item.image} className="w-full h-full object-cover" alt={item.name} /> : <Utensils size={24} className="text-slate-600" />}
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <h4 className="font-bold text-white text-base truncate pr-14" title={item.name}>{item.name}</h4>
-                                                                <p className="text-orange-400 font-mono font-bold text-sm mt-0.5">€ {item.price.toFixed(2)}</p>
-                                                                {item.ingredients && <p className="text-[11px] text-slate-500 truncate mt-1">{item.ingredients}</p>}
+                                                                <h4 className="font-bold text-white text-base line-clamp-2 leading-tight mb-1" title={item.name}>{item.name}</h4>
+                                                                <p className="text-orange-400 font-mono font-bold text-sm">€ {item.price.toFixed(2)}</p>
+                                                                {item.ingredients && <p className="text-[11px] text-slate-500 line-clamp-1 mt-1">{item.ingredients}</p>}
                                                             </div>
                                                         </div>
                                                         {item.allergens && item.allergens.length > 0 && (
-                                                            <div className="flex flex-wrap gap-1 mt-1">
-                                                                {item.allergens.map(alg => (
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {item.allergens.slice(0, 4).map(alg => (
                                                                     <span key={alg} className="px-1.5 py-0.5 bg-red-900/30 text-red-400 border border-red-900/50 rounded text-[9px] font-bold uppercase tracking-wide">{alg}</span>
                                                                 ))}
+                                                                {item.allergens.length > 4 && <span className="px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded text-[9px] font-bold">+{item.allergens.length - 4}</span>}
                                                             </div>
                                                         )}
-                                                        <div className="absolute top-3 right-3 flex gap-2">
-                                                            <button onClick={() => { setEditingItem(item); setIsEditingItem(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 bg-slate-700 hover:bg-blue-600 text-slate-300 hover:text-white rounded-lg transition-colors shadow-lg"><Edit2 size={16} /></button>
-                                                            <button onClick={() => confirmDelete(item)} className="p-2 bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white rounded-lg transition-colors shadow-lg"><Trash2 size={16} /></button>
+                                                        <div className="flex gap-2 mt-auto pt-2 border-t border-slate-700/50">
+                                                            <button onClick={() => { setEditingItem(item); setIsEditingItem(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex-1 p-2 bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5 text-xs font-bold">
+                                                                <Edit2 size={14} /> Modifica
+                                                            </button>
+                                                            <button onClick={() => confirmDelete(item)} className="flex-1 p-2 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5 text-xs font-bold">
+                                                                <Trash2 size={14} /> Elimina
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 ))}
