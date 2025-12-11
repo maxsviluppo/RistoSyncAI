@@ -701,14 +701,96 @@ export default function App() {
                         <div className="max-w-6xl mx-auto animate-fade-in">
                             <div className="flex justify-between items-center mb-8"><div><h2 className="text-3xl font-black text-white mb-2">Gestione Menu</h2><p className="text-slate-400">Aggiungi, modifica o rimuovi piatti dal tuo menu digitale.</p></div><div className="flex gap-3"><button onClick={() => { setEditingItem({}); setIsEditingItem(!isEditingItem); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg transition-transform active:scale-95 ${isEditingItem ? 'bg-slate-700 text-white' : 'bg-green-600 hover:bg-green-500 text-white shadow-green-600/20'}`}>{isEditingItem ? <X size={20} /> : <Plus size={20} />} {isEditingItem ? 'Chiudi Editor' : 'NUOVO PIATTO'}</button></div></div>
                             <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg"><div className="flex items-center gap-4"><div className="p-3 bg-blue-600/20 text-blue-400 rounded-xl"><LayoutGrid size={24} /></div><div><h3 className="font-bold text-white text-lg">Configurazione Sala</h3><p className="text-xs text-slate-400 font-medium">Imposta il numero di tavoli attivi nel ristorante.</p></div></div><div className="flex items-center gap-3 bg-slate-950 p-1.5 rounded-xl border border-slate-700"><button onClick={() => handleUpdateTableCount(-1)} className="w-10 h-10 flex items-center justify-center bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors"><Minus size={18} strokeWidth={3} /></button><span className="font-black text-3xl w-16 text-center text-white">{appSettings.restaurantProfile?.tableCount || 12}</span><button onClick={() => handleUpdateTableCount(1)} className="w-10 h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded-lg text-white shadow-lg shadow-blue-600/20 transition-colors"><Plus size={18} strokeWidth={3} /></button></div></div>
-                            <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex gap-4 mb-8 overflow-x-auto no-scrollbar items-center"><button onClick={() => bulkInputRef.current?.click()} className="flex items-center gap-2 bg-blue-600/20 text-blue-400 px-4 py-2 rounded-lg font-bold hover:bg-blue-600/30 transition-colors whitespace-nowrap text-xs"><Upload size={16} /> Importa JSON</button><input type="file" ref={bulkInputRef} onChange={handleBulkImport} accept=".json" className="hidden" /><button onClick={() => bulkImagesRef.current?.click()} className="flex items-center gap-2 bg-pink-600/20 text-pink-400 px-4 py-2 rounded-lg font-bold hover:bg-pink-600/30 transition-colors whitespace-nowrap text-xs"><ImageIcon size={16} /> Importa Foto Massiva</button><input type="file" ref={bulkImagesRef} onChange={handleBulkImageUpload} accept="image/*" multiple className="hidden" /><button onClick={exportMenu} className="flex items-center gap-2 bg-teal-600/20 text-teal-400 px-4 py-2 rounded-lg font-bold hover:bg-teal-600/30 transition-colors whitespace-nowrap text-xs"><Download size={16} /> Esporta JSON</button><div className="flex-1"></div><button onClick={() => setShowDeleteAllMenuModal(true)} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-500 transition-colors whitespace-nowrap shadow-lg shadow-red-900/20 text-xs"><Trash2 size={16} /> ELIMINA TUTTO</button></div>
+                            <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-wrap gap-4 mb-8 items-center">
+                                <button onClick={() => bulkInputRef.current?.click()} className="flex items-center gap-2 bg-blue-600/20 text-blue-400 px-4 py-2 rounded-lg font-bold hover:bg-blue-600/30 transition-colors whitespace-nowrap text-xs"><Upload size={16} /> Importa JSON</button>
+                                <input type="file" ref={bulkInputRef} onChange={handleBulkImport} accept=".json" className="hidden" />
+                                <button onClick={() => bulkImagesRef.current?.click()} className="flex items-center gap-2 bg-pink-600/20 text-pink-400 px-4 py-2 rounded-lg font-bold hover:bg-pink-600/30 transition-colors whitespace-nowrap text-xs"><ImageIcon size={16} /> Importa Foto Massiva</button>
+                                <input type="file" ref={bulkImagesRef} onChange={handleBulkImageUpload} accept="image/*" multiple className="hidden" />
+                                <button onClick={exportMenu} className="flex items-center gap-2 bg-teal-600/20 text-teal-400 px-4 py-2 rounded-lg font-bold hover:bg-teal-600/30 transition-colors whitespace-nowrap text-xs"><Download size={16} /> Esporta JSON</button>
+                                <button onClick={() => { if (confirm("Caricare piatti dimostrativi?")) importDemoMenu(); }} className="flex items-center gap-2 bg-purple-600/20 text-purple-400 px-4 py-2 rounded-lg font-bold hover:bg-purple-600/30 transition-colors whitespace-nowrap text-xs"><Sparkles size={16} /> Carica Demo</button>
+                                <div className="flex-1"></div>
+                                <button onClick={() => setShowDeleteAllMenuModal(true)} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-500 transition-colors whitespace-nowrap shadow-lg shadow-red-900/20 text-xs"><Trash2 size={16} /> ELIMINA TUTTO</button>
+                            </div>
                             {(isEditingItem || Object.keys(editingItem).length > 0) && (
                                 <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-2xl mb-10 relative overflow-hidden animate-slide-up">
-                                    <h3 className="font-bold text-white mb-4 flex items-center gap-2 text-lg"><Edit2 size={18} /> {editingItem.id ? 'Modifica Piatto' : 'Crea Nuovo Piatto'}</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="space-y-4"><div className="flex gap-4"><div className="relative w-24 h-24 bg-slate-950 rounded-xl border border-slate-700 flex items-center justify-center overflow-hidden shrink-0 group">{editingItem.image ? (<><img src={editingItem.image} alt="Preview" className="w-full h-full object-cover" /><button onClick={(e) => { e.stopPropagation(); setEditingItem(prev => ({ ...prev, image: undefined })); }} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-20"><X size={12} /></button></>) : <ImageIcon className="text-slate-600" size={24} />}<input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" /><div onClick={() => fileInputRef.current?.click()} className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity z-10"><Upload className="text-white" size={20} /></div></div><div className="flex-1 space-y-2"><input type="text" placeholder="Nome Piatto" value={editingItem.name || ''} onChange={e => setEditingItem({ ...editingItem, name: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm focus:border-orange-500 outline-none" /><div className="flex gap-2"><input type="number" placeholder="€" value={editingItem.price || ''} onChange={e => setEditingItem({ ...editingItem, price: parseFloat(e.target.value) })} className="w-24 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono font-bold text-sm focus:border-orange-500 outline-none text-right" /><select value={editingItem.category || Category.ANTIPASTI} onChange={e => setEditingItem({ ...editingItem, category: e.target.value as Category })} className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-xs focus:border-orange-500 outline-none appearance-none">{Object.values(Category).map(c => <option key={c} value={c}>{c}</option>)}</select></div></div></div><select value={editingItem.specificDepartment || ''} onChange={e => setEditingItem({ ...editingItem, specificDepartment: e.target.value as Department | undefined })} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-400 text-xs outline-none"><option value="">Destinazione Default</option><option value="Cucina">Forza Cucina</option><option value="Pizzeria">Forza Pizzeria</option><option value="Pub">Forza Pub</option><option value="Sala">Forza Sala</option></select></div>
-                                        <div className="space-y-3"><div><div className="flex justify-between mb-1"><label className="text-[10px] font-bold text-slate-500 uppercase">Ingredienti</label><button onClick={generateIngr} disabled={!editingItem.name} className="text-[10px] text-purple-400 hover:text-purple-300 flex gap-1 items-center"><Sparkles size={10} /> AI</button></div><input type="text" placeholder="Es. Pomodoro, Mozzarella" value={editingItem.ingredients || ''} onChange={e => setEditingItem({ ...editingItem, ingredients: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs outline-none" /></div><div><div className="flex justify-between mb-1"><label className="text-[10px] font-bold text-slate-500 uppercase">Descrizione</label><button onClick={generateDesc} disabled={!editingItem.name} className="text-[10px] text-purple-400 hover:text-purple-300 flex gap-1 items-center"><Sparkles size={10} /> AI</button></div><textarea placeholder="Descrizione breve..." value={editingItem.description || ''} onChange={e => setEditingItem({ ...editingItem, description: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs outline-none resize-none h-16" /></div></div>
-                                        <div className="flex flex-col justify-between"><div><label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Allergeni</label><div className="flex flex-wrap gap-1.5">{ALLERGENS_CONFIG.map(alg => (<button key={alg.id} onClick={() => { const current = editingItem.allergens || []; setEditingItem({ ...editingItem, allergens: current.includes(alg.id) ? current.filter(a => a !== alg.id) : [...current, alg.id] }); }} className={`px-2 py-1 rounded text-[10px] font-bold border transition-all ${editingItem.allergens?.includes(alg.id) ? 'bg-orange-500 border-orange-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>{alg.label}</button>))}</div></div><div className="flex gap-2 mt-4"><button onClick={() => { setEditingItem({}); setIsEditingItem(false); }} className="flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs">Annulla</button><button onClick={handleSaveItem} disabled={!editingItem.name || !editingItem.price} className="flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1"><Save size={14} /> Salva</button></div></div>
+                                    <h3 className="font-bold text-white mb-6 flex items-center gap-2 text-xl border-b border-slate-800 pb-4"><Edit2 size={20} /> {editingItem.id ? 'Modifica Piatto' : 'Crea Nuovo Piatto'}</h3>
+                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                        <div className="lg:col-span-4 space-y-6">
+                                            <div className="flex gap-6 items-start">
+                                                <div className="relative w-32 h-32 bg-slate-950 rounded-2xl border-2 border-slate-700 border-dashed flex items-center justify-center overflow-hidden shrink-0 group hover:border-blue-500 transition-colors">
+                                                    {editingItem.image ? (<>
+                                                        <img src={editingItem.image} alt="Preview" className="w-full h-full object-cover" />
+                                                        <button onClick={(e) => { e.stopPropagation(); setEditingItem(prev => ({ ...prev, image: undefined })); }} className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:scale-110"><X size={14} /></button>
+                                                    </>) : <ImageIcon className="text-slate-600" size={32} />}
+                                                    <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
+                                                    <div onClick={() => fileInputRef.current?.click()} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity z-10 font-bold text-xs text-white uppercase tracking-wider">Cambia Foto</div>
+                                                </div>
+                                                <div className="flex-1 space-y-4">
+                                                    <div>
+                                                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Nome Piatto</label>
+                                                        <input type="text" placeholder="Es. Spaghetti alla Carbonara" value={editingItem.name || ''} onChange={e => setEditingItem({ ...editingItem, name: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white font-bold focus:border-blue-500 outline-none transition-colors" />
+                                                    </div>
+                                                    <div className="flex gap-4">
+                                                        <div className="w-24">
+                                                            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Prezzo</label>
+                                                            <input type="number" placeholder="0.00" value={editingItem.price || ''} onChange={e => setEditingItem({ ...editingItem, price: parseFloat(e.target.value) })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white font-mono font-bold text-right focus:border-green-500 outline-none transition-colors" />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Categoria</label>
+                                                            <select value={editingItem.category || Category.ANTIPASTI} onChange={e => setEditingItem({ ...editingItem, category: e.target.value as Category })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white font-bold focus:border-blue-500 outline-none appearance-none transition-colors cursor-pointer">
+                                                                {Object.values(Category).map(c => <option key={c} value={c}>{c}</option>)}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Reparto di Destinazione (Opzionale)</label>
+                                                <select value={editingItem.specificDepartment || ''} onChange={e => setEditingItem({ ...editingItem, specificDepartment: e.target.value as Department | undefined })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-slate-300 text-sm outline-none focus:border-purple-500 transition-colors cursor-pointer">
+                                                    <option value="">Usa Default della Categoria</option>
+                                                    <option value="Cucina">Forza Cucina</option>
+                                                    <option value="Pizzeria">Forza Pizzeria</option>
+                                                    <option value="Pub">Forza Pub</option>
+                                                    <option value="Sala">Forza Sala</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div className="lg:col-span-4 space-y-4">
+                                            <div>
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <label className="text-xs font-bold text-slate-500 uppercase">Ingredienti</label>
+                                                    <button onClick={generateIngr} disabled={!editingItem.name} className="text-xs bg-purple-600/10 text-purple-400 hover:bg-purple-600/20 px-2 py-0.5 rounded-lg font-bold flex gap-1 items-center transition-colors disabled:opacity-50"><Sparkles size={12} /> Auto-Genera</button>
+                                                </div>
+                                                <textarea placeholder="Elenco ingredienti separati da virgola..." value={editingItem.ingredients || ''} onChange={e => setEditingItem({ ...editingItem, ingredients: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-purple-500 transition-colors resize-none h-24" />
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <label className="text-xs font-bold text-slate-500 uppercase">Descrizione Menu</label>
+                                                    <button onClick={generateDesc} disabled={!editingItem.name} className="text-xs bg-purple-600/10 text-purple-400 hover:bg-purple-600/20 px-2 py-0.5 rounded-lg font-bold flex gap-1 items-center transition-colors disabled:opacity-50"><Sparkles size={12} /> Auto-Genera</button>
+                                                </div>
+                                                <textarea placeholder="Descrizione accattivante per il menu digitale..." value={editingItem.description || ''} onChange={e => setEditingItem({ ...editingItem, description: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-purple-500 transition-colors resize-none h-24" />
+                                            </div>
+                                        </div>
+
+                                        <div className="lg:col-span-4 flex flex-col h-full">
+                                            <div className="flex-1 mb-6">
+                                                <label className="text-xs font-bold text-slate-500 uppercase mb-3 block">Allergeni</label>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {ALLERGENS_CONFIG.map(alg => (
+                                                        <button key={alg.id} onClick={() => { const current = editingItem.allergens || []; setEditingItem({ ...editingItem, allergens: current.includes(alg.id) ? current.filter(a => a !== alg.id) : [...current, alg.id] }); }}
+                                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${editingItem.allergens?.includes(alg.id) ? 'bg-orange-600 border-orange-500 text-white shadow-lg shadow-orange-900/20' : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300'}`}
+                                                        >
+                                                            {alg.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-4 pt-4 border-t border-slate-800">
+                                                <button onClick={() => { setEditingItem({}); setIsEditingItem(false); }} className="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm transition-colors">Annulla</button>
+                                                <button onClick={handleSaveItem} disabled={!editingItem.name || !editingItem.price} className="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-green-900/20 transition-all hover:scale-[1.02] active:scale-95"><Save size={18} /> SALVA PIATTO</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -718,7 +800,40 @@ export default function App() {
                                     const categoryItems = menuItems.filter(item => item.category === category);
                                     if (categoryItems.length === 0) return null;
                                     return (
-                                        <div key={category} className="bg-slate-900/50 border border-slate-800 rounded-2xl p-5"><div className="flex items-center gap-3 mb-4"><div className="w-2 h-8 bg-orange-500 rounded-full"></div><h3 className="text-xl font-bold text-white uppercase tracking-wide">{category}</h3><span className="text-xs font-mono text-slate-500 bg-slate-800 px-2 py-1 rounded">{categoryItems.length}</span></div><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{categoryItems.map(item => (<div key={item.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-slate-500 transition-all group flex items-start gap-4 shadow-sm relative"><div className="w-16 h-16 bg-slate-900 rounded-lg border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">{item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <Utensils size={20} className="text-slate-600" />}</div><div className="flex-1 min-w-0"><h4 className="font-bold text-white text-sm truncate">{item.name}</h4><p className="text-orange-400 font-mono font-bold text-xs mt-0.5">€ {item.price.toFixed(2)}</p>{item.ingredients && <p className="text-[10px] text-slate-500 truncate mt-1">{item.ingredients}</p>}</div><div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-2"><button onClick={() => { setEditingItem(item); setIsEditingItem(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-1.5 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white"><Edit2 size={14} /></button><button onClick={() => confirmDelete(item)} className="p-1.5 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600 hover:text-white"><Trash2 size={14} /></button></div></div>))}</div></div>
+                                        <div key={category} className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-2 h-8 bg-orange-500 rounded-full"></div>
+                                                <h3 className="text-xl font-bold text-white uppercase tracking-wide">{category}</h3>
+                                                <span className="text-xs font-mono text-slate-500 bg-slate-800 px-2 py-1 rounded-lg border border-slate-700">{categoryItems.length}</span>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                                {categoryItems.map(item => (
+                                                    <div key={item.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 hover:border-slate-500 transition-all group flex flex-col gap-3 shadow-lg hover:shadow-xl relative overflow-hidden">
+                                                        <div className="flex items-start gap-4">
+                                                            <div className="w-20 h-20 bg-slate-900 rounded-xl border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
+                                                                {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <Utensils size={24} className="text-slate-600" />}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <h4 className="font-bold text-white text-base truncate pr-14" title={item.name}>{item.name}</h4>
+                                                                <p className="text-orange-400 font-mono font-bold text-sm mt-0.5">€ {item.price.toFixed(2)}</p>
+                                                                {item.ingredients && <p className="text-[11px] text-slate-500 truncate mt-1">{item.ingredients}</p>}
+                                                            </div>
+                                                        </div>
+                                                        {item.allergens && item.allergens.length > 0 && (
+                                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                                {item.allergens.map(alg => (
+                                                                    <span key={alg} className="px-1.5 py-0.5 bg-red-900/30 text-red-400 border border-red-900/50 rounded text-[9px] font-bold uppercase tracking-wide">{alg}</span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        <div className="absolute top-3 right-3 flex gap-2">
+                                                            <button onClick={() => { setEditingItem(item); setIsEditingItem(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 bg-slate-700 hover:bg-blue-600 text-slate-300 hover:text-white rounded-lg transition-colors shadow-lg"><Edit2 size={16} /></button>
+                                                            <button onClick={() => confirmDelete(item)} className="p-2 bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white rounded-lg transition-colors shadow-lg"><Trash2 size={16} /></button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     )
                                 })}
                             </div>
