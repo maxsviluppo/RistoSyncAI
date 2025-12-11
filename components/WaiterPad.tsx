@@ -366,6 +366,7 @@ const WaiterPad: React.FC<WaiterPadProps> = ({ onExit }) => {
                         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
                             {Array.from({ length: tableCount }, (_, i) => i + 1).map(num => {
                                 const status = getTableStatus(num.toString());
+                                const currentTableOrder = orders.find(o => o.tableNumber === num.toString() && o.status !== OrderStatus.DELIVERED);
                                 let bgClass = "bg-slate-800 border-slate-700 text-slate-400";
                                 let statusIcon = null;
 
@@ -381,7 +382,12 @@ const WaiterPad: React.FC<WaiterPadProps> = ({ onExit }) => {
                                         className={`aspect-square rounded-2xl border-2 flex flex-col items-center justify-center gap-1 shadow-lg transition-all active:scale-95 ${bgClass}`}
                                     >
                                         <span className="text-3xl font-black">{num}</span>
-                                        {status !== 'free' && <div className="flex items-center gap-1 text-[10px] font-bold uppercase">{statusIcon} {status === 'ready' ? 'SERVIRE' : status}</div>}
+                                        {status !== 'free' && (
+                                            <>
+                                                <div className="flex items-center gap-1 text-[10px] font-bold uppercase">{statusIcon} {status === 'ready' ? 'SERVIRE' : status}</div>
+                                                {currentTableOrder?.waiterName && <div className="text-[9px] font-mono opacity-80 mt-0.5 truncate max-w-[90%]">{currentTableOrder.waiterName}</div>}
+                                            </>
+                                        )}
                                     </button>
                                 );
                             })}
