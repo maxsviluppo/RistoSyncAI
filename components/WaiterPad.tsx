@@ -10,7 +10,7 @@ import {
     LogOut, Plus, Search, Utensils, CheckCircle,
     ChevronLeft, Trash2, User, Clock,
     DoorOpen, ChefHat, Pizza, Sandwich,
-    Wine, CakeSlice, UtensilsCrossed, Send as SendIcon, CheckSquare, Square, BellRing, X, ArrowLeft, AlertTriangle, Home
+    Wine, CakeSlice, UtensilsCrossed, Send as SendIcon, CheckSquare, Square, BellRing, X, ArrowLeft, AlertTriangle, Home, Lock
 } from 'lucide-react';
 
 interface WaiterPadProps {
@@ -367,6 +367,8 @@ const WaiterPad: React.FC<WaiterPadProps> = ({ onExit }) => {
                             {Array.from({ length: tableCount }, (_, i) => i + 1).map(num => {
                                 const status = getTableStatus(num.toString());
                                 const currentTableOrder = orders.find(o => o.tableNumber === num.toString() && o.status !== OrderStatus.DELIVERED);
+                                const isLocked = currentTableOrder?.waiterName && waiterName && currentTableOrder.waiterName !== waiterName;
+
                                 let bgClass = "bg-slate-800 border-slate-700 text-slate-400";
                                 let statusIcon = null;
 
@@ -375,16 +377,29 @@ const WaiterPad: React.FC<WaiterPadProps> = ({ onExit }) => {
                                 if (status === 'ready') { bgClass = "bg-green-600 border-green-400 text-white animate-pulse shadow-[0_0_15px_rgba(34,197,94,0.6)]"; statusIcon = <BellRing size={14} className="animate-wiggle" />; }
                                 if (status === 'completed') { bgClass = "bg-orange-700/80 border-orange-500 text-white shadow-lg"; statusIcon = <CheckSquare size={12} />; }
 
+                                if (isLocked && status !== 'free') {
+                                    bgClass = "bg-slate-800 border-slate-600 text-slate-500 opacity-60 cursor-not-allowed grayscale";
+                                }
+
                                 return (
                                     <button
                                         key={num}
-                                        onClick={() => handleTableClick(num.toString())}
+                                        onClick={() => {
+                                            if (isLocked) {
+                                                alert(`Tavolo gestito da ${currentTableOrder?.waiterName}. Non puoi modificarlo.`);
+                                                return;
+                                            }
+                                            handleTableClick(num.toString());
+                                        }}
                                         className={`aspect-square rounded-2xl border-2 flex flex-col items-center justify-center gap-1 shadow-lg transition-all active:scale-95 ${bgClass}`}
                                     >
                                         <span className="text-3xl font-black">{num}</span>
                                         {status !== 'free' && (
                                             <>
-                                                <div className="flex items-center gap-1 text-[10px] font-bold uppercase">{statusIcon} {status === 'ready' ? 'SERVIRE' : status}</div>
+                                                <div className="flex items-center gap-1 text-[10px] font-bold uppercase">
+                                                    {isLocked ? <Lock size={12} /> : statusIcon}
+                                                    {status === 'ready' ? 'SERVIRE' : status}
+                                                </div>
                                                 {currentTableOrder?.waiterName && <div className="text-[9px] font-mono opacity-80 mt-0.5 truncate max-w-[90%]">{currentTableOrder.waiterName}</div>}
                                             </>
                                         )}
