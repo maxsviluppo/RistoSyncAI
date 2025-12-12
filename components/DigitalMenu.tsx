@@ -234,7 +234,7 @@ const DigitalMenu: React.FC<DigitalMenuProps> = ({ restaurantId, isPreview = fal
     return (
         <div
             id="digital-menu-container"
-            className={`${isPreview ? 'h-full overflow-y-auto relative rounded-[2.5rem] bg-gray-50 scrollbar-hide' : 'min-h-screen bg-gray-50 pb-24'}`}
+            className={`${isPreview ? 'h-full overflow-y-auto relative rounded-[2.5rem] bg-slate-900 scrollbar-hide' : 'min-h-screen bg-slate-900 pb-24'}`}
         >
             {/* THIN HEADER */}
             <div className={`bg-slate-900 text-white relative shadow-lg z-20 border-b border-slate-800 ${isPreview ? 'rounded-b-2xl pt-8 pb-3' : 'pt-4 pb-4 sticky top-0'}`}>

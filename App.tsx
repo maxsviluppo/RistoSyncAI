@@ -1099,19 +1099,19 @@ export default function App() {
                                 </div>
 
                                 {/* QR Code Box - Gradiente Arancione */}
-                                <div className="bg-gradient-to-br from-orange-500 to-red-600 p-8 rounded-3xl shadow-2xl">
-                                    <div className="bg-white p-6 rounded-2xl shadow-xl">
+                                <div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-3xl shadow-2xl max-w-sm">
+                                    <div className="bg-white p-4 rounded-2xl shadow-xl">
                                         {qrCodeUrl ? (
-                                            <img src={qrCodeUrl} alt="Menu QR" className="w-full h-auto mix-blend-multiply" />
+                                            <img src={qrCodeUrl} alt="Menu QR" className="w-64 h-64 mx-auto mix-blend-multiply" />
                                         ) : (
                                             <div className="w-64 h-64 flex items-center justify-center bg-slate-100 text-slate-400 text-xs">
                                                 QR non disponibile
                                             </div>
                                         )}
                                     </div>
-                                    <div className="mt-6 text-center">
-                                        <h4 className="text-2xl font-black text-white mb-2">{profileForm.name || restaurantName}</h4>
-                                        <p className="text-white/80 text-sm font-medium">Scansiona per ordinare dal tavolo</p>
+                                    <div className="mt-4 text-center">
+                                        <h4 className="text-xl font-black text-white mb-1">{profileForm.name || restaurantName}</h4>
+                                        <p className="text-white/80 text-sm">Scansiona per ordinare dal tavolo</p>
                                     </div>
 
                                     {/* Pulsanti Azione */}
@@ -1162,9 +1162,9 @@ export default function App() {
 
                             {/* Destra - Preview Smartphone */}
                             <div className="flex-1 xl:max-w-md">
-                                <div className="h-[700px] bg-slate-950 border-4 border-slate-800 rounded-[3rem] shadow-2xl relative overflow-hidden">
-                                    {/* Notch */}
-                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-800 rounded-b-xl z-20"></div>
+                                <div className="h-[700px] bg-black border-[14px] border-slate-900 rounded-[3.5rem] shadow-2xl relative overflow-hidden">
+                                    {/* Dynamic Island (iPhone 14 Pro style) */}
+                                    <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-7 bg-black rounded-full z-20"></div>
                                     {/* Menu Preview */}
                                     <DigitalMenu
                                         restaurantId={session?.user?.id}
