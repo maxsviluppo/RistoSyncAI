@@ -1193,285 +1193,287 @@ export default function App() {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                        </div>
                     )}
-                            {adminTab === 'analytics' && (
-                                <div className="max-w-7xl mx-auto space-y-6 animate-fade-in pb-20">
-                                    {/* Header */}
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <h2 className="text-4xl font-black text-white mb-2">Business Intelligence</h2>
-                                            <p className="text-slate-400 text-sm flex items-center gap-2">
-                                                <MapPin size={14} /> Località non impostata
-                                            </p>
-                                        </div>
+                {adminTab === 'analytics' && (
+                    <div className="max-w-7xl mx-auto space-y-6 animate-fade-in pb-20">
+                        {/* Header */}
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-4xl font-black text-white mb-2">Business Intelligence</h2>
+                                <p className="text-slate-400 text-sm flex items-center gap-2">
+                                    <MapPin size={14} /> Località non impostata
+                                </p>
+                            </div>
 
-                                        {/* Date Selector */}
-                                        <div className="flex items-center gap-3 bg-slate-900 px-4 py-3 rounded-xl border border-slate-800">
-                                            <button
-                                                onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); }}
-                                                className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
-                                            >
-                                                <ChevronLeft size={18} />
-                                            </button>
-                                            <div className="flex items-center gap-2 px-3">
-                                                <Calendar size={18} className="text-orange-500" />
-                                                <span className="font-bold text-white">ven {selectedDate.getDate()} {selectedDate.toLocaleDateString('it-IT', { month: 'long' })}</span>
-                                            </div>
-                                            <button
-                                                onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); }}
-                                                className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
-                                            >
-                                                <ChevronRight size={18} />
-                                            </button>
-                                        </div>
+                            {/* Date Selector */}
+                            <div className="flex items-center gap-3 bg-slate-900 px-4 py-3 rounded-xl border border-slate-800">
+                                <button
+                                    onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); }}
+                                    className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+                                >
+                                    <ChevronLeft size={18} />
+                                </button>
+                                <div className="flex items-center gap-2 px-3">
+                                    <Calendar size={18} className="text-orange-500" />
+                                    <span className="font-bold text-white">ven {selectedDate.getDate()} {selectedDate.toLocaleDateString('it-IT', { month: 'long' })}</span>
+                                </div>
+                                <button
+                                    onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); }}
+                                    className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+                                >
+                                    <ChevronRight size={18} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* KPI Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            {/* Incasso Netto */}
+                            <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-green-500/50 transition-all">
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <DollarSign size={60} className="text-green-500" />
+                                </div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
+                                        <DollarSign size={14} /> Incasso Netto
                                     </div>
+                                    <p className="text-3xl font-black text-white">€ {analyticsData.revenue.toFixed(2)}</p>
+                                </div>
+                            </div>
 
-                                    {/* KPI Cards */}
-                                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                                        {/* Incasso Netto */}
-                                        <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-green-500/50 transition-all">
-                                            <div className="absolute top-0 right-0 p-4 opacity-10">
-                                                <DollarSign size={60} className="text-green-500" />
-                                            </div>
-                                            <div className="relative z-10">
-                                                <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
-                                                    <DollarSign size={14} /> Incasso Netto
-                                                </div>
-                                                <p className="text-3xl font-black text-white">€ {analyticsData.revenue.toFixed(2)}</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Piatti Serviti */}
-                                        <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-blue-500/50 transition-all">
-                                            <div className="absolute top-0 right-0 p-4 opacity-10">
-                                                <UtensilsCrossed size={60} className="text-blue-500" />
-                                            </div>
-                                            <div className="relative z-10">
-                                                <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
-                                                    <UtensilsCrossed size={14} /> Piatti Serviti
-                                                </div>
-                                                <p className="text-3xl font-black text-white">{analyticsData.totalDishes}</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Tempo Medio Attesa */}
-                                        <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-cyan-500/50 transition-all">
-                                            <div className="absolute top-0 right-0 p-4 opacity-10">
-                                                <Clock size={60} className="text-cyan-500" />
-                                            </div>
-                                            <div className="relative z-10">
-                                                <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
-                                                    <Clock size={14} /> Tempo Medio Attesa
-                                                </div>
-                                                <p className="text-3xl font-black text-white">0 min</p>
-                                                <p className="text-xs text-slate-500 mt-1">Target: &lt; 20 min</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Tavoli Serviti */}
-                                        <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-purple-500/50 transition-all">
-                                            <div className="absolute top-0 right-0 p-4 opacity-10">
-                                                <Users size={60} className="text-purple-500" />
-                                            </div>
-                                            <div className="relative z-10">
-                                                <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
-                                                    <Users size={14} /> Tavoli Serviti
-                                                </div>
-                                                <p className="text-3xl font-black text-white">{analyticsData.totalOrders}</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Food Cost */}
-                                        <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-orange-500/50 transition-all">
-                                            <div className="absolute top-0 right-0 p-4 opacity-10">
-                                                <TrendingUp size={60} className="text-orange-500" />
-                                            </div>
-                                            <div className="relative z-10">
-                                                <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
-                                                    <TrendingUp size={14} /> Food Cost (est. 32%)
-                                                </div>
-                                                <p className="text-3xl font-black text-orange-500">€ 0</p>
-                                                <p className="text-xs text-slate-500 mt-1">Scostino: € 0.00</p>
-                                            </div>
-                                        </div>
+                            {/* Piatti Serviti */}
+                            <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-blue-500/50 transition-all">
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <UtensilsCrossed size={60} className="text-blue-500" />
+                                </div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
+                                        <UtensilsCrossed size={14} /> Piatti Serviti
                                     </div>
+                                    <p className="text-3xl font-black text-white">{analyticsData.totalDishes}</p>
+                                </div>
+                            </div>
 
-                                    {/* Second Row: Consumo Materie Prime + Top Piatti */}
-                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                        {/* Consumo Materie Prime */}
-                                        <div className="lg:col-span-2 bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-800">
-                                            <div className="flex justify-between items-center mb-4">
-                                                <h3 className="font-bold text-white flex items-center gap-2">
-                                                    <Utensils className="text-blue-500" size={20} />
-                                                    Consumo Materie Prime
-                                                </h3>
-                                                <button className="text-xs text-slate-400 hover:text-white px-3 py-1.5 bg-slate-800 rounded-lg border border-slate-700 transition-colors">
-                                                    Calcolato su Ingredienti Menu
-                                                </button>
-                                            </div>
-                                            <div className="flex flex-col items-center justify-center py-12 text-center">
-                                                <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
-                                                    <Utensils size={40} className="text-slate-600" />
-                                                </div>
-                                                <p className="text-slate-500 text-sm mb-2">Nessun dato ingredienti disponibile.</p>
-                                                <p className="text-slate-600 text-xs">Assicurati di aver compilato il campo "Ingredienti" nel menu.</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Top Piatti */}
-                                        <div className="bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-800">
-                                            <h3 className="font-bold text-white flex items-center gap-2 mb-4">
-                                                <Trophy className="text-yellow-500" size={20} />
-                                                Top Piatti
-                                            </h3>
-                                            {analyticsData.topItems.length > 0 ? (
-                                                <div className="space-y-3">
-                                                    {analyticsData.topItems.slice(0, 5).map(([name, count], i) => (
-                                                        <div key={name} className="flex items-center justify-between p-3 bg-slate-950/50 rounded-xl border border-slate-800/50 hover:border-slate-700 transition-all">
-                                                            <div className="flex items-center gap-3">
-                                                                <span className={`font-black w-7 h-7 flex items-center justify-center rounded-full text-xs ${i === 0 ? 'bg-yellow-500 text-black' : i === 1 ? 'bg-slate-400 text-black' : i === 2 ? 'bg-orange-700 text-white' : 'bg-slate-700 text-white'}`}>
-                                                                    {i + 1}
-                                                                </span>
-                                                                <span className="font-bold text-white text-sm">{name}</span>
-                                                            </div>
-                                                            <span className="font-mono text-slate-400 text-sm">{count}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center justify-center py-8 text-center">
-                                                    <p className="text-slate-500 text-sm italic">Nessun dato.</p>
-                                                </div>
-                                            )}
-                                        </div>
+                            {/* Tempo Medio Attesa */}
+                            <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-cyan-500/50 transition-all">
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <Clock size={60} className="text-cyan-500" />
+                                </div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
+                                        <Clock size={14} /> Tempo Medio Attesa
                                     </div>
+                                    <p className="text-3xl font-black text-white">0 min</p>
+                                    <p className="text-xs text-slate-500 mt-1">Target: &lt; 20 min</p>
+                                </div>
+                            </div>
 
-                                    {/* AI Supply Chain & Efficienza */}
-                                    <div className="bg-gradient-to-br from-purple-900 to-indigo-900 p-8 rounded-3xl border border-purple-500/30 relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 opacity-10">
-                                            <Bot size={200} className="text-white" />
-                                        </div>
-                                        <div className="relative z-10">
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <div className="p-3 bg-white/10 rounded-xl">
-                                                    <Bot size={28} className="text-white" />
+                            {/* Tavoli Serviti */}
+                            <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-purple-500/50 transition-all">
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <Users size={60} className="text-purple-500" />
+                                </div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
+                                        <Users size={14} /> Tavoli Serviti
+                                    </div>
+                                    <p className="text-3xl font-black text-white">{analyticsData.totalOrders}</p>
+                                </div>
+                            </div>
+
+                            {/* Food Cost */}
+                            <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-orange-500/50 transition-all">
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <TrendingUp size={60} className="text-orange-500" />
+                                </div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
+                                        <TrendingUp size={14} /> Food Cost (est. 32%)
+                                    </div>
+                                    <p className="text-3xl font-black text-orange-500">€ 0</p>
+                                    <p className="text-xs text-slate-500 mt-1">Scostino: € 0.00</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Second Row: Consumo Materie Prime + Top Piatti */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {/* Consumo Materie Prime */}
+                            <div className="lg:col-span-2 bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-800">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="font-bold text-white flex items-center gap-2">
+                                        <Utensils className="text-blue-500" size={20} />
+                                        Consumo Materie Prime
+                                    </h3>
+                                    <button className="text-xs text-slate-400 hover:text-white px-3 py-1.5 bg-slate-800 rounded-lg border border-slate-700 transition-colors">
+                                        Calcolato su Ingredienti Menu
+                                    </button>
+                                </div>
+                                <div className="flex flex-col items-center justify-center py-12 text-center">
+                                    <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
+                                        <Utensils size={40} className="text-slate-600" />
+                                    </div>
+                                    <p className="text-slate-500 text-sm mb-2">Nessun dato ingredienti disponibile.</p>
+                                    <p className="text-slate-600 text-xs">Assicurati di aver compilato il campo "Ingredienti" nel menu.</p>
+                                </div>
+                            </div>
+
+                            {/* Top Piatti */}
+                            <div className="bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-800">
+                                <h3 className="font-bold text-white flex items-center gap-2 mb-4">
+                                    <Trophy className="text-yellow-500" size={20} />
+                                    Top Piatti
+                                </h3>
+                                {analyticsData.topItems.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {analyticsData.topItems.slice(0, 5).map(([name, count], i) => (
+                                            <div key={name} className="flex items-center justify-between p-3 bg-slate-950/50 rounded-xl border border-slate-800/50 hover:border-slate-700 transition-all">
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`font-black w-7 h-7 flex items-center justify-center rounded-full text-xs ${i === 0 ? 'bg-yellow-500 text-black' : i === 1 ? 'bg-slate-400 text-black' : i === 2 ? 'bg-orange-700 text-white' : 'bg-slate-700 text-white'}`}>
+                                                        {i + 1}
+                                                    </span>
+                                                    <span className="font-bold text-white text-sm">{name}</span>
                                                 </div>
-                                                <div>
-                                                    <h3 className="text-2xl font-black text-white">Supply Chain & Efficienza AI</h3>
-                                                    <p className="text-purple-200 text-sm">Analisi operativa, fornitori e food cost per la tua zona.</p>
-                                                </div>
+                                                <span className="font-mono text-slate-400 text-sm">{count}</span>
                                             </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                                        <p className="text-slate-500 text-sm italic">Nessun dato.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
-                                            {aiAnalysisResult ? (
-                                                <div className="bg-black/30 backdrop-blur-sm p-6 rounded-2xl border border-white/10 mb-4">
-                                                    <p className="text-white leading-relaxed whitespace-pre-wrap">{aiAnalysisResult}</p>
-                                                </div>
-                                            ) : (
-                                                <div className="bg-black/20 backdrop-blur-sm p-6 rounded-2xl border border-white/10 mb-4">
-                                                    <p className="text-purple-100 text-center">
-                                                        L'intelligenza artificiale valuterà la velocità della cucina (0 min/tavolo), i flussi di lavoro e i consumi per suggerirti miglioramenti strutturali.
-                                                    </p>
-                                                </div>
-                                            )}
-
-                                            <button
-                                                onClick={handleGenerateAnalysis}
-                                                disabled={isAnalyzing}
-                                                className="w-full py-4 bg-white hover:bg-purple-50 text-purple-900 font-black rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                {isAnalyzing ? (
-                                                    <>
-                                                        <Loader className="animate-spin" size={20} />
-                                                        Analisi in corso...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Sparkles size={20} />
-                                                        GENERA CONSULENZA COMPLETA
-                                                    </>
-                                                )}
-                                            </button>
-                                        </div>
+                        {/* AI Supply Chain & Efficienza */}
+                        <div className="bg-gradient-to-br from-purple-900 to-indigo-900 p-8 rounded-3xl border border-purple-500/30 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 opacity-10">
+                                <Bot size={200} className="text-white" />
+                            </div>
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="p-3 bg-white/10 rounded-xl">
+                                        <Bot size={28} className="text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-black text-white">Supply Chain & Efficienza AI</h3>
+                                        <p className="text-purple-200 text-sm">Analisi operativa, fornitori e food cost per la tua zona.</p>
                                     </div>
                                 </div>
-                            )}
-                            {adminTab === 'receipts' && (
-                                <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-20">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                                            <Receipt className="text-yellow-500" size={32} />
-                                            Scontrini Cassa
-                                        </h2>
-                                        <div className="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                                            <button onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); }} className="p-2 hover:bg-slate-800 rounded-lg"><ChevronLeft size={16} /></button>
-                                            <span className="font-bold text-sm w-32 text-center">{selectedDate.toLocaleDateString()}</span>
-                                            <button onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); }} className="p-2 hover:bg-slate-800 rounded-lg"><ChevronRight size={16} /></button>
-                                        </div>
+
+                                {aiAnalysisResult ? (
+                                    <div className="bg-black/30 backdrop-blur-sm p-6 rounded-2xl border border-white/10 mb-4">
+                                        <p className="text-white leading-relaxed whitespace-pre-wrap">{aiAnalysisResult}</p>
                                     </div>
+                                ) : (
+                                    <div className="bg-black/20 backdrop-blur-sm p-6 rounded-2xl border border-white/10 mb-4">
+                                        <p className="text-purple-100 text-center">
+                                            L'intelligenza artificiale valuterà la velocità della cucina (0 min/tavolo), i flussi di lavoro e i consumi per suggerirti miglioramenti strutturali.
+                                        </p>
+                                    </div>
+                                )}
 
-                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                        <div className="space-y-4">
-                                            {(() => {
-                                                const dayOrders = orders.filter(o => {
-                                                    const orderDate = new Date(o.timestamp);
-                                                    return orderDate.toDateString() === selectedDate.toDateString() && o.status === 'DELIVERED';
-                                                }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                                <button
+                                    onClick={handleGenerateAnalysis}
+                                    disabled={isAnalyzing}
+                                    className="w-full py-4 bg-white hover:bg-purple-50 text-purple-900 font-black rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isAnalyzing ? (
+                                        <>
+                                            <Loader className="animate-spin" size={20} />
+                                            Analisi in corso...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles size={20} />
+                                            GENERA CONSULENZA COMPLETA
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {adminTab === 'receipts' && (
+                    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-20">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-3xl font-black text-white flex items-center gap-3">
+                                <Receipt className="text-yellow-500" size={32} />
+                                Scontrini Cassa
+                            </h2>
+                            <div className="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                                <button onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); }} className="p-2 hover:bg-slate-800 rounded-lg"><ChevronLeft size={16} /></button>
+                                <span className="font-bold text-sm w-32 text-center">{selectedDate.toLocaleDateString()}</span>
+                                <button onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); }} className="p-2 hover:bg-slate-800 rounded-lg"><ChevronRight size={16} /></button>
+                            </div>
+                        </div>
 
-                                                if (dayOrders.length === 0) {
-                                                    return (
-                                                        <div className="text-center py-12">
-                                                            <Receipt size={48} className="mx-auto mb-4 text-slate-600 opacity-50" />
-                                                            <p className="text-slate-500 font-bold">Nessuno scontrino per questa data</p>
-                                                            <p className="text-slate-600 text-sm mt-2">Gli scontrini appariranno qui quando gli ordini saranno completati</p>
+                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                            <div className="space-y-4">
+                                {(() => {
+                                    const dayOrders = orders.filter(o => {
+                                        const orderDate = new Date(o.timestamp);
+                                        return orderDate.toDateString() === selectedDate.toDateString() && o.status === 'DELIVERED';
+                                    }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+                                    if (dayOrders.length === 0) {
+                                        return (
+                                            <div className="text-center py-12">
+                                                <Receipt size={48} className="mx-auto mb-4 text-slate-600 opacity-50" />
+                                                <p className="text-slate-500 font-bold">Nessuno scontrino per questa data</p>
+                                                <p className="text-slate-600 text-sm mt-2">Gli scontrini appariranno qui quando gli ordini saranno completati</p>
+                                            </div>
+                                        );
+                                    }
+
+                                    return dayOrders.map(order => {
+                                        const orderTime = new Date(order.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                                        const orderTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+                                        return (
+                                            <div key={order.id} className="bg-slate-950 p-5 rounded-xl border border-slate-800 hover:border-slate-700 transition-all">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-12 h-12 bg-yellow-600 rounded-xl flex items-center justify-center font-black text-white text-lg">
+                                                            {order.tableNumber}
                                                         </div>
-                                                    );
-                                                }
+                                                        <div>
+                                                            <h3 className="font-bold text-white text-lg">Tavolo {order.tableNumber}</h3>
+                                                            <p className="text-slate-400 text-sm flex items-center gap-2">
+                                                                <Clock size={14} /> {orderTime}
+                                                                {order.waiterName && <span className="text-slate-600">• {order.waiterName}</span>}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-2xl font-black text-white">€ {orderTotal.toFixed(2)}</p>
+                                                        <p className="text-slate-500 text-xs">{order.items.length} {order.items.length === 1 ? 'articolo' : 'articoli'}</p>
+                                                    </div>
+                                                </div>
 
-                                                return dayOrders.map(order => {
-                                                    const orderTime = new Date(order.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-                                                    const orderTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-                                                    return (
-                                                        <div key={order.id} className="bg-slate-950 p-5 rounded-xl border border-slate-800 hover:border-slate-700 transition-all">
-                                                            <div className="flex items-center justify-between mb-4">
-                                                                <div className="flex items-center gap-4">
-                                                                    <div className="w-12 h-12 bg-yellow-600 rounded-xl flex items-center justify-center font-black text-white text-lg">
-                                                                        {order.tableNumber}
-                                                                    </div>
-                                                                    <div>
-                                                                        <h3 className="font-bold text-white text-lg">Tavolo {order.tableNumber}</h3>
-                                                                        <p className="text-slate-400 text-sm flex items-center gap-2">
-                                                                            <Clock size={14} /> {orderTime}
-                                                                            {order.waiterName && <span className="text-slate-600">• {order.waiterName}</span>}
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                                <div className="text-right">
-                                                                    <p className="text-2xl font-black text-white">€ {orderTotal.toFixed(2)}</p>
-                                                                    <p className="text-slate-500 text-xs">{order.items.length} {order.items.length === 1 ? 'articolo' : 'articoli'}</p>
-                                                                </div>
+                                                <div className="border-t border-slate-800 pt-4 mb-4">
+                                                    <div className="space-y-2">
+                                                        {order.items.map((item, idx) => (
+                                                            <div key={idx} className="flex justify-between items-center text-sm">
+                                                                <span className="text-slate-300">
+                                                                    <span className="font-mono text-slate-500 mr-2">{item.quantity}x</span>
+                                                                    {item.name}
+                                                                </span>
+                                                                <span className="font-mono text-slate-400">€ {(item.price * item.quantity).toFixed(2)}</span>
                                                             </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
 
-                                                            <div className="border-t border-slate-800 pt-4 mb-4">
-                                                                <div className="space-y-2">
-                                                                    {order.items.map((item, idx) => (
-                                                                        <div key={idx} className="flex justify-between items-center text-sm">
-                                                                            <span className="text-slate-300">
-                                                                                <span className="font-mono text-slate-500 mr-2">{item.quantity}x</span>
-                                                                                {item.name}
-                                                                            </span>
-                                                                            <span className="font-mono text-slate-400">€ {(item.price * item.quantity).toFixed(2)}</span>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex gap-3">
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const printWindow = window.open('', '', 'width=300,height=600');
-                                                                        if (printWindow) {
-                                                                            printWindow.document.write(`
+                                                <div className="flex gap-3">
+                                                    <button
+                                                        onClick={() => {
+                                                            const printWindow = window.open('', '', 'width=300,height=600');
+                                                            if (printWindow) {
+                                                                printWindow.document.write(`
                                                                         <html>
                                                                         <head>
                                                                             <title>Scontrino Tavolo ${order.tableNumber}</title>
@@ -1511,16 +1513,16 @@ export default function App() {
                                                                         </body>
                                                                         </html>
                                                                     `);
-                                                                            printWindow.document.close();
-                                                                        }
-                                                                    }}
-                                                                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
-                                                                >
-                                                                    <Printer size={18} /> Stampa
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const receiptText = `
+                                                                printWindow.document.close();
+                                                            }
+                                                        }}
+                                                        className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                                    >
+                                                        <Printer size={18} /> Stampa
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            const receiptText = `
 ${restaurantName}
 Tavolo: ${order.tableNumber}
 ${new Date(order.timestamp).toLocaleString('it-IT')}
@@ -1530,140 +1532,140 @@ ${order.items.map(item => `${item.quantity}x ${item.name} - € ${(item.price * 
 ${'='.repeat(30)}
 TOTALE: € ${orderTotal.toFixed(2)}
                                                                 `.trim();
-                                                                        navigator.clipboard.writeText(receiptText);
-                                                                        alert('Scontrino copiato negli appunti!');
-                                                                    }}
-                                                                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
-                                                                >
-                                                                    <Eye size={18} /> Visualizza
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                });
-                                            })()}
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                        <h3 className="font-bold text-white mb-4 flex items-center gap-2">
-                                            <BarChart3 className="text-yellow-500" /> Riepilogo Giornaliero
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            {(() => {
-                                                const dayOrders = orders.filter(o => {
-                                                    const orderDate = new Date(o.timestamp);
-                                                    return orderDate.toDateString() === selectedDate.toDateString() && o.status === 'DELIVERED';
-                                                });
-                                                const totalRevenue = dayOrders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + (i.price * i.quantity), 0), 0);
-                                                const totalReceipts = dayOrders.length;
-                                                const avgReceipt = totalReceipts > 0 ? totalRevenue / totalReceipts : 0;
-
-                                                return (
-                                                    <>
-                                                        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                                                            <p className="text-slate-400 text-xs font-bold uppercase mb-1">Incasso Totale</p>
-                                                            <p className="text-2xl font-black text-white">€ {totalRevenue.toFixed(2)}</p>
-                                                        </div>
-                                                        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                                                            <p className="text-slate-400 text-xs font-bold uppercase mb-1">Scontrini Emessi</p>
-                                                            <p className="text-2xl font-black text-white">{totalReceipts}</p>
-                                                        </div>
-                                                        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                                                            <p className="text-slate-400 text-xs font-bold uppercase mb-1">Scontrino Medio</p>
-                                                            <p className="text-2xl font-black text-white">€ {avgReceipt.toFixed(2)}</p>
-                                                        </div>
-                                                    </>
-                                                );
-                                            })()}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                            {adminTab === 'ai' && (
-                                <div className="max-w-2xl mx-auto space-y-8 animate-fade-in pb-20">
-                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                        <h3 className="font-bold text-white mb-4 flex items-center gap-2"><Key className="text-yellow-500" /> Configurazione API</h3>
-                                        <p className="text-slate-400 text-sm mb-4">Inserisci la tua Google Gemini API Key per abilitare le funzioni intelligenti.</p>
-                                        <div className="flex gap-2">
-                                            <input type="password" value={apiKeyInput} onChange={(e) => setApiKeyInput(e.target.value)} placeholder="Incolla la tua API Key qui..." className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-yellow-500" />
-                                            <button onClick={handleSaveApiKey} className="bg-yellow-600 hover:bg-yellow-500 text-white font-bold px-6 py-3 rounded-xl transition-colors">Salva</button>
-                                        </div>
-                                        <p className="text-xs text-slate-500 mt-2">Non hai una chiave? <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-400 hover:underline">Richiedila qui</a>.</p>
-                                    </div>
-
-                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex flex-col h-[500px]">
-                                        <h3 className="font-bold text-white mb-4 flex items-center gap-2"><Bot className="text-blue-400" /> Chef Assistant</h3>
-                                        <div className="flex-1 bg-slate-950 rounded-xl border border-slate-700 p-4 overflow-y-auto mb-4">
-                                            {chatResponse ? (
-                                                <div className="flex gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0"><Bot size={16} className="text-white" /></div>
-                                                    <div className="bg-slate-800 p-3 rounded-r-xl rounded-bl-xl text-sm leading-relaxed text-slate-200">{chatResponse}</div>
+                                                            navigator.clipboard.writeText(receiptText);
+                                                            alert('Scontrino copiato negli appunti!');
+                                                        }}
+                                                        className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                                    >
+                                                        <Eye size={18} /> Visualizza
+                                                    </button>
                                                 </div>
-                                            ) : (
-                                                <p className="text-slate-500 text-center text-sm mt-10">Chiedimi qualcosa sul menu, sugli allergeni o per un consiglio!</p>
-                                            )}
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <input type="text" value={chatQuery} onChange={(e) => setChatQuery(e.target.value)} placeholder="Fai una domanda allo Chef AI..." className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500" onKeyDown={(e) => e.key === 'Enter' && handleAskChef()} />
-                                            <button onClick={handleAskChef} disabled={isChatting} className="bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl transition-colors disabled:opacity-50">{isChatting ? <Loader className="animate-spin" /> : <Send size={20} />}</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                            {adminTab === 'info' && (
-                                <div className="max-w-3xl mx-auto space-y-8 animate-fade-in pb-20">
-                                    <h2 className="text-3xl font-black text-white mb-4">Supporto & Info</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                            <h3 className="font-bold text-white mb-4">Contatti Assistenza</h3>
-                                            <ul className="space-y-4">
-                                                <li className="flex items-center gap-3 text-slate-300"><Mail className="text-blue-500" /> {adminContactEmail}</li>
-                                                <li className="flex items-center gap-3 text-slate-300"><Phone className="text-green-500" /> {adminPhone}</li>
-                                                <li className="flex items-center gap-3 text-slate-300"><Globe className="text-purple-500" /> www.ristosync.com</li>
-                                            </ul>
-                                        </div>
-                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                            <h3 className="font-bold text-white mb-4">Informazioni App</h3>
-                                            <ul className="space-y-4">
-                                                <li className="flex justify-between text-sm"><span className="text-slate-500">Versione</span><span className="text-white font-mono">2.4.0 (Cloud)</span></li>
-                                                <li className="flex justify-between text-sm"><span className="text-slate-500">Stato Sync</span><span className="text-green-400 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Online</span></li>
-                                                <li className="flex justify-between text-sm"><span className="text-slate-500">Storage</span><span className="text-white font-mono">Supabase Enterprise</span></li>
-                                            </ul>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-red-900/10 border border-red-500/30 p-6 rounded-2xl">
-                                        <h3 className="font-bold text-red-400 mb-2 flex items-center gap-2"><AlertTriangle /> Area Pericolosa</h3>
-                                        <p className="text-slate-400 text-sm mb-4">Queste azioni sono irreversibili.</p>
-                                        <div className="flex gap-4">
-                                            <button onClick={async () => { if (await showConfirm("Factory Reset", "Cancellare TUTTO (Ordini e Menu)? Questa azione è irreversibile!")) { await performFactoryReset(); await showAlert("Successo", "Reset completato!"); window.location.reload(); } }} className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-bold text-sm transition-colors shadow-lg">Factory Reset</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                                            </div>
+                                        );
+                                    });
+                                })()}
+                            </div>
                         </div>
+
+                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                            <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+                                <BarChart3 className="text-yellow-500" /> Riepilogo Giornaliero
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {(() => {
+                                    const dayOrders = orders.filter(o => {
+                                        const orderDate = new Date(o.timestamp);
+                                        return orderDate.toDateString() === selectedDate.toDateString() && o.status === 'DELIVERED';
+                                    });
+                                    const totalRevenue = dayOrders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + (i.price * i.quantity), 0), 0);
+                                    const totalReceipts = dayOrders.length;
+                                    const avgReceipt = totalReceipts > 0 ? totalRevenue / totalReceipts : 0;
+
+                                    return (
+                                        <>
+                                            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                                                <p className="text-slate-400 text-xs font-bold uppercase mb-1">Incasso Totale</p>
+                                                <p className="text-2xl font-black text-white">€ {totalRevenue.toFixed(2)}</p>
+                                            </div>
+                                            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                                                <p className="text-slate-400 text-xs font-bold uppercase mb-1">Scontrini Emessi</p>
+                                                <p className="text-2xl font-black text-white">{totalReceipts}</p>
+                                            </div>
+                                            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                                                <p className="text-slate-400 text-xs font-bold uppercase mb-1">Scontrino Medio</p>
+                                                <p className="text-2xl font-black text-white">€ {avgReceipt.toFixed(2)}</p>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {adminTab === 'ai' && (
+                    <div className="max-w-2xl mx-auto space-y-8 animate-fade-in pb-20">
+                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                            <h3 className="font-bold text-white mb-4 flex items-center gap-2"><Key className="text-yellow-500" /> Configurazione API</h3>
+                            <p className="text-slate-400 text-sm mb-4">Inserisci la tua Google Gemini API Key per abilitare le funzioni intelligenti.</p>
+                            <div className="flex gap-2">
+                                <input type="password" value={apiKeyInput} onChange={(e) => setApiKeyInput(e.target.value)} placeholder="Incolla la tua API Key qui..." className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-yellow-500" />
+                                <button onClick={handleSaveApiKey} className="bg-yellow-600 hover:bg-yellow-500 text-white font-bold px-6 py-3 rounded-xl transition-colors">Salva</button>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-2">Non hai una chiave? <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-400 hover:underline">Richiedila qui</a>.</p>
+                        </div>
+
+                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex flex-col h-[500px]">
+                            <h3 className="font-bold text-white mb-4 flex items-center gap-2"><Bot className="text-blue-400" /> Chef Assistant</h3>
+                            <div className="flex-1 bg-slate-950 rounded-xl border border-slate-700 p-4 overflow-y-auto mb-4">
+                                {chatResponse ? (
+                                    <div className="flex gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0"><Bot size={16} className="text-white" /></div>
+                                        <div className="bg-slate-800 p-3 rounded-r-xl rounded-bl-xl text-sm leading-relaxed text-slate-200">{chatResponse}</div>
+                                    </div>
+                                ) : (
+                                    <p className="text-slate-500 text-center text-sm mt-10">Chiedimi qualcosa sul menu, sugli allergeni o per un consiglio!</p>
+                                )}
+                            </div>
+                            <div className="flex gap-2">
+                                <input type="text" value={chatQuery} onChange={(e) => setChatQuery(e.target.value)} placeholder="Fai una domanda allo Chef AI..." className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500" onKeyDown={(e) => e.key === 'Enter' && handleAskChef()} />
+                                <button onClick={handleAskChef} disabled={isChatting} className="bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl transition-colors disabled:opacity-50">{isChatting ? <Loader className="animate-spin" /> : <Send size={20} />}</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {adminTab === 'info' && (
+                    <div className="max-w-3xl mx-auto space-y-8 animate-fade-in pb-20">
+                        <h2 className="text-3xl font-black text-white mb-4">Supporto & Info</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                <h3 className="font-bold text-white mb-4">Contatti Assistenza</h3>
+                                <ul className="space-y-4">
+                                    <li className="flex items-center gap-3 text-slate-300"><Mail className="text-blue-500" /> {adminContactEmail}</li>
+                                    <li className="flex items-center gap-3 text-slate-300"><Phone className="text-green-500" /> {adminPhone}</li>
+                                    <li className="flex items-center gap-3 text-slate-300"><Globe className="text-purple-500" /> www.ristosync.com</li>
+                                </ul>
+                            </div>
+                            <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                <h3 className="font-bold text-white mb-4">Informazioni App</h3>
+                                <ul className="space-y-4">
+                                    <li className="flex justify-between text-sm"><span className="text-slate-500">Versione</span><span className="text-white font-mono">2.4.0 (Cloud)</span></li>
+                                    <li className="flex justify-between text-sm"><span className="text-slate-500">Stato Sync</span><span className="text-green-400 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Online</span></li>
+                                    <li className="flex justify-between text-sm"><span className="text-slate-500">Storage</span><span className="text-white font-mono">Supabase Enterprise</span></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div className="bg-red-900/10 border border-red-500/30 p-6 rounded-2xl">
+                            <h3 className="font-bold text-red-400 mb-2 flex items-center gap-2"><AlertTriangle /> Area Pericolosa</h3>
+                            <p className="text-slate-400 text-sm mb-4">Queste azioni sono irreversibili.</p>
+                            <div className="flex gap-4">
+                                <button onClick={async () => { if (await showConfirm("Factory Reset", "Cancellare TUTTO (Ordini e Menu)? Questa azione è irreversibile!")) { await performFactoryReset(); await showAlert("Successo", "Reset completato!"); window.location.reload(); } }} className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-bold text-sm transition-colors shadow-lg">Factory Reset</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
+            </div >
                 );
     }
 
-                // --- WAIT/KITCHEN VIEW RENDER IS ABOVE ---
-                return (
-                <>
-                    <CustomDialog
-                        isOpen={dialogState.isOpen}
-                        title={dialogState.title}
-                        message={dialogState.message}
-                        type={dialogState.type}
-                        onConfirm={dialogState.onConfirm}
-                        onCancel={closeDialog}
-                    />
-                    <Toast
-                        isOpen={toastState.isOpen}
-                        message={toastState.message}
-                        type={toastState.type}
-                        onClose={closeToast}
-                    />
-                </>
-                );
+    // --- WAIT/KITCHEN VIEW RENDER IS ABOVE ---
+    return (
+        <>
+            <CustomDialog
+                isOpen={dialogState.isOpen}
+                title={dialogState.title}
+                message={dialogState.message}
+                type={dialogState.type}
+                onConfirm={dialogState.onConfirm}
+                onCancel={closeDialog}
+            />
+            <Toast
+                isOpen={toastState.isOpen}
+                message={toastState.message}
+                type={toastState.type}
+                onClose={closeToast}
+            />
+        </>
+    );
 }
