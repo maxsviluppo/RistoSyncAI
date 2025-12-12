@@ -501,7 +501,8 @@ export default function App() {
         const hourCounts: Record<number, number> = {};
         dailyOrders.forEach((o: Order) => { const h = new Date(o.createdAt || o.timestamp).getHours(); hourCounts[h] = (hourCounts[h] || 0) + 1; });
         const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
-        return { revenue, totalDishes, avgOrder, topItems, peakHour };
+        const totalOrders = dailyOrders.length;
+        return { revenue, totalDishes, avgOrder, topItems, peakHour, totalOrders };
     }, [ordersForAnalytics, selectedDate]);
 
     // --- SETTINGS & SHARE ---
@@ -1195,202 +1196,235 @@ export default function App() {
                         </div>
                     )}
                     {adminTab === 'analytics' && (
-                        <div className="max-w-7xl mx-auto space-y-6 animate-fade-in pb-20">
-                            {/* Header */}
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <h2 className="text-4xl font-black text-white mb-2">Business Intelligence</h2>
-                                    <p className="text-slate-400 text-sm flex items-center gap-2">
-                                        <MapPin size={14} /> Località non impostata
-                                    </p>
-                                </div>
-
-                                {/* Date Selector */}
-                                <div className="flex items-center gap-3 bg-slate-900 px-4 py-3 rounded-xl border border-slate-800">
-                                    <button
-                                        onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); }}
-                                        className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
-                                    >
-                                        <ChevronLeft size={18} />
-                                    </button>
-                                    <div className="flex items-center gap-2 px-3">
-                                        <Calendar size={18} className="text-orange-500" />
-                                        <span className="font-bold text-white">ven {selectedDate.getDate()} {selectedDate.toLocaleDateString('it-IT', { month: 'long' })}</span>
+                        <div className="w-full min-h-full bg-slate-950 text-white p-6 pb-24 overflow-y-auto">
+                            <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
+                                {/* Header & Date Selector */}
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                    <div>
+                                        <h2 className="text-4xl font-black text-white mb-2">Business Intelligence</h2>
+                                        <p className="text-slate-400 text-sm flex items-center gap-2">
+                                            <MapPin size={16} className="text-slate-500" />
+                                            {profileForm.name ? profileForm.name : 'Località non impostata'}
+                                        </p>
                                     </div>
-                                    <button
-                                        onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); }}
-                                        className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
-                                    >
-                                        <ChevronRight size={18} />
-                                    </button>
-                                </div>
-                            </div>
 
-                            {/* KPI Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                                {/* Incasso Netto */}
-                                <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-green-500/50 transition-all">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                                        <DollarSign size={60} className="text-green-500" />
-                                    </div>
-                                    <div className="relative z-10">
-                                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
-                                            <DollarSign size={14} /> Incasso Netto
+                                    <div className="flex items-center gap-4 bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 shadow-lg">
+                                        <button
+                                            onClick={() => {
+                                                const d = new Date(selectedDate);
+                                                d.setDate(d.getDate() - 1);
+                                                setSelectedDate(d);
+                                            }}
+                                            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+                                        >
+                                            <ChevronLeft size={20} />
+                                        </button>
+                                        <div className="flex items-center gap-3 px-2">
+                                            <Calendar className="text-orange-500" size={20} />
+                                            <span className="font-bold text-lg capitalize">
+                                                {selectedDate.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'long' })}
+                                            </span>
                                         </div>
-                                        <p className="text-3xl font-black text-white">€ {analyticsData.revenue.toFixed(2)}</p>
-                                    </div>
-                                </div>
-
-                                {/* Piatti Serviti */}
-                                <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-blue-500/50 transition-all">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                                        <UtensilsCrossed size={60} className="text-blue-500" />
-                                    </div>
-                                    <div className="relative z-10">
-                                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
-                                            <UtensilsCrossed size={14} /> Piatti Serviti
-                                        </div>
-                                        <p className="text-3xl font-black text-white">{analyticsData.totalDishes}</p>
-                                    </div>
-                                </div>
-
-                                {/* Tempo Medio Attesa */}
-                                <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-cyan-500/50 transition-all">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                                        <Clock size={60} className="text-cyan-500" />
-                                    </div>
-                                    <div className="relative z-10">
-                                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
-                                            <Clock size={14} /> Tempo Medio Attesa
-                                        </div>
-                                        <p className="text-3xl font-black text-white">0 min</p>
-                                        <p className="text-xs text-slate-500 mt-1">Target: &lt; 20 min</p>
-                                    </div>
-                                </div>
-
-                                {/* Tavoli Serviti */}
-                                <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-purple-500/50 transition-all">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                                        <Users size={60} className="text-purple-500" />
-                                    </div>
-                                    <div className="relative z-10">
-                                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
-                                            <Users size={14} /> Tavoli Serviti
-                                        </div>
-                                        <p className="text-3xl font-black text-white">{analyticsData.totalOrders}</p>
-                                    </div>
-                                </div>
-
-                                {/* Food Cost */}
-                                <div className="bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-800 relative overflow-hidden group hover:border-orange-500/50 transition-all">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                                        <TrendingUp size={60} className="text-orange-500" />
-                                    </div>
-                                    <div className="relative z-10">
-                                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase mb-2">
-                                            <TrendingUp size={14} /> Food Cost (est. 32%)
-                                        </div>
-                                        <p className="text-3xl font-black text-orange-500">€ 0</p>
-                                        <p className="text-xs text-slate-500 mt-1">Scostino: € 0.00</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Second Row: Consumo Materie Prime + Top Piatti */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                {/* Consumo Materie Prime */}
-                                <div className="lg:col-span-2 bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-800">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="font-bold text-white flex items-center gap-2">
-                                            <Utensils className="text-blue-500" size={20} />
-                                            Consumo Materie Prime
-                                        </h3>
-                                        <button className="text-xs text-slate-400 hover:text-white px-3 py-1.5 bg-slate-800 rounded-lg border border-slate-700 transition-colors">
-                                            Calcolato su Ingredienti Menu
+                                        <button
+                                            onClick={() => {
+                                                const d = new Date(selectedDate);
+                                                d.setDate(d.getDate() + 1);
+                                                setSelectedDate(d);
+                                            }}
+                                            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+                                        >
+                                            <ChevronRight size={20} />
                                         </button>
                                     </div>
-                                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                                        <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
-                                            <Utensils size={40} className="text-slate-600" />
+                                </div>
+
+                                {/* KPI Metrics Grid */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                                    {/* Incasso Netto */}
+                                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
+                                        <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                            <Euro size={80} />
                                         </div>
-                                        <p className="text-slate-500 text-sm mb-2">Nessun dato ingredienti disponibile.</p>
-                                        <p className="text-slate-600 text-xs">Assicurati di aver compilato il campo "Ingredienti" nel menu.</p>
+                                        <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                                            <Wallet size={14} /> Incasso Netto
+                                        </div>
+                                        <div className="text-3xl font-black text-white">
+                                            € {(analyticsData?.revenue || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </div>
+                                    </div>
+
+                                    {/* Piatti Serviti */}
+                                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
+                                        <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                            <Utensils size={80} />
+                                        </div>
+                                        <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                                            <Utensils size={14} /> Piatti Serviti
+                                        </div>
+                                        <div className="text-3xl font-black text-white">
+                                            {analyticsData?.totalDishes || 0}
+                                        </div>
+                                    </div>
+
+                                    {/* Tempo Medio Attesa */}
+                                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
+                                        <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                            <Clock size={80} />
+                                        </div>
+                                        <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                                            <History size={14} /> Tempo Medio Attesa
+                                        </div>
+                                        <div className="text-3xl font-black text-white mb-1">
+                                            0 <span className="text-base font-normal text-slate-500">min</span>
+                                        </div>
+                                        <div className="text-xs text-slate-500">Target: &lt; 20 min</div>
+                                    </div>
+
+                                    {/* Tavoli Serviti */}
+                                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
+                                        <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                            <Users size={80} />
+                                        </div>
+                                        <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                                            <Users size={14} /> Tavoli Serviti
+                                        </div>
+                                        <div className="text-3xl font-black text-white">
+                                            0
+                                        </div>
+                                    </div>
+
+                                    {/* Food Cost */}
+                                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
+                                        <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                            <TrendingUp size={80} />
+                                        </div>
+                                        <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                                            <TrendingDown size={14} /> Food Cost (Est. 32%)
+                                        </div>
+                                        <div className="text-3xl font-black text-orange-500 mb-1">
+                                            € 0
+                                        </div>
+                                        <div className="text-xs text-slate-500">Scontrino: € {(analyticsData?.avgOrder || 0).toFixed(2)}</div>
                                     </div>
                                 </div>
 
-                                {/* Top Piatti */}
-                                <div className="bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-800">
-                                    <h3 className="font-bold text-white flex items-center gap-2 mb-4">
-                                        <Trophy className="text-yellow-500" size={20} />
-                                        Top Piatti
-                                    </h3>
-                                    {analyticsData.topItems.length > 0 ? (
-                                        <div className="space-y-3">
-                                            {analyticsData.topItems.slice(0, 5).map(([name, count], i) => (
-                                                <div key={name} className="flex items-center justify-between p-3 bg-slate-950/50 rounded-xl border border-slate-800/50 hover:border-slate-700 transition-all">
-                                                    <div className="flex items-center gap-3">
-                                                        <span className={`font-black w-7 h-7 flex items-center justify-center rounded-full text-xs ${i === 0 ? 'bg-yellow-500 text-black' : i === 1 ? 'bg-slate-400 text-black' : i === 2 ? 'bg-orange-700 text-white' : 'bg-slate-700 text-white'}`}>
-                                                            {i + 1}
-                                                        </span>
-                                                        <span className="font-bold text-white text-sm">{name}</span>
-                                                    </div>
-                                                    <span className="font-mono text-slate-400 text-sm">{count}</span>
+                                {/* Middle Section: Consumption & Top Items */}
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    {/* Consumo Materie Prime */}
+                                    <div className="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-3xl relative min-h-[300px] flex flex-col">
+                                        <div className="flex justify-between items-start mb-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-blue-500/20 p-2 rounded-lg text-blue-400">
+                                                    <Package size={24} />
                                                 </div>
-                                            ))}
+                                                <h3 className="text-xl font-bold text-white">Consumo Materie Prime</h3>
+                                            </div>
+                                            <button className="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-400 transition-colors">
+                                                Calcolato su Ingredienti Menu
+                                            </button>
                                         </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center py-8 text-center">
-                                            <p className="text-slate-500 text-sm italic">Nessun dato.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
 
-                            {/* AI Supply Chain & Efficienza */}
-                            <div className="bg-gradient-to-br from-purple-900 to-indigo-900 p-8 rounded-3xl border border-purple-500/30 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 opacity-10">
-                                    <Bot size={200} className="text-white" />
-                                </div>
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="p-3 bg-white/10 rounded-xl">
-                                            <Bot size={28} className="text-white" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-2xl font-black text-white">Supply Chain & Efficienza AI</h3>
-                                            <p className="text-purple-200 text-sm">Analisi operativa, fornitori e food cost per la tua zona.</p>
+                                        <div className="flex-1 flex flex-col items-center justify-center text-slate-500 gap-4 opacity-50">
+                                            <Package size={48} strokeWidth={1} />
+                                            <div className="text-center">
+                                                <p className="text-sm">Nessun dato ingredienti disponibile.</p>
+                                                <p className="text-xs">Assicurati di aver compilato il campo "Ingredienti" nel menu.</p>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {aiAnalysisResult ? (
-                                        <div className="bg-black/30 backdrop-blur-sm p-6 rounded-2xl border border-white/10 mb-4">
-                                            <p className="text-white leading-relaxed whitespace-pre-wrap">{aiAnalysisResult}</p>
+                                    {/* Top Piatti */}
+                                    <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl min-h-[300px]">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="bg-yellow-500/20 p-2 rounded-lg text-yellow-500">
+                                                <Trophy size={24} />
+                                            </div>
+                                            <h3 className="text-xl font-bold text-white">Top Piatti</h3>
                                         </div>
-                                    ) : (
-                                        <div className="bg-black/20 backdrop-blur-sm p-6 rounded-2xl border border-white/10 mb-4">
-                                            <p className="text-purple-100 text-center">
-                                                L'intelligenza artificiale valuterà la velocità della cucina (0 min/tavolo), i flussi di lavoro e i consumi per suggerirti miglioramenti strutturali.
-                                            </p>
-                                        </div>
-                                    )}
 
-                                    <button
-                                        onClick={handleGenerateAnalysis}
-                                        disabled={isAnalyzing}
-                                        className="w-full py-4 bg-white hover:bg-purple-50 text-purple-900 font-black rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {isAnalyzing ? (
-                                            <>
-                                                <Loader className="animate-spin" size={20} />
-                                                Analisi in corso...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Sparkles size={20} />
-                                                GENERA CONSULENZA COMPLETA
-                                            </>
-                                        )}
-                                    </button>
+                                        <div className="space-y-4">
+                                            {analyticsData && analyticsData.topItems && analyticsData.topItems.length > 0 ? (
+                                                analyticsData.topItems.map((item, index) => (
+                                                    <div key={index} className="flex items-center justify-between p-3 bg-slate-950/50 rounded-xl border border-slate-800 hover:border-slate-700 transition-all">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${index === 0 ? 'bg-yellow-500 text-black' :
+                                                                index === 1 ? 'bg-slate-400 text-black' :
+                                                                    'bg-orange-700 text-white'
+                                                                }`}>
+                                                                {index + 1}
+                                                            </div>
+                                                            <span className="font-medium text-slate-200">{item[0]}</span>
+                                                        </div>
+                                                        <span className="font-bold text-slate-400">{item[1]} <span className="text-xs font-normal">ordini</span></span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="text-center py-10 text-slate-600 italic">
+                                                    Nessun dato.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* AI Supply Chain Section */}
+                                <div className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-3xl p-8 relative overflow-hidden border border-indigo-500/30 shadow-2xl">
+                                    <div className="absolute right-0 bottom-0 opacity-10 translate-y-1/3 translate-x-1/4">
+                                        <Factory size={400} />
+                                    </div>
+
+                                    <div className="relative z-10">
+                                        <div className="flex items-center gap-4 mb-2">
+                                            <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-md border border-white/20">
+                                                <Bot size={32} className="text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-2xl font-black text-white">Supply Chain & Efficienza AI</h3>
+                                                <p className="text-indigo-200">Analisi operativa, fornitori e food cost per <span className="font-bold text-white">la tua zona</span>.</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-8 bg-black/20 backdrop-blur-sm rounded-2xl p-8 border border-white/10 text-center max-w-3xl mx-auto">
+                                            {aiAnalysisResult ? (
+                                                <div className="text-left space-y-4">
+                                                    <div className="flex items-start gap-4">
+                                                        <Sparkles className="text-yellow-400 shrink-0 mt-1" />
+                                                        <div className="prose prose-invert max-w-none">
+                                                            <p className="text-lg text-slate-200 leading-relaxed whitespace-pre-line">
+                                                                {aiAnalysisResult}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-6">
+                                                    <p className="text-lg text-slate-300">
+                                                        L'intelligenza artificiale valuterà la velocità della cucina (0 min/tavolo),<br />
+                                                        i flussi di lavoro e i consumi per suggerirti miglioramenti strutturali.
+                                                    </p>
+                                                    <div className="flex justify-center">
+                                                        <button
+                                                            onClick={handleGenerateAnalysis}
+                                                            disabled={isAnalyzing}
+                                                            className="px-8 py-4 bg-white hover:bg-slate-100 text-indigo-900 font-black rounded-xl shadow-lg transition-all flex items-center gap-3 disabled:opacity-70 transform hover:scale-105"
+                                                        >
+                                                            {isAnalyzing ? (
+                                                                <>
+                                                                    <Loader className="animate-spin" size={20} />
+                                                                    Analisi in corso...
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Sparkles size={20} className="text-indigo-600" />
+                                                                    GENERA CONSULENZA COMPLETA
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
