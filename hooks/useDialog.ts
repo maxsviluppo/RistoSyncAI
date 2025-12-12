@@ -6,6 +6,7 @@ interface DialogState {
     message: string;
     type: 'confirm' | 'alert' | 'success';
     onConfirm?: () => void;
+    onCancel?: () => void;
 }
 
 export function useDialog() {
@@ -26,6 +27,10 @@ export function useDialog() {
                 onConfirm: () => {
                     setDialogState(prev => ({ ...prev, isOpen: false }));
                     resolve(true);
+                },
+                onCancel: () => {
+                    setDialogState(prev => ({ ...prev, isOpen: false }));
+                    resolve(false);
                 }
             });
         });

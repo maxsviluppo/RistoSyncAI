@@ -6,6 +6,7 @@ import AuthScreen from './components/AuthScreen';
 import SuperAdminDashboard from './components/SuperAdminDashboard';
 import DigitalMenu from './components/DigitalMenu';
 import CustomDialog from './components/CustomDialog';
+import Toast from './components/Toast';
 import { ChefHat, Smartphone, User, Settings, Bell, Utensils, X, Save, Plus, Trash2, Edit2, Wheat, Milk, Egg, Nut, Fish, Bean, Flame, Leaf, Info, LogOut, Bot, Key, Database, ShieldCheck, Lock, AlertTriangle, Mail, RefreshCw, Send, Printer, Mic, MicOff, TrendingUp, BarChart3, Calendar, ChevronLeft, ChevronRight, DollarSign, History, Receipt, UtensilsCrossed, Eye, ArrowRight, QrCode, Share2, Copy, MapPin, Store, Phone, Globe, Star, Pizza, CakeSlice, Wine, Sandwich, MessageCircle, FileText, PhoneCall, Sparkles, Loader, Facebook, Instagram, Youtube, Linkedin, Music, Compass, FileSpreadsheet, Image as ImageIcon, Upload, FileImage, ExternalLink, CreditCard, Banknote, Briefcase, Clock, Check, ListPlus, ArrowRightLeft, Code2, Cookie, Shield, Wrench, Download, CloudUpload, BookOpen, EyeOff, LayoutGrid, ArrowLeft, PlayCircle, ChevronDown, FileJson, Wallet, Crown, Zap, ShieldCheck as ShieldIcon, Trophy, Timer, LifeBuoy, Minus, Hash } from 'lucide-react';
 import { getWaiterName, saveWaiterName, getMenuItems, addMenuItem, updateMenuItem, deleteMenuItem, getNotificationSettings, saveNotificationSettings, initSupabaseSync, getGoogleApiKey, saveGoogleApiKey, getAppSettings, saveAppSettings, getOrders, deleteHistoryByDate, performFactoryReset, deleteAllMenuItems, importDemoMenu } from './services/storageService';
 import { supabase, signOut, isSupabaseConfigured, SUPER_ADMIN_EMAIL } from './services/supabase';
@@ -66,7 +67,6 @@ export default function App() {
     const [editingItem, setEditingItem] = useState<Partial<MenuItem>>({});
     const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
     const [isGeneratingIngr, setIsGeneratingIngr] = useState(false);
-    const [showDeleteAllMenuModal, setShowDeleteAllMenuModal] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const bulkInputRef = useRef<HTMLInputElement>(null);
     const bulkImagesRef = useRef<HTMLInputElement>(null);
@@ -111,6 +111,21 @@ export default function App() {
 
     // Custom Dialog Hook
     const { dialogState, showConfirm, showAlert, closeDialog } = useDialog();
+
+    // Toast State
+    const [toastState, setToastState] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({
+        isOpen: false,
+        message: '',
+        type: 'info'
+    });
+
+    const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+        setToastState({ isOpen: true, message, type });
+    };
+
+    const closeToast = () => {
+        setToastState(prev => ({ ...prev, isOpen: false }));
+    };
 
     // --- USE EFFECTS ---
 
@@ -717,9 +732,9 @@ export default function App() {
                                 <button onClick={() => bulkImagesRef.current?.click()} className="flex items-center gap-2 bg-pink-600/20 text-pink-400 px-4 py-2 rounded-lg font-bold hover:bg-pink-600/30 transition-colors whitespace-nowrap text-xs"><ImageIcon size={16} /> Importa Foto Massiva</button>
                                 <input type="file" ref={bulkImagesRef} onChange={handleBulkImageUpload} accept="image/*" multiple className="hidden" />
                                 <button onClick={exportMenu} className="flex items-center gap-2 bg-teal-600/20 text-teal-400 px-4 py-2 rounded-lg font-bold hover:bg-teal-600/30 transition-colors whitespace-nowrap text-xs"><Download size={16} /> Esporta JSON</button>
-                                <button onClick={() => { if (confirm("Caricare piatti dimostrativi?")) importDemoMenu(); }} className="flex items-center gap-2 bg-purple-600/20 text-purple-400 px-4 py-2 rounded-lg font-bold hover:bg-purple-600/30 transition-colors whitespace-nowrap text-xs"><Sparkles size={16} /> Carica Demo</button>
+                                <button onClick={async () => { if (await showConfirm("Conferma", "Caricare piatti dimostrativi? Verranno sincronizzati automaticamente al cloud per il menu digitale.")) { await importDemoMenu(); showToast("✅ Menu demo caricato! I piatti sono pronti per la prova.", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="flex items-center gap-2 bg-purple-600/20 text-purple-400 px-4 py-2 rounded-lg font-bold hover:bg-purple-600/30 transition-colors whitespace-nowrap text-xs"><Sparkles size={16} /> Carica Demo</button>
                                 <div className="flex-1"></div>
-                                <button onClick={() => setShowDeleteAllMenuModal(true)} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-500 transition-colors whitespace-nowrap shadow-lg shadow-red-900/20 text-xs"><Trash2 size={16} /> ELIMINA TUTTO</button>
+                                <button onClick={async () => { if (await showConfirm("Elimina Menu", "Eliminare tutti i piatti dal menu?")) { await deleteAllMenuItems(); showToast("✅ Menu eliminato con successo!", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-500 transition-colors whitespace-nowrap shadow-lg shadow-red-900/20 text-xs"><Trash2 size={16} /> ELIMINA TUTTO</button>
                             </div>
                             {(isEditingItem || Object.keys(editingItem).length > 0) && (
                                 <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-2xl mb-10 relative overflow-hidden animate-slide-up max-w-5xl mx-auto">
@@ -1160,8 +1175,7 @@ TOTALE: € ${orderTotal.toFixed(2)}
                                 <h3 className="font-bold text-red-400 mb-2 flex items-center gap-2"><AlertTriangle /> Area Pericolosa</h3>
                                 <p className="text-slate-400 text-sm mb-4">Queste azioni sono irreversibili.</p>
                                 <div className="flex gap-4">
-                                    <button onClick={() => { if (confirm("Cancellare tutto lo storico ordini?")) deleteHistoryByDate(new Date()) }} className="px-4 py-2 bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white rounded-lg font-bold text-sm transition-colors border border-red-500/30">Reset Storico</button>
-                                    <button onClick={() => { if (confirm("Cancellare TUTTO (Ordini e Menu)?")) performFactoryReset() }} className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-bold text-sm transition-colors shadow-lg">Factory Reset</button>
+                                    <button onClick={async () => { if (await showConfirm("Factory Reset", "Cancellare TUTTO (Ordini e Menu)? Questa azione è irreversibile!")) { await performFactoryReset(); await showAlert("Successo", "Reset completato!"); window.location.reload(); } }} className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-bold text-sm transition-colors shadow-lg">Factory Reset</button>
                                 </div>
                             </div>
                         </div>
@@ -1181,6 +1195,12 @@ TOTALE: € ${orderTotal.toFixed(2)}
                 type={dialogState.type}
                 onConfirm={dialogState.onConfirm}
                 onCancel={closeDialog}
+            />
+            <Toast
+                isOpen={toastState.isOpen}
+                message={toastState.message}
+                type={toastState.type}
+                onClose={closeToast}
             />
         </>
     );

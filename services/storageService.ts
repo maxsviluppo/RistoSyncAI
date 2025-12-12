@@ -498,27 +498,27 @@ export const deleteAllMenuItems = async () => {
 };
 
 export const importDemoMenu = async () => {
-    if (!currentUserId || !supabase) return;
+    // Sync to cloud if available
+    if (currentUserId && supabase) {
+        const demoItemsWithUserId = DEMO_MENU_ITEMS.map(item => ({
+            id: item.id,
+            user_id: currentUserId,
+            name: item.name,
+            price: item.price,
+            category: item.category,
+            description: item.description,
+            ingredients: item.ingredients,
+            allergens: item.allergens,
+            image: item.image,
+            combo_items: item.comboItems,
+            specific_department: item.specificDepartment
+        }));
 
-    const demoItemsWithUserId = DEMO_MENU_ITEMS.map(item => ({
-        id: item.id,
-        user_id: currentUserId,
-        name: item.name,
-        price: item.price,
-        category: item.category,
-        description: item.description,
-        ingredients: item.ingredients,
-        allergens: item.allergens,
-        image: item.image,
-        combo_items: item.comboItems,
-        specific_department: item.specificDepartment
-    }));
-
-    const { error } = await supabase.from('menu_items').upsert(demoItemsWithUserId);
-    if (error) {
-        handleSupabaseError(error);
-        alert("Errore durante l'importazione demo.");
-        return;
+        const { error } = await supabase.from('menu_items').upsert(demoItemsWithUserId);
+        if (error) {
+            handleSupabaseError(error);
+            console.error("Errore sincronizzazione cloud:", error);
+        }
     }
 
     const currentItems = getMenuItems();
@@ -527,7 +527,6 @@ export const importDemoMenu = async () => {
     const finalMenu = [...existingFiltered, ...DEMO_MENU_ITEMS];
     safeLocalStorageSave(MENU_KEY, JSON.stringify(finalMenu));
     window.dispatchEvent(new Event('local-menu-update'));
-    alert("Menu Demo importato con successo!");
 };
 
 export const getTableCount = (): number => {
@@ -607,6 +606,33 @@ export const deleteMenuItem = (id: string) => {
     saveMenuItems(newItems);
     if (itemToDelete) syncMenuToCloud(itemToDelete, true);
 };
+
+// Force sync all local menu items to cloud
+export const syncAllMenuToCloud = async () => {
+    if (!supabase || !currentUserId) {
+        console.warn('Cannot sync: Supabase not initialized or user not logged in');
+        return { success: false, message: 'Supabase non inizializzato o utente non loggato' };
+    }
+
+    const items = getMenuItems();
+    if (items.length === 0) {
+        return { success: true, message: 'Nessun piatto da sincronizzare' };
+    }
+
+    try {
+        let synced = 0;
+        for (const item of items) {
+            await syncMenuToCloud(item);
+            synced++;
+        }
+        console.log(`Synced ${synced} menu items to cloud`);
+        return { success: true, message: `${synced} piatti sincronizzati con successo` };
+    } catch (e) {
+        console.error('Sync all menu failed:', e);
+        return { success: false, message: 'Errore durante la sincronizzazione' };
+    }
+};
+
 
 export const getGoogleApiKey = (): string | null => {
     return localStorage.getItem(GOOGLE_API_KEY_STORAGE);

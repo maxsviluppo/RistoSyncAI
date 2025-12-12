@@ -305,12 +305,7 @@ const DigitalMenu: React.FC<DigitalMenuProps> = ({ restaurantId, isPreview = fal
                                         <div key={item.id} className={`bg-white rounded-2xl shadow-md border border-gray-200 flex flex-col relative overflow-hidden group hover:shadow-lg transition-shadow ${isPreview ? 'p-3 gap-1.5' : 'p-5 gap-3'}`}>
                                             <div className="flex justify-between items-start gap-3">
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="flex justify-between items-start">
-                                                        <h3 className={`${isPreview ? 'text-sm' : 'text-base'} font-bold text-slate-900 leading-tight`}>{item.name}</h3>
-                                                        <div className="font-bold text-orange-600 text-sm whitespace-nowrap ml-2">
-                                                            € {item.price.toFixed(2)}
-                                                        </div>
-                                                    </div>
+                                                    <h3 className={`${isPreview ? 'text-sm' : 'text-base'} font-bold text-slate-900 leading-tight`}>{item.name}</h3>
 
                                                     {/* 1. INGREDIENTS (New Order) */}
                                                     {item.ingredients && (
@@ -351,10 +346,22 @@ const DigitalMenu: React.FC<DigitalMenuProps> = ({ restaurantId, isPreview = fal
                                                     )}
                                                 </div>
 
-                                                {/* DISH IMAGE */}
+                                                {/* DISH IMAGE WITH PRICE BELOW */}
                                                 {item.image && (
-                                                    <div className={`shrink-0 rounded-xl overflow-hidden aspect-square bg-gray-100 border border-gray-200 ${isPreview ? 'w-16' : 'w-24'}`}>
-                                                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                                    <div className="shrink-0 flex flex-col items-center gap-2">
+                                                        <div className={`rounded-xl overflow-hidden aspect-square bg-gray-100 border border-gray-200 ${isPreview ? 'w-16' : 'w-24'}`}>
+                                                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                                        </div>
+                                                        <div className={`font-black text-orange-600 ${isPreview ? 'text-sm' : 'text-lg'} whitespace-nowrap`}>
+                                                            € {item.price.toFixed(2)}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* PRICE ONLY (if no image) */}
+                                                {!item.image && (
+                                                    <div className={`font-black text-orange-600 ${isPreview ? 'text-sm' : 'text-lg'} whitespace-nowrap self-start`}>
+                                                        € {item.price.toFixed(2)}
                                                     </div>
                                                 )}
                                             </div>
