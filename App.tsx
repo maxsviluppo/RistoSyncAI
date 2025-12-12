@@ -1431,8 +1431,6 @@ export default function App() {
                     )}
                     {adminTab === 'receipts' && (
                         <div className="max-w-7xl mx-auto space-y-8 animate-fade-in pb-24">
-                            {/* Init orders from state */}
-
 
                             {/* Header Section with Date & Summary */}
                             <div className="flex flex-col gap-6">
@@ -1468,10 +1466,12 @@ export default function App() {
                                 {/* Daily Summary Cards (Top Presentation) */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     {(() => {
+                                        // Use ordersForAnalytics (guaranteed to be defined in App scope)
                                         const dayOrders = ordersForAnalytics.filter(o => {
                                             const orderDate = new Date(o.timestamp);
                                             return orderDate.toDateString() === selectedDate.toDateString();
                                         });
+                                        // Fix: Access item.menuItem.price instead of item.price
                                         const totalRevenue = dayOrders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + (i.menuItem.price * i.quantity), 0), 0);
                                         const totalReceipts = dayOrders.length;
                                         const avgReceipt = totalReceipts > 0 ? totalRevenue / totalReceipts : 0;
@@ -1541,6 +1541,7 @@ export default function App() {
                                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                             {dayOrders.map(order => {
                                                 const orderTime = new Date(order.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                                                // Fix: Access item.menuItem.price
                                                 const orderTotal = order.items.reduce((sum, item) => sum + (item.menuItem.price * item.quantity), 0);
 
                                                 return (
@@ -1554,8 +1555,8 @@ export default function App() {
                                                             <div className="text-right">
                                                                 <span className="block text-xs text-slate-500 font-bold uppercase tracking-wider">{orderTime}</span>
                                                                 <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${order.status === 'Servito' ? 'bg-green-100 text-green-700' :
-                                                                    order.status === 'Pronto' ? 'bg-yellow-100 text-yellow-700' :
-                                                                        'bg-slate-200 text-slate-600'
+                                                                        order.status === 'Pronto' ? 'bg-yellow-100 text-yellow-700' :
+                                                                            'bg-slate-200 text-slate-600'
                                                                     }`}>
                                                                     {order.status}
                                                                 </span>
