@@ -1441,24 +1441,24 @@ export default function App() {
                                     </h2>
 
                                     {/* Date Selector */}
-                                    <div className="flex items-center gap-4 bg-slate-900 p-2 rounded-2xl border border-slate-800 shadow-xl">
+                                    <div className="bg-slate-900 p-1.5 rounded-xl border border-slate-800 flex items-center shadow-lg">
                                         <button
                                             onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); }}
-                                            className="w-10 h-10 flex items-center justify-center hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
+                                            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
                                         >
-                                            <ChevronLeft size={24} />
+                                            <ChevronLeft size={20} />
                                         </button>
-                                        <div className="flex flex-col items-center w-40">
-                                            <span className="text-xs text-slate-500 uppercase font-bold tracking-wider">Data Contabile</span>
-                                            <span className="font-bold text-xl text-white capitalize">
-                                                {selectedDate.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                        <div className="flex items-center gap-3 px-2">
+                                            <Calendar className="text-orange-500" size={20} />
+                                            <span className="font-bold text-lg capitalize text-white">
+                                                {selectedDate.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'long' })}
                                             </span>
                                         </div>
                                         <button
                                             onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); }}
-                                            className="w-10 h-10 flex items-center justify-center hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
+                                            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
                                         >
-                                            <ChevronRight size={24} />
+                                            <ChevronRight size={20} />
                                         </button>
                                     </div>
                                 </div>
@@ -1555,8 +1555,8 @@ export default function App() {
                                                             <div className="text-right">
                                                                 <span className="block text-xs text-slate-500 font-bold uppercase tracking-wider">{orderTime}</span>
                                                                 <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${order.status === 'Servito' ? 'bg-green-100 text-green-700' :
-                                                                        order.status === 'Pronto' ? 'bg-yellow-100 text-yellow-700' :
-                                                                            'bg-slate-200 text-slate-600'
+                                                                    order.status === 'Pronto' ? 'bg-yellow-100 text-yellow-700' :
+                                                                        'bg-slate-200 text-slate-600'
                                                                     }`}>
                                                                     {order.status}
                                                                 </span>
