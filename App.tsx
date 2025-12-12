@@ -57,7 +57,7 @@ export default function App() {
 
     // Admin State
     const [showAdmin, setShowAdmin] = useState(false);
-    const [adminTab, setAdminTab] = useState<'profile' | 'subscription' | 'menu' | 'notif' | 'info' | 'ai' | 'analytics' | 'share'>('menu');
+    const [adminTab, setAdminTab] = useState<'profile' | 'subscription' | 'menu' | 'notif' | 'info' | 'ai' | 'analytics' | 'share' | 'receipts'>('menu');
     const [adminViewMode, setAdminViewMode] = useState<'dashboard' | 'app'>('dashboard');
 
     // Menu Manager State
@@ -109,7 +109,7 @@ export default function App() {
     const isSuperAdmin = session?.user?.email === SUPER_ADMIN_EMAIL;
 
     // Custom Dialog Hook
-    const { dialogState, showConfirm, showAlert, closeDialog } = useDialog();
+    const { dialogState, showConfirm, showDelete, showAlert, showSuccess, closeDialog } = useDialog();
 
     // Toast State
     const [toastState, setToastState] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({
@@ -709,10 +709,10 @@ export default function App() {
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <button onClick={() => { if (confirm("Sei sicuro di voler ELIMINARE TUTTI I PIATTI dal menu?")) deleteAllMenuItems() }} className="w-full py-3 rounded-xl border border-red-500/50 text-red-400 hover:bg-red-500 hover:text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
+                                        <button onClick={async () => { if (await showDelete("Elimina Menu Completo", "Sei sicuro di voler ELIMINARE TUTTI I PIATTI dal menu? Questa azione non può essere annullata.")) { deleteAllMenuItems(); showToast("✅ Menu eliminato con successo!", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="w-full py-3 rounded-xl border border-red-500/50 text-red-400 hover:bg-red-500 hover:text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
                                             <Trash2 size={16} /> RESET MENU
                                         </button>
-                                        <button onClick={() => { if (confirm("ATTENZIONE: Questa azione cancellerà TUTTI i dati (Ordini, Menu, Impostazioni). Continuare?")) performFactoryReset() }} className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-900/20">
+                                        <button onClick={async () => { if (await showDelete("Factory Reset Completo", "⚠️ ATTENZIONE: Questa azione cancellerà TUTTI i dati (Ordini, Menu, Impostazioni). Questa operazione è IRREVERSIBILE. Sei assolutamente sicuro?")) { performFactoryReset(); showToast("🔄 Reset completato. Ricaricamento...", "info"); setTimeout(() => window.location.reload(), 2000); } }} className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-900/20">
                                             <AlertTriangle size={16} /> FACTORY RESET
                                         </button>
                                     </div>
@@ -734,7 +734,7 @@ export default function App() {
                                 <button onClick={exportMenu} className="flex items-center gap-2 bg-teal-600/20 text-teal-400 px-4 py-2 rounded-lg font-bold hover:bg-teal-600/30 transition-colors whitespace-nowrap text-xs"><Download size={16} /> Esporta JSON</button>
                                 <button onClick={async () => { if (await showConfirm("Conferma", "Caricare piatti dimostrativi? Verranno sincronizzati automaticamente al cloud per il menu digitale.")) { await importDemoMenu(); showToast("✅ Menu demo caricato! I piatti sono pronti per la prova.", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="flex items-center gap-2 bg-purple-600/20 text-purple-400 px-4 py-2 rounded-lg font-bold hover:bg-purple-600/30 transition-colors whitespace-nowrap text-xs"><Sparkles size={16} /> Carica Demo</button>
                                 <div className="flex-1"></div>
-                                <button onClick={async () => { if (await showConfirm("Elimina Menu", "Eliminare tutti i piatti dal menu?")) { await deleteAllMenuItems(); showToast("✅ Menu eliminato con successo!", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-500 transition-colors whitespace-nowrap shadow-lg shadow-red-900/20 text-xs"><Trash2 size={16} /> ELIMINA TUTTO</button>
+                                <button onClick={async () => { if (await showDelete("Elimina Menu Completo", "Sei sicuro di voler eliminare tutti i piatti dal menu? Questa azione non può essere annullata.")) { await deleteAllMenuItems(); showToast("✅ Menu eliminato con successo!", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-500 transition-colors whitespace-nowrap shadow-lg shadow-red-900/20 text-xs"><Trash2 size={16} /> ELIMINA TUTTO</button>
                             </div>
                             {(isEditingItem || Object.keys(editingItem).length > 0) && (
                                 <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-2xl mb-10 relative overflow-hidden animate-slide-up max-w-5xl mx-auto">
