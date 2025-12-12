@@ -349,10 +349,7 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onExit, department = 'C
                     <div className={`w-14 h-14 rounded-full flex items-center justify-center ${isPizzeria ? 'bg-red-600' : isPub ? 'bg-amber-500' : 'bg-orange-500'}`}><ThemeIcon className="w-8 h-8 text-white" /></div>
                     <div><h1 className="text-3xl font-bold">Risto<span className={`${isPizzeria ? 'text-red-500' : isPub ? 'text-amber-500' : 'text-orange-500'}`}>Sync</span></h1><p className="text-slate-400 text-xs uppercase font-semibold">{isPizzeria ? 'Pizzeria' : isPub ? 'Pub' : 'Kitchen'} Dashboard</p></div>
                     <button onClick={() => loadOrders()} className="ml-4 p-2 rounded-full bg-slate-800 text-slate-500 hover:text-white"><History size={16} /></button>
-                    <div className="ml-4 flex bg-slate-800 rounded-lg p-1 border border-slate-700">
-                        <button onClick={() => setViewMode('active')} className={`px-6 py-2 rounded-md font-bold text-sm uppercase transition-all ${viewMode === 'active' ? 'bg-slate-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>Attivi</button>
-                        <button onClick={() => setViewMode('history')} className={`px-6 py-2 rounded-md font-bold text-sm uppercase transition-all ${viewMode === 'history' ? 'bg-slate-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>Storico</button>
-                    </div>
+
                 </div>
                 <div className="flex gap-4 items-center">
                     {isAutoPrintActive && (<div className="flex items-center gap-2 px-3 py-1 bg-green-900/30 border border-green-500/30 rounded-lg text-green-400 text-xs font-bold uppercase animate-pulse"><Receipt size={14} /> Auto-Print ON</div>)}
