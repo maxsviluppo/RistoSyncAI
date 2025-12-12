@@ -1087,8 +1087,93 @@ export default function App() {
                     )}
                     {adminTab === 'share' && (
                         <div className="flex flex-col xl:flex-row gap-8 pb-20 animate-fade-in">
-                            <div className="flex-1 space-y-8"><div><h3 className="text-2xl font-black text-white mb-2">Menu Digitale</h3><p className="text-slate-400 text-sm">Il tuo menu accessibile ovunque.</p></div><div className="bg-white p-6 rounded-3xl shadow-2xl inline-block mx-auto xl:mx-0">{qrCodeUrl ? <img src={qrCodeUrl} alt="Menu QR" className="w-64 h-64 mix-blend-multiply" /> : <div className="w-64 h-64 flex items-center justify-center bg-slate-100 text-slate-400 text-xs">QR non disponibile</div>}</div><div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 text-left space-y-4"><div><label className="text-xs text-slate-500 font-bold uppercase block mb-1">Link Pubblico</label><div className="flex gap-2"><input type="text" readOnly value={digitalMenuLink} className="w-full bg-slate-950 text-slate-300 p-3 rounded-lg border border-slate-700 text-xs font-mono select-all" /><button onClick={copyToClipboard} className="p-3 bg-blue-600 rounded-lg text-white hover:bg-blue-500 transition-colors"><Copy size={18} /></button></div></div><div className="flex gap-3"><button onClick={shareLink} className="flex-1 py-3 bg-slate-800 text-white font-bold rounded-lg border border-slate-700 hover:bg-slate-700 flex items-center justify-center gap-2"><Share2 size={18} /> Condividi</button><button onClick={handlePrintQR} className="flex-1 py-3 bg-slate-800 text-white font-bold rounded-lg border border-slate-700 hover:bg-slate-700 flex items-center justify-center gap-2"><Printer size={18} /> Stampa QR</button></div></div></div>
-                            <div className="flex-1 xl:max-w-md h-[600px] bg-slate-950 border-4 border-slate-800 rounded-[3rem] shadow-2xl relative overflow-hidden"><div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-800 rounded-b-xl z-20"></div><DigitalMenu restaurantId={session?.user?.id} isPreview activeMenuData={menuItems} activeRestaurantName={profileForm.name} /></div>
+                            {/* Sinistra - QR Code e Info */}
+                            <div className="flex-1 space-y-6">
+                                {/* Titolo */}
+                                <div>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <QrCode className="text-cyan-400" size={32} />
+                                        <h3 className="text-3xl font-black text-white">Menu Digitale</h3>
+                                    </div>
+                                    <p className="text-slate-400">Il tuo menu è online. Condividilo istantaneamente con i clienti.</p>
+                                </div>
+
+                                {/* QR Code Box - Gradiente Arancione */}
+                                <div className="bg-gradient-to-br from-orange-500 to-red-600 p-8 rounded-3xl shadow-2xl">
+                                    <div className="bg-white p-6 rounded-2xl shadow-xl">
+                                        {qrCodeUrl ? (
+                                            <img src={qrCodeUrl} alt="Menu QR" className="w-full h-auto mix-blend-multiply" />
+                                        ) : (
+                                            <div className="w-64 h-64 flex items-center justify-center bg-slate-100 text-slate-400 text-xs">
+                                                QR non disponibile
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="mt-6 text-center">
+                                        <h4 className="text-2xl font-black text-white mb-2">{profileForm.name || restaurantName}</h4>
+                                        <p className="text-white/80 text-sm font-medium">Scansiona per ordinare dal tavolo</p>
+                                    </div>
+
+                                    {/* Pulsanti Azione */}
+                                    <div className="grid grid-cols-2 gap-3 mt-6">
+                                        <button
+                                            onClick={copyToClipboard}
+                                            className="py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold rounded-xl flex items-center justify-center gap-2 border border-white/30 transition-all"
+                                        >
+                                            <Copy size={18} /> Copia Link
+                                        </button>
+                                        <button
+                                            onClick={handlePrintQR}
+                                            className="py-3 bg-white hover:bg-white/90 text-orange-600 font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg"
+                                        >
+                                            <Printer size={18} /> Stampa
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Link Pubblico */}
+                                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Globe className="text-cyan-400" size={18} />
+                                        <label className="text-xs text-slate-400 font-bold uppercase">Link Pubblico</label>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            readOnly
+                                            value={digitalMenuLink}
+                                            className="flex-1 bg-slate-950 text-slate-300 p-3 rounded-lg border border-slate-700 text-xs font-mono select-all focus:border-cyan-500 outline-none"
+                                        />
+                                        <button
+                                            onClick={copyToClipboard}
+                                            className="p-3 bg-cyan-600 rounded-lg text-white hover:bg-cyan-500 transition-colors"
+                                        >
+                                            <Copy size={18} />
+                                        </button>
+                                        <button
+                                            onClick={shareLink}
+                                            className="p-3 bg-slate-800 rounded-lg text-white hover:bg-slate-700 transition-colors border border-slate-700"
+                                        >
+                                            <Share2 size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Destra - Preview Smartphone */}
+                            <div className="flex-1 xl:max-w-md">
+                                <div className="h-[700px] bg-slate-950 border-4 border-slate-800 rounded-[3rem] shadow-2xl relative overflow-hidden">
+                                    {/* Notch */}
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-800 rounded-b-xl z-20"></div>
+                                    {/* Menu Preview */}
+                                    <DigitalMenu
+                                        restaurantId={session?.user?.id}
+                                        isPreview
+                                        activeMenuData={menuItems}
+                                        activeRestaurantName={profileForm.name}
+                                    />
+                                </div>
+                            </div>
                         </div>
                     )}
                     {adminTab === 'analytics' && (
