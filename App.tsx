@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import KitchenDisplay from './components/KitchenDisplay'; 
+import KitchenDisplay from './components/KitchenDisplay';
 import WaiterPad from './components/WaiterPad';
 import AuthScreen from './components/AuthScreen';
 import SuperAdminDashboard from './components/SuperAdminDashboard';
@@ -1190,13 +1189,13 @@ export default function App() {
                                         <div className="absolute -left-[2px] top-36 w-[2px] h-12 bg-slate-950 rounded-l-sm"></div>
                                         <div className="absolute -left-[2px] top-52 w-[2px] h-12 bg-slate-950 rounded-l-sm"></div>
                                         <div className="absolute -right-[2px] top-32 w-[2px] h-16 bg-slate-950 rounded-r-sm"></div>
-                                     </div>
-                    </div>
-                </div>
+                                    </div>
+                                </div>
                             </div>
-            )}
-            {adminTab === 'analytics' && (
-                <div className="max-w-7xl mx-auto space-y-6 animate-fade-in pb-20">
+                        </div>
+                    )}
+                    {adminTab === 'analytics' && (
+                        <div className="max-w-7xl mx-auto space-y-6 animate-fade-in pb-20">
                             {/* Header */}
                             <div className="flex justify-between items-center">
                                 <div>
