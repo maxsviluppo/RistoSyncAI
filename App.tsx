@@ -1882,6 +1882,86 @@ export default function App() {
                                         </ul>
                                     </div>
                                 </div>
+
+                                {/* LEGAL SECTION */}
+                                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                    <h3 className="font-bold text-white mb-6 flex items-center gap-2 text-xl">
+                                        <Shield className="text-slate-400" /> Informazioni Legali
+                                    </h3>
+
+                                    {/* Titolare Trattamento Dati */}
+                                    <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mb-6">
+                                        <h4 className="font-bold text-white mb-2 flex items-center gap-2"><User className="text-blue-500" size={16} /> Titolare del Trattamento Dati</h4>
+                                        <p className="text-slate-300 text-sm leading-relaxed">
+                                            <strong>Castro Massimo</strong><br />
+                                            Email: {adminContactEmail}<br />
+                                            Telefono: {adminPhone}<br />
+                                            I dati sono conservati su server <strong>Supabase</strong> (infrastruttura cloud conforme GDPR) e non verranno in alcun modo divulgati, venduti o ceduti a terzi.
+                                        </p>
+                                    </div>
+
+                                    {/* Accordion-style Legal Docs */}
+                                    <div className="space-y-4">
+                                        {/* TERMINI E CONDIZIONI */}
+                                        <details className="group bg-slate-800/30 rounded-xl border border-slate-700 overflow-hidden">
+                                            <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-800/50 transition-colors">
+                                                <span className="font-bold text-white flex items-center gap-2"><FileText size={16} className="text-orange-500" /> Termini e Condizioni d'Uso</span>
+                                                <ChevronDown size={18} className="text-slate-400 group-open:rotate-180 transition-transform" />
+                                            </summary>
+                                            <div className="p-4 pt-0 text-slate-400 text-xs leading-relaxed space-y-3 border-t border-slate-700">
+                                                <p><strong className="text-slate-300">1. Oggetto del Servizio</strong><br />RistoSync è un software gestionale cloud per la gestione di ordini, menu e comunicazioni interne di attività ristorative. L'accesso e l'utilizzo del servizio implicano l'accettazione dei presenti termini.</p>
+                                                <p><strong className="text-slate-300">2. Registrazione e Account</strong><br />L'utente si impegna a fornire dati veritieri durante la registrazione e a mantenere riservate le proprie credenziali. L'account è personale e non cedibile.</p>
+                                                <p><strong className="text-slate-300">3. Periodo di Prova</strong><br />Il servizio offre un periodo di prova gratuita di 15 giorni con accesso completo a tutte le funzionalità. Al termine, l'utente potrà scegliere di sottoscrivere un abbonamento.</p>
+                                                <p><strong className="text-slate-300">4. Obblighi dell'Utente</strong><br />L'utente si impegna a utilizzare il servizio in conformità alle leggi vigenti, a non tentare accessi non autorizzati ai sistemi e a non utilizzare il software per scopi illeciti.</p>
+                                                <p><strong className="text-slate-300">5. Proprietà Intellettuale</strong><br />Tutti i diritti sul software, marchi, loghi e contenuti sono di proprietà esclusiva di Castro Massimo. È vietata la riproduzione non autorizzata.</p>
+                                                <p><strong className="text-slate-300">6. Limitazione di Responsabilità</strong><br />Il servizio viene fornito "così com'è". Non si garantisce l'assenza di interruzioni o errori. Il titolare non è responsabile per danni indiretti derivanti dall'uso del servizio.</p>
+                                                <p><strong className="text-slate-300">7. Modifiche ai Termini</strong><br />Il titolare si riserva il diritto di modificare i presenti termini con preavviso di 30 giorni tramite comunicazione via email o notifica in-app.</p>
+                                                <p><strong className="text-slate-300">8. Foro Competente</strong><br />Per qualsiasi controversia sarà competente il Foro di residenza del titolare.</p>
+                                            </div>
+                                        </details>
+
+                                        {/* PRIVACY POLICY */}
+                                        <details className="group bg-slate-800/30 rounded-xl border border-slate-700 overflow-hidden">
+                                            <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-800/50 transition-colors">
+                                                <span className="font-bold text-white flex items-center gap-2"><Lock size={16} className="text-green-500" /> Privacy Policy (GDPR)</span>
+                                                <ChevronDown size={18} className="text-slate-400 group-open:rotate-180 transition-transform" />
+                                            </summary>
+                                            <div className="p-4 pt-0 text-slate-400 text-xs leading-relaxed space-y-3 border-t border-slate-700">
+                                                <p><strong className="text-slate-300">Titolare del Trattamento</strong><br />Castro Massimo - Email: {adminContactEmail}</p>
+                                                <p><strong className="text-slate-300">Tipologia di Dati Raccolti</strong><br />Raccogliamo: dati di registrazione (email, nome ristorante), dati operativi (menu, ordini), dati di utilizzo (log, analytics anonimizzati). Non raccogliamo dati sensibili dei clienti finali.</p>
+                                                <p><strong className="text-slate-300">Finalità del Trattamento</strong><br />I dati sono trattati per: erogazione del servizio, assistenza tecnica, miglioramento dell'esperienza utente, comunicazioni di servizio.</p>
+                                                <p><strong className="text-slate-300">Base Giuridica</strong><br />Il trattamento si basa sul consenso espresso al momento della registrazione e sull'esecuzione del contratto di servizio.</p>
+                                                <p><strong className="text-slate-300">Conservazione dei Dati</strong><br />I dati sono conservati su server Supabase (AWS, regione EU) con crittografia at-rest e in-transit. I dati vengono conservati per la durata dell'abbonamento + 12 mesi per obblighi legali.</p>
+                                                <p><strong className="text-slate-300">Condivisione con Terzi</strong><br />I dati NON vengono venduti, ceduti o condivisi con terze parti per finalità commerciali. Possono essere condivisi solo con fornitori tecnici (es. Supabase per hosting) strettamente necessari all'erogazione del servizio.</p>
+                                                <p><strong className="text-slate-300">Diritti dell'Interessato</strong><br />Ai sensi degli artt. 15-22 GDPR, l'utente ha diritto di: accesso, rettifica, cancellazione ("diritto all'oblio"), limitazione, portabilità e opposizione. Per esercitare tali diritti, contattare: {adminContactEmail}</p>
+                                                <p><strong className="text-slate-300">Data Protection Officer (DPO)</strong><br />Per appuntamenti legati al trattamento dati: {adminContactEmail}</p>
+                                            </div>
+                                        </details>
+
+                                        {/* COOKIE POLICY */}
+                                        <details className="group bg-slate-800/30 rounded-xl border border-slate-700 overflow-hidden">
+                                            <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-800/50 transition-colors">
+                                                <span className="font-bold text-white flex items-center gap-2"><Cookie size={16} className="text-yellow-500" /> Cookie Policy</span>
+                                                <ChevronDown size={18} className="text-slate-400 group-open:rotate-180 transition-transform" />
+                                            </summary>
+                                            <div className="p-4 pt-0 text-slate-400 text-xs leading-relaxed space-y-3 border-t border-slate-700">
+                                                <p><strong className="text-slate-300">Cosa sono i Cookie</strong><br />I cookie sono piccoli file di testo memorizzati sul dispositivo dell'utente per migliorare l'esperienza di navigazione.</p>
+                                                <p><strong className="text-slate-300">Cookie Tecnici (Necessari)</strong><br />Utilizziamo cookie strettamente necessari per: autenticazione utente, mantenimento della sessione, preferenze di utilizzo. Questi cookie non richiedono consenso in quanto essenziali per il funzionamento del servizio.</p>
+                                                <p><strong className="text-slate-300">Cookie Analitici</strong><br />Potremmo utilizzare cookie analitici anonimizzati per comprendere come gli utenti interagiscono con l'applicazione e migliorare il servizio. Nessun dato personale identificabile viene raccolto tramite questi cookie.</p>
+                                                <p><strong className="text-slate-300">Cookie di Terze Parti</strong><br />L'applicazione si integra con servizi di terze parti (es. Supabase per autenticazione) che potrebbero utilizzare propri cookie tecnici. Si rimanda alle rispettive privacy policy.</p>
+                                                <p><strong className="text-slate-300">Gestione dei Cookie</strong><br />L'utente può gestire le preferenze sui cookie attraverso le impostazioni del proprio browser. La disabilitazione dei cookie tecnici potrebbe compromettere il funzionamento dell'applicazione.</p>
+                                                <p><strong className="text-slate-300">Durata</strong><br />I cookie di sessione vengono eliminati alla chiusura del browser. I cookie persistenti hanno durata massima di 12 mesi.</p>
+                                            </div>
+                                        </details>
+                                    </div>
+
+                                    {/* Footer Legal */}
+                                    <div className="mt-6 pt-4 border-t border-slate-700 text-center">
+                                        <p className="text-slate-500 text-[10px]">
+                                            © {new Date().getFullYear()} RistoSync - Tutti i diritti riservati | Titolare: Castro Massimo | Ultimo aggiornamento: Dicembre 2024
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div >
