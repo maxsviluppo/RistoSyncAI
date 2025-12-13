@@ -799,15 +799,42 @@ export default function App() {
                             <div className="max-w-6xl mx-auto animate-fade-in">
                                 <div className="flex justify-between items-center mb-8"><div><h2 className="text-3xl font-black text-white mb-2">Gestione Menu</h2><p className="text-slate-400">Aggiungi, modifica o rimuovi piatti dal tuo menu digitale.</p></div><div className="flex gap-3"><button onClick={() => { setEditingItem({}); setIsEditingItem(!isEditingItem); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg transition-transform active:scale-95 ${isEditingItem ? 'bg-slate-700 text-white' : 'bg-green-600 hover:bg-green-500 text-white shadow-green-600/20'}`}>{isEditingItem ? <X size={20} /> : <Plus size={20} />} {isEditingItem ? 'Chiudi Editor' : 'NUOVO PIATTO'}</button></div></div>
                                 <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg"><div className="flex items-center gap-4"><div className="p-3 bg-blue-600/20 text-blue-400 rounded-xl"><LayoutGrid size={24} /></div><div><h3 className="font-bold text-white text-lg">Configurazione Sala</h3><p className="text-xs text-slate-400 font-medium">Imposta il numero di tavoli attivi nel ristorante.</p></div></div><div className="flex items-center gap-3 bg-slate-950 p-1.5 rounded-xl border border-slate-700"><button onClick={() => handleUpdateTableCount(-1)} className="w-10 h-10 flex items-center justify-center bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors"><Minus size={18} strokeWidth={3} /></button><span className="font-black text-3xl w-16 text-center text-white">{appSettings.restaurantProfile?.tableCount || 12}</span><button onClick={() => handleUpdateTableCount(1)} className="w-10 h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded-lg text-white shadow-lg shadow-blue-600/20 transition-colors"><Plus size={18} strokeWidth={3} /></button></div></div>
-                                <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-wrap gap-4 mb-8 items-center">
-                                    <button onClick={() => bulkInputRef.current?.click()} className="flex items-center gap-2 bg-blue-600/20 text-blue-400 px-4 py-2 rounded-lg font-bold hover:bg-blue-600/30 transition-colors whitespace-nowrap text-xs"><Upload size={16} /> Importa JSON</button>
-                                    <input type="file" ref={bulkInputRef} onChange={handleBulkImport} accept=".json" className="hidden" />
-                                    <button onClick={() => bulkImagesRef.current?.click()} className="flex items-center gap-2 bg-pink-600/20 text-pink-400 px-4 py-2 rounded-lg font-bold hover:bg-pink-600/30 transition-colors whitespace-nowrap text-xs"><ImageIcon size={16} /> Importa Foto Massiva</button>
-                                    <input type="file" ref={bulkImagesRef} onChange={handleBulkImageUpload} accept="image/*" multiple className="hidden" />
-                                    <button onClick={exportMenu} className="flex items-center gap-2 bg-teal-600/20 text-teal-400 px-4 py-2 rounded-lg font-bold hover:bg-teal-600/30 transition-colors whitespace-nowrap text-xs"><Download size={16} /> Esporta JSON</button>
-                                    <button onClick={async () => { if (await showConfirm("Conferma", "Caricare piatti dimostrativi? Verranno sincronizzati automaticamente al cloud per il menu digitale.")) { await importDemoMenu(); showToast("✅ Menu demo caricato! I piatti sono pronti per la prova.", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="flex items-center gap-2 bg-purple-600/20 text-purple-400 px-4 py-2 rounded-lg font-bold hover:bg-purple-600/30 transition-colors whitespace-nowrap text-xs"><Sparkles size={16} /> Carica Demo</button>
-                                    <div className="flex-1"></div>
-                                    <button onClick={async () => { if (await showDelete("Elimina Menu Completo", "Sei sicuro di voler eliminare tutti i piatti dal menu? Questa azione non può essere annullata.")) { await deleteAllMenuItems(); showToast("✅ Menu eliminato con successo!", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-500 transition-colors whitespace-nowrap shadow-lg shadow-red-900/20 text-xs"><Trash2 size={16} /> ELIMINA TUTTO</button>
+                                <div className="bg-slate-900/50 backdrop-blur-sm p-4 rounded-2xl border border-slate-800/50 mb-8">
+                                    {/* Toolbar Row */}
+                                    <div className="flex flex-wrap gap-3 items-center">
+                                        {/* IMPORT/EXPORT GROUP */}
+                                        <div className="flex items-center gap-1 bg-slate-800/50 p-1 rounded-xl">
+                                            <button onClick={() => bulkInputRef.current?.click()} className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-semibold text-xs text-slate-300 hover:bg-slate-700 hover:text-white transition-all" title="Importa menu da file JSON">
+                                                <Upload size={14} /> JSON
+                                            </button>
+                                            <input type="file" ref={bulkInputRef} onChange={handleBulkImport} accept=".json" className="hidden" />
+                                            <button onClick={exportMenu} className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-semibold text-xs text-slate-300 hover:bg-slate-700 hover:text-white transition-all" title="Esporta menu in JSON">
+                                                <Download size={14} /> Esporta
+                                            </button>
+                                        </div>
+
+                                        {/* DIVIDER */}
+                                        <div className="w-px h-8 bg-slate-700 hidden sm:block"></div>
+
+                                        {/* QUICK ACTIONS GROUP */}
+                                        <div className="flex items-center gap-1 bg-slate-800/50 p-1 rounded-xl">
+                                            <button onClick={() => bulkImagesRef.current?.click()} className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-semibold text-xs text-slate-300 hover:bg-pink-600/20 hover:text-pink-400 transition-all" title="Carica più foto insieme">
+                                                <ImageIcon size={14} /> Foto Bulk
+                                            </button>
+                                            <input type="file" ref={bulkImagesRef} onChange={handleBulkImageUpload} accept="image/*" multiple className="hidden" />
+                                            <button onClick={async () => { if (await showConfirm("Conferma", "Caricare piatti dimostrativi? Verranno sincronizzati automaticamente al cloud per il menu digitale.")) { await importDemoMenu(); showToast("✅ Menu demo caricato! I piatti sono pronti per la prova.", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-semibold text-xs text-slate-300 hover:bg-purple-600/20 hover:text-purple-400 transition-all" title="Carica piatti dimostrativi">
+                                                <Sparkles size={14} /> Demo
+                                            </button>
+                                        </div>
+
+                                        {/* SPACER */}
+                                        <div className="flex-1"></div>
+
+                                        {/* DANGER ZONE */}
+                                        <button onClick={async () => { if (await showDelete("Elimina Menu Completo", "Sei sicuro di voler eliminare tutti i piatti dal menu? Questa azione non può essere annullata.")) { await deleteAllMenuItems(); showToast("✅ Menu eliminato con successo!", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-semibold text-xs text-red-400 hover:bg-red-600 hover:text-white transition-all border border-red-500/30 hover:border-red-500" title="Elimina tutti i piatti">
+                                            <Trash2 size={14} /> Svuota Menu
+                                        </button>
+                                    </div>
                                 </div>
                                 {(isEditingItem || Object.keys(editingItem).length > 0) && (
                                     <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-2xl mb-10 relative overflow-hidden animate-slide-up max-w-5xl mx-auto">
@@ -926,7 +953,7 @@ export default function App() {
                                                             {item.allergens && item.allergens.length > 0 && (
                                                                 <div className="flex flex-wrap gap-1">
                                                                     {item.allergens.slice(0, 4).map(alg => (
-                                                                        <span key={alg} className="px-1.5 py-0.5 bg-red-900/30 text-red-400 border border-red-900/50 rounded text-[9px] font-bold uppercase tracking-wide">{alg}</span>
+                                                                        <span key={alg} className="px-1.5 py-0.5 bg-orange-900/30 text-orange-400 border border-orange-900/50 rounded text-[9px] font-bold uppercase tracking-wide">{alg}</span>
                                                                     ))}
                                                                     {item.allergens.length > 4 && <span className="px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded text-[9px] font-bold">+{item.allergens.length - 4}</span>}
                                                                 </div>
