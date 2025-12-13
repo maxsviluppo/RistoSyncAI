@@ -507,7 +507,7 @@ export default function App() {
 
     // --- SETTINGS & SHARE ---
     const saveDestinations = async () => { const newSettings: AppSettings = { ...appSettings, categoryDestinations: tempDestinations, printEnabled: tempPrintSettings }; await saveAppSettings(newSettings); setAppSettingsState(newSettings); setHasUnsavedDestinations(false); alert("Impostazioni salvate con successo!"); };
-    const handleSaveAppSettings = async () => { const newSettings: AppSettings = { categoryDestinations: tempDestinations, printEnabled: tempPrintSettings, restaurantProfile: { ...appSettings.restaurantProfile, ...profileForm } }; await saveAppSettings(newSettings); setAppSettingsState(newSettings); setHasUnsavedDestinations(false); alert("Configurazione salvata con successo!"); };
+    const handleSaveAppSettings = async () => { const newSettings: AppSettings = { categoryDestinations: tempDestinations, printEnabled: tempPrintSettings, restaurantProfile: { ...appSettings.restaurantProfile, ...profileForm } }; await saveAppSettings(newSettings); setAppSettingsState(newSettings); setHasUnsavedDestinations(false); await showSuccess("✅ Profilo Salvato", "La configurazione è stata salvata con successo!"); };
     const handleSaveApiKey = async () => { await saveGoogleApiKey(apiKeyInput); alert("API Key salvata!"); };
     const handlePrintQR = () => {
         const url = `${window.location.origin}?menu=${session?.user?.id}`;
