@@ -527,6 +527,19 @@ export default function App() {
         setIsChatting(false);
     };
 
+    // --- DELETE HANDLERS ---
+    const handleFactoryReset = async () => {
+        const confirmed = await showDelete(
+            "Factory Reset Completo",
+            "⚠️ ATTENZIONE: Questa azione cancellerà TUTTI i dati (Ordini, Menu, Impostazioni). Questa operazione è IRREVERSIBILE. Sei assolutamente sicuro?"
+        );
+        if (confirmed) {
+            performFactoryReset();
+            showToast("🔄 Reset completato. Ricaricamento...", "info");
+            setTimeout(() => window.location.reload(), 2000);
+        }
+    };
+
     // RENDER LOGIC
     if (publicMenuId) return <DigitalMenu restaurantId={publicMenuId} />;
     if (loadingSession) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white"><Loader className="animate-spin text-orange-500" size={48} /></div>;
@@ -576,1020 +589,1019 @@ export default function App() {
     if (role === 'pub') return <KitchenDisplay onExit={() => setRole(null)} department="Pub" />;
     if (role === 'waiter') return <WaiterPad onExit={() => setRole(null)} />;
 
+
     if (showAdmin) {
         return (
-            <div className="min-h-screen bg-slate-950 text-white font-sans flex flex-col md:flex-row">
-                <div className="w-full md:w-72 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 h-screen sticky top-0">
-                    <div className="p-6 border-b border-slate-800 flex items-center gap-3"><div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg"><ChefHat size={20} className="text-white" /></div><h1 className="font-black text-xl tracking-tight">Risto<span className="text-orange-500">Sync</span></h1></div>
-                    <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-                        <button onClick={() => setAdminTab('profile')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'profile' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Store size={18} /> Profilo Ristorante</button>
-                        <button onClick={() => setAdminTab('menu')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'menu' ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Utensils size={18} /> Gestione Menu</button>
-                        <button onClick={() => setAdminTab('share')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'share' ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><QrCode size={18} /> Menu Digitale</button>
-                        <button onClick={() => setAdminTab('notif')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'notif' ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Bell size={18} /> Notifiche & Reparti</button>
-                        <button onClick={() => setAdminTab('subscription')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'subscription' ? 'bg-green-600 text-white shadow-lg shadow-green-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><CreditCard size={18} /> Abbonamento</button>
-                        <button onClick={() => setAdminTab('analytics')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'analytics' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><BarChart3 size={18} /> Statistiche</button>
-                        <button onClick={() => setAdminTab('receipts')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'receipts' ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Receipt size={18} /> Scontrini Cassa</button>
-                        <button onClick={() => setAdminTab('ai')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'ai' ? 'bg-pink-600 text-white shadow-lg shadow-pink-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Bot size={18} /> AI Intelligence</button>
-                        <button onClick={() => setAdminTab('info')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'info' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Info size={18} /> Info & Supporto</button>
-                    </nav>
-                    <div className="p-4 border-t border-slate-800"><button onClick={() => setShowAdmin(false)} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl font-bold transition-colors"><ArrowLeft size={18} /> Torna alla Home</button></div>
-                </div>
+            <>
+                <div className="min-h-screen bg-slate-950 text-white font-sans flex flex-col md:flex-row">
+                    <div className="w-full md:w-72 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 h-screen sticky top-0">
+                        <div className="p-6 border-b border-slate-800 flex items-center gap-3"><div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg"><ChefHat size={20} className="text-white" /></div><h1 className="font-black text-xl tracking-tight">Risto<span className="text-orange-500">Sync</span></h1></div>
+                        <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+                            <button onClick={() => setAdminTab('profile')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'profile' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Store size={18} /> Profilo Ristorante</button>
+                            <button onClick={() => setAdminTab('menu')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'menu' ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Utensils size={18} /> Gestione Menu</button>
+                            <button onClick={() => setAdminTab('share')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'share' ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><QrCode size={18} /> Menu Digitale</button>
+                            <button onClick={() => setAdminTab('notif')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'notif' ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Bell size={18} /> Notifiche & Reparti</button>
+                            <button onClick={() => setAdminTab('subscription')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'subscription' ? 'bg-green-600 text-white shadow-lg shadow-green-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><CreditCard size={18} /> Abbonamento</button>
+                            <button onClick={() => setAdminTab('analytics')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'analytics' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><BarChart3 size={18} /> Statistiche</button>
+                            <button onClick={() => setAdminTab('receipts')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'receipts' ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Receipt size={18} /> Scontrini Cassa</button>
+                            <button onClick={() => setAdminTab('ai')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'ai' ? 'bg-pink-600 text-white shadow-lg shadow-pink-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Bot size={18} /> AI Intelligence</button>
+                            <button onClick={() => setAdminTab('info')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'info' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Info size={18} /> Info & Supporto</button>
+                        </nav>
+                        <div className="p-4 border-t border-slate-800"><button onClick={() => setShowAdmin(false)} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl font-bold transition-colors"><ArrowLeft size={18} /> Torna alla Home</button></div>
+                    </div>
 
-                <div className="flex-1 h-screen overflow-y-auto bg-slate-950 p-6 md:p-10 custom-scroll">
-                    {adminTab === 'profile' && (
-                        <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-20">
-                            <h2 className="text-3xl font-black text-white mb-8">Profilo Ristorante</h2>
-                            <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
-                                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Store className="text-blue-500" /> Dati Pubblici</h3>
-                                <p className="text-slate-400 text-sm mb-6">Questi dati appariranno nel Menu Digitale.</p>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Insegna (Nome Ristorante)</label>
-                                        <input type="text" value={profileForm.name || ''} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white font-bold focus:border-blue-500 outline-none" />
-                                    </div>
-                                    <div>
-                                        <div className="flex justify-between items-center mb-1">
-                                            <label className="text-[10px] text-slate-500 uppercase font-bold block">Bio / Descrizione</label>
-                                            <div className="flex gap-2">
-                                                <button onClick={handleGenerateBio} disabled={isGeneratingBio} className="text-[10px] bg-purple-600/20 text-purple-400 hover:bg-purple-600 hover:text-white px-2 py-1 rounded-lg font-bold flex items-center gap-1 transition-colors disabled:opacity-50"><Sparkles size={10} /> {isGeneratingBio ? '...' : 'AI'}</button>
-                                                <button onClick={handleMicBio} disabled={isListeningBio} className={`text-[10px] px-2 py-1 rounded-lg font-bold flex items-center gap-1 transition-colors ${isListeningBio ? 'bg-red-600 text-white animate-pulse' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>{isListeningBio ? <MicOff size={10} /> : <Mic size={10} />} REC</button>
+                    <div className="flex-1 h-screen overflow-y-auto bg-slate-950 p-6 md:p-10 custom-scroll">
+                        {adminTab === 'profile' && (
+                            <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-20">
+                                <h2 className="text-3xl font-black text-white mb-8">Profilo Ristorante</h2>
+                                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
+                                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Store className="text-blue-500" /> Dati Pubblici</h3>
+                                    <p className="text-slate-400 text-sm mb-6">Questi dati appariranno nel Menu Digitale.</p>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Insegna (Nome Ristorante)</label>
+                                            <input type="text" value={profileForm.name || ''} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white font-bold focus:border-blue-500 outline-none" />
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="text-[10px] text-slate-500 uppercase font-bold block">Bio / Descrizione</label>
+                                                <div className="flex gap-2">
+                                                    <button onClick={handleGenerateBio} disabled={isGeneratingBio} className="text-[10px] bg-purple-600/20 text-purple-400 hover:bg-purple-600 hover:text-white px-2 py-1 rounded-lg font-bold flex items-center gap-1 transition-colors disabled:opacity-50"><Sparkles size={10} /> {isGeneratingBio ? '...' : 'AI'}</button>
+                                                    <button onClick={handleMicBio} disabled={isListeningBio} className={`text-[10px] px-2 py-1 rounded-lg font-bold flex items-center gap-1 transition-colors ${isListeningBio ? 'bg-red-600 text-white animate-pulse' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>{isListeningBio ? <MicOff size={10} /> : <Mic size={10} />} REC</button>
+                                                </div>
+                                            </div>
+                                            <textarea value={profileForm.description || ''} onChange={(e) => setProfileForm({ ...profileForm, description: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none h-24 resize-none" placeholder="Breve descrizione del locale..." />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Sito Web (Url)</label>
+                                            <div className="flex items-center gap-2 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 focus-within:border-blue-500">
+                                                <Globe size={16} className="text-slate-500" />
+                                                <input type="text" value={profileForm.website || ''} onChange={(e) => setProfileForm({ ...profileForm, website: e.target.value })} className="w-full bg-transparent text-white text-sm outline-none" placeholder="www.ristorante.com" />
                                             </div>
                                         </div>
-                                        <textarea value={profileForm.description || ''} onChange={(e) => setProfileForm({ ...profileForm, description: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none h-24 resize-none" placeholder="Breve descrizione del locale..." />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Sito Web (Url)</label>
-                                        <div className="flex items-center gap-2 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 focus-within:border-blue-500">
-                                            <Globe size={16} className="text-slate-500" />
-                                            <input type="text" value={profileForm.website || ''} onChange={(e) => setProfileForm({ ...profileForm, website: e.target.value })} className="w-full bg-transparent text-white text-sm outline-none" placeholder="www.ristorante.com" />
-                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
-                                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Share2 className="text-pink-500" /> Social & Presenza Online</h3>
-                                <p className="text-slate-400 text-sm mb-6">Inserisci i link ai tuoi profili social per mostrarli nel menu digitale.</p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
-                                        <Instagram className="text-pink-500 ml-2" size={18} />
-                                        <input type="text" value={profileForm.socials?.instagram || ''} onChange={(e) => handleSocialChange('instagram', e.target.value)} className="bg-transparent outline-none text-white text-sm w-full placeholder-slate-600" placeholder="Link Instagram" />
-                                    </div>
-                                    <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
-                                        <Facebook className="text-blue-600 ml-2" size={18} />
-                                        <input type="text" value={profileForm.socials?.facebook || ''} onChange={(e) => handleSocialChange('facebook', e.target.value)} className="bg-transparent outline-none text-white text-sm w-full placeholder-slate-600" placeholder="Link Facebook" />
-                                    </div>
-                                    <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
-                                        <Music className="text-white ml-2" size={18} />
-                                        <input type="text" value={profileForm.socials?.tiktok || ''} onChange={(e) => handleSocialChange('tiktok', e.target.value)} className="bg-transparent outline-none text-white text-sm w-full placeholder-slate-600" placeholder="Link TikTok" />
-                                    </div>
-                                    <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
-                                        <Store className="text-blue-400 ml-2" size={18} />
-                                        <input type="text" value={profileForm.socials?.google || ''} onChange={(e) => handleSocialChange('google', e.target.value)} className="bg-transparent outline-none text-white text-sm w-full placeholder-slate-600" placeholder="Link Google Business" />
-                                    </div>
-                                    <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
-                                        <Compass className="text-green-500 ml-2" size={18} />
-                                        <input type="text" value={profileForm.socials?.tripadvisor || ''} onChange={(e) => handleSocialChange('tripadvisor', e.target.value)} className="bg-transparent outline-none text-white text-sm w-full placeholder-slate-600" placeholder="Link TripAdvisor" />
-                                    </div>
-                                    <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
-                                        <UtensilsCrossed className="text-emerald-500 ml-2" size={18} />
-                                        <input type="text" value={profileForm.socials?.thefork || ''} onChange={(e) => handleSocialChange('thefork', e.target.value)} className="bg-transparent outline-none text-white text-sm w-full placeholder-slate-600" placeholder="Link TheFork" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
-                                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Briefcase className="text-orange-500" /> Dati Aziendali (Fatturazione)</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="md:col-span-2">
-                                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Ragione Sociale Completa</label>
-                                        <input type="text" value={profileForm.businessName || ''} onChange={(e) => setProfileForm({ ...profileForm, businessName: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold" />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">P.IVA / Codice Fiscale</label>
-                                        <input type="text" value={profileForm.vatNumber || ''} onChange={(e) => setProfileForm({ ...profileForm, vatNumber: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono" />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Codice SDI (Destinatario)</label>
-                                        <input type="text" value={profileForm.sdiCode || ''} onChange={(e) => setProfileForm({ ...profileForm, sdiCode: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono uppercase" placeholder="XXXXXXX" />
-                                    </div>
-                                    <div className="md:col-span-2">
-                                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Indirizzo Sede Legale</label>
-                                        <input type="text" value={profileForm.address || ''} onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white" />
-                                    </div>
-                                    <div className="md:col-span-2">
-                                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Indirizzo PEC</label>
-                                        <input type="email" value={profileForm.pecEmail || ''} onChange={(e) => setProfileForm({ ...profileForm, pecEmail: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
-                                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Phone className="text-green-500" /> Contatti Amministrativi</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Email Amministrazione</label>
-                                        <input type="email" value={profileForm.email || ''} onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white" />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Telefono / Cellulare</label>
-                                        <input type="text" value={profileForm.phoneNumber || ''} onChange={(e) => setProfileForm({ ...profileForm, phoneNumber: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-slate-900 p-6 rounded-2xl border border-red-500/20 shadow-xl">
-                                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Settings className="text-red-500" /> Gestione Account</h3>
-                                <div className="space-y-6">
-                                    <div>
-                                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Email di Login (Account ID)</label>
-                                        <div className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-slate-400 font-mono text-sm flex items-center gap-2">
-                                            <Mail size={14} />
-                                            {session?.user?.email || 'N/A'}
-                                        </div>
-                                    </div>
+                                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
+                                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Share2 className="text-pink-500" /> Social & Presenza Online</h3>
+                                    <p className="text-slate-400 text-sm mb-6">Inserisci i link ai tuoi profili social per mostrarli nel menu digitale.</p>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <button onClick={async () => { if (await showDelete("Elimina Menu Completo", "Sei sicuro di voler ELIMINARE TUTTI I PIATTI dal menu? Questa azione non può essere annullata.")) { deleteAllMenuItems(); showToast("✅ Menu eliminato con successo!", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="w-full py-3 rounded-xl border border-red-500/50 text-red-400 hover:bg-red-500 hover:text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
-                                            <Trash2 size={16} /> RESET MENU
-                                        </button>
-                                        <button onClick={async () => { if (await showDelete("Factory Reset Completo", "⚠️ ATTENZIONE: Questa azione cancellerà TUTTI i dati (Ordini, Menu, Impostazioni). Questa operazione è IRREVERSIBILE. Sei assolutamente sicuro?")) { performFactoryReset(); showToast("🔄 Reset completato. Ricaricamento...", "info"); setTimeout(() => window.location.reload(), 2000); } }} className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-900/20">
-                                            <AlertTriangle size={16} /> FACTORY RESET
-                                        </button>
+                                        <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
+                                            <Instagram className="text-pink-500 ml-2" size={18} />
+                                            <input type="text" value={profileForm.socials?.instagram || ''} onChange={(e) => handleSocialChange('instagram', e.target.value)} className="bg-transparent outline-none text-white text-sm w-full placeholder-slate-600" placeholder="Link Instagram" />
+                                        </div>
+                                        <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
+                                            <Facebook className="text-blue-600 ml-2" size={18} />
+                                            <input type="text" value={profileForm.socials?.facebook || ''} onChange={(e) => handleSocialChange('facebook', e.target.value)} className="bg-transparent outline-none text-white text-sm w-full placeholder-slate-600" placeholder="Link Facebook" />
+                                        </div>
+                                        <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
+                                            <Music className="text-white ml-2" size={18} />
+                                            <input type="text" value={profileForm.socials?.tiktok || ''} onChange={(e) => handleSocialChange('tiktok', e.target.value)} className="bg-transparent outline-none text-white text-sm w-full placeholder-slate-600" placeholder="Link TikTok" />
+                                        </div>
+                                        <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
+                                            <Store className="text-blue-400 ml-2" size={18} />
+                                            <input type="text" value={profileForm.socials?.google || ''} onChange={(e) => handleSocialChange('google', e.target.value)} className="bg-transparent outline-none text-white text-sm w-full placeholder-slate-600" placeholder="Link Google Business" />
+                                        </div>
+                                        <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
+                                            <Compass className="text-green-500 ml-2" size={18} />
+                                            <input type="text" value={profileForm.socials?.tripadvisor || ''} onChange={(e) => handleSocialChange('tripadvisor', e.target.value)} className="bg-transparent outline-none text-white text-sm w-full placeholder-slate-600" placeholder="Link TripAdvisor" />
+                                        </div>
+                                        <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
+                                            <UtensilsCrossed className="text-emerald-500 ml-2" size={18} />
+                                            <input type="text" value={profileForm.socials?.thefork || ''} onChange={(e) => handleSocialChange('thefork', e.target.value)} className="bg-transparent outline-none text-white text-sm w-full placeholder-slate-600" placeholder="Link TheFork" />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="flex justify-end"><button onClick={handleSaveAppSettings} className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition-all flex items-center gap-2"><Save size={18} /> Salva Profilo</button></div>
-                        </div>
-                    )}
-                    {adminTab === 'menu' && (
-                        <div className="max-w-6xl mx-auto animate-fade-in">
-                            <div className="flex justify-between items-center mb-8"><div><h2 className="text-3xl font-black text-white mb-2">Gestione Menu</h2><p className="text-slate-400">Aggiungi, modifica o rimuovi piatti dal tuo menu digitale.</p></div><div className="flex gap-3"><button onClick={() => { setEditingItem({}); setIsEditingItem(!isEditingItem); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg transition-transform active:scale-95 ${isEditingItem ? 'bg-slate-700 text-white' : 'bg-green-600 hover:bg-green-500 text-white shadow-green-600/20'}`}>{isEditingItem ? <X size={20} /> : <Plus size={20} />} {isEditingItem ? 'Chiudi Editor' : 'NUOVO PIATTO'}</button></div></div>
-                            <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg"><div className="flex items-center gap-4"><div className="p-3 bg-blue-600/20 text-blue-400 rounded-xl"><LayoutGrid size={24} /></div><div><h3 className="font-bold text-white text-lg">Configurazione Sala</h3><p className="text-xs text-slate-400 font-medium">Imposta il numero di tavoli attivi nel ristorante.</p></div></div><div className="flex items-center gap-3 bg-slate-950 p-1.5 rounded-xl border border-slate-700"><button onClick={() => handleUpdateTableCount(-1)} className="w-10 h-10 flex items-center justify-center bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors"><Minus size={18} strokeWidth={3} /></button><span className="font-black text-3xl w-16 text-center text-white">{appSettings.restaurantProfile?.tableCount || 12}</span><button onClick={() => handleUpdateTableCount(1)} className="w-10 h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded-lg text-white shadow-lg shadow-blue-600/20 transition-colors"><Plus size={18} strokeWidth={3} /></button></div></div>
-                            <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-wrap gap-4 mb-8 items-center">
-                                <button onClick={() => bulkInputRef.current?.click()} className="flex items-center gap-2 bg-blue-600/20 text-blue-400 px-4 py-2 rounded-lg font-bold hover:bg-blue-600/30 transition-colors whitespace-nowrap text-xs"><Upload size={16} /> Importa JSON</button>
-                                <input type="file" ref={bulkInputRef} onChange={handleBulkImport} accept=".json" className="hidden" />
-                                <button onClick={() => bulkImagesRef.current?.click()} className="flex items-center gap-2 bg-pink-600/20 text-pink-400 px-4 py-2 rounded-lg font-bold hover:bg-pink-600/30 transition-colors whitespace-nowrap text-xs"><ImageIcon size={16} /> Importa Foto Massiva</button>
-                                <input type="file" ref={bulkImagesRef} onChange={handleBulkImageUpload} accept="image/*" multiple className="hidden" />
-                                <button onClick={exportMenu} className="flex items-center gap-2 bg-teal-600/20 text-teal-400 px-4 py-2 rounded-lg font-bold hover:bg-teal-600/30 transition-colors whitespace-nowrap text-xs"><Download size={16} /> Esporta JSON</button>
-                                <button onClick={async () => { if (await showConfirm("Conferma", "Caricare piatti dimostrativi? Verranno sincronizzati automaticamente al cloud per il menu digitale.")) { await importDemoMenu(); showToast("✅ Menu demo caricato! I piatti sono pronti per la prova.", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="flex items-center gap-2 bg-purple-600/20 text-purple-400 px-4 py-2 rounded-lg font-bold hover:bg-purple-600/30 transition-colors whitespace-nowrap text-xs"><Sparkles size={16} /> Carica Demo</button>
-                                <div className="flex-1"></div>
-                                <button onClick={async () => { if (await showDelete("Elimina Menu Completo", "Sei sicuro di voler eliminare tutti i piatti dal menu? Questa azione non può essere annullata.")) { await deleteAllMenuItems(); showToast("✅ Menu eliminato con successo!", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-500 transition-colors whitespace-nowrap shadow-lg shadow-red-900/20 text-xs"><Trash2 size={16} /> ELIMINA TUTTO</button>
-                            </div>
-                            {(isEditingItem || Object.keys(editingItem).length > 0) && (
-                                <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-2xl mb-10 relative overflow-hidden animate-slide-up max-w-5xl mx-auto">
-                                    <h3 className="font-bold text-white mb-5 flex items-center gap-2 text-xl border-b border-slate-800 pb-3"><Edit2 size={20} /> {editingItem.id ? 'Modifica Piatto' : 'Crea Nuovo Piatto'}</h3>
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        <div className="space-y-5">
-                                            <div className="flex gap-4 items-start">
-                                                <div className="relative w-28 h-28 bg-slate-950 rounded-2xl border-2 border-slate-700 border-dashed flex items-center justify-center overflow-hidden shrink-0 group hover:border-blue-500 transition-colors">
-                                                    {editingItem.image ? (<>
-                                                        <img src={editingItem.image} alt="Preview" className="w-full h-full object-cover" />
-                                                        <button onClick={(e) => { e.stopPropagation(); setEditingItem(prev => ({ ...prev, image: undefined })); }} className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:scale-110"><X size={14} /></button>
-                                                    </>) : <ImageIcon className="text-slate-600" size={28} />}
-                                                    <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
-                                                    <div onClick={() => fileInputRef.current?.click()} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity z-10 font-bold text-xs text-white uppercase tracking-wider">Cambia</div>
-                                                </div>
-                                                <div className="flex-1 space-y-3">
-                                                    <div>
-                                                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Nome Piatto</label>
-                                                        <input type="text" placeholder="Es. Spaghetti alla Carbonara" value={editingItem.name || ''} onChange={e => setEditingItem({ ...editingItem, name: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-bold text-sm focus:border-blue-500 outline-none transition-colors" />
-                                                    </div>
-                                                    <div className="flex gap-3">
-                                                        <div className="w-24">
-                                                            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Prezzo</label>
-                                                            <div className="relative">
-                                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-400 font-bold text-base">€</span>
-                                                                <input type="number" placeholder="0.00" value={editingItem.price || ''} onChange={e => setEditingItem({ ...editingItem, price: parseFloat(e.target.value) })} className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-7 pr-3 py-2.5 text-white font-mono font-bold text-left text-sm focus:border-green-500 outline-none transition-colors" />
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Categoria</label>
-                                                            <select value={editingItem.category || Category.ANTIPASTI} onChange={e => setEditingItem({ ...editingItem, category: e.target.value as Category })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-bold text-sm focus:border-blue-500 outline-none appearance-none transition-colors cursor-pointer">
-                                                                {Object.values(Category).map(c => <option key={c} value={c}>{c}</option>)}
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Reparto di Destinazione (Opzionale)</label>
-                                                <select value={editingItem.specificDepartment || ''} onChange={e => setEditingItem({ ...editingItem, specificDepartment: e.target.value as Department | undefined })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-300 text-sm outline-none focus:border-purple-500 transition-colors cursor-pointer">
-                                                    <option value="">Usa Default della Categoria</option>
-                                                    <option value="Cucina">Forza Cucina</option>
-                                                    <option value="Pizzeria">Forza Pizzeria</option>
-                                                    <option value="Pub">Forza Pub</option>
-                                                    <option value="Sala">Forza Sala</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <div className="flex justify-between items-center mb-1">
-                                                    <label className="text-xs font-bold text-slate-500 uppercase">Ingredienti</label>
-                                                    <button onClick={generateIngr} disabled={!editingItem.name} className="text-xs bg-purple-600/10 text-purple-400 hover:bg-purple-600/20 px-2 py-0.5 rounded-lg font-bold flex gap-1 items-center transition-colors disabled:opacity-50"><Sparkles size={12} /> AI</button>
-                                                </div>
-                                                <textarea placeholder="Elenco ingredienti separati da virgola..." value={editingItem.ingredients || ''} onChange={e => setEditingItem({ ...editingItem, ingredients: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-purple-500 transition-colors resize-none h-24" />
+                                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
+                                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Briefcase className="text-orange-500" /> Dati Aziendali (Fatturazione)</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="md:col-span-2">
+                                            <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Ragione Sociale Completa</label>
+                                            <input type="text" value={profileForm.businessName || ''} onChange={(e) => setProfileForm({ ...profileForm, businessName: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">P.IVA / Codice Fiscale</label>
+                                            <input type="text" value={profileForm.vatNumber || ''} onChange={(e) => setProfileForm({ ...profileForm, vatNumber: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Codice SDI (Destinatario)</label>
+                                            <input type="text" value={profileForm.sdiCode || ''} onChange={(e) => setProfileForm({ ...profileForm, sdiCode: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono uppercase" placeholder="XXXXXXX" />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Indirizzo Sede Legale</label>
+                                            <input type="text" value={profileForm.address || ''} onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white" />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Indirizzo PEC</label>
+                                            <input type="email" value={profileForm.pecEmail || ''} onChange={(e) => setProfileForm({ ...profileForm, pecEmail: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
+                                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Phone className="text-green-500" /> Contatti Amministrativi</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Email Amministrazione</label>
+                                            <input type="email" value={profileForm.email || ''} onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Telefono / Cellulare</label>
+                                            <input type="text" value={profileForm.phoneNumber || ''} onChange={(e) => setProfileForm({ ...profileForm, phoneNumber: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-slate-900 p-6 rounded-2xl border border-red-500/20 shadow-xl">
+                                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Settings className="text-red-500" /> Gestione Account</h3>
+                                    <div className="space-y-6">
+                                        <div>
+                                            <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Email di Login (Account ID)</label>
+                                            <div className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-slate-400 font-mono text-sm flex items-center gap-2">
+                                                <Mail size={14} />
+                                                {session?.user?.email || 'N/A'}
                                             </div>
                                         </div>
+                                        <div className="flex justify-center">
+                                            <button onClick={handleFactoryReset} className="w-full md:w-1/2 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-900/20">
+                                                <AlertTriangle size={16} /> FACTORY RESET
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
 
-                                        <div className="space-y-5">
-                                            <div>
-                                                <div className="flex justify-between items-center mb-1">
-                                                    <label className="text-xs font-bold text-slate-500 uppercase">Descrizione Menu</label>
-                                                    <button onClick={generateDesc} disabled={!editingItem.name} className="text-xs bg-purple-600/10 text-purple-400 hover:bg-purple-600/20 px-2 py-0.5 rounded-lg font-bold flex gap-1 items-center transition-colors disabled:opacity-50"><Sparkles size={12} /> AI</button>
+                                <div className="flex justify-end"><button onClick={handleSaveAppSettings} className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition-all flex items-center gap-2"><Save size={18} /> Salva Profilo</button></div>
+                            </div>
+                        )}
+                        {adminTab === 'menu' && (
+                            <div className="max-w-6xl mx-auto animate-fade-in">
+                                <div className="flex justify-between items-center mb-8"><div><h2 className="text-3xl font-black text-white mb-2">Gestione Menu</h2><p className="text-slate-400">Aggiungi, modifica o rimuovi piatti dal tuo menu digitale.</p></div><div className="flex gap-3"><button onClick={() => { setEditingItem({}); setIsEditingItem(!isEditingItem); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg transition-transform active:scale-95 ${isEditingItem ? 'bg-slate-700 text-white' : 'bg-green-600 hover:bg-green-500 text-white shadow-green-600/20'}`}>{isEditingItem ? <X size={20} /> : <Plus size={20} />} {isEditingItem ? 'Chiudi Editor' : 'NUOVO PIATTO'}</button></div></div>
+                                <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg"><div className="flex items-center gap-4"><div className="p-3 bg-blue-600/20 text-blue-400 rounded-xl"><LayoutGrid size={24} /></div><div><h3 className="font-bold text-white text-lg">Configurazione Sala</h3><p className="text-xs text-slate-400 font-medium">Imposta il numero di tavoli attivi nel ristorante.</p></div></div><div className="flex items-center gap-3 bg-slate-950 p-1.5 rounded-xl border border-slate-700"><button onClick={() => handleUpdateTableCount(-1)} className="w-10 h-10 flex items-center justify-center bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors"><Minus size={18} strokeWidth={3} /></button><span className="font-black text-3xl w-16 text-center text-white">{appSettings.restaurantProfile?.tableCount || 12}</span><button onClick={() => handleUpdateTableCount(1)} className="w-10 h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded-lg text-white shadow-lg shadow-blue-600/20 transition-colors"><Plus size={18} strokeWidth={3} /></button></div></div>
+                                <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-wrap gap-4 mb-8 items-center">
+                                    <button onClick={() => bulkInputRef.current?.click()} className="flex items-center gap-2 bg-blue-600/20 text-blue-400 px-4 py-2 rounded-lg font-bold hover:bg-blue-600/30 transition-colors whitespace-nowrap text-xs"><Upload size={16} /> Importa JSON</button>
+                                    <input type="file" ref={bulkInputRef} onChange={handleBulkImport} accept=".json" className="hidden" />
+                                    <button onClick={() => bulkImagesRef.current?.click()} className="flex items-center gap-2 bg-pink-600/20 text-pink-400 px-4 py-2 rounded-lg font-bold hover:bg-pink-600/30 transition-colors whitespace-nowrap text-xs"><ImageIcon size={16} /> Importa Foto Massiva</button>
+                                    <input type="file" ref={bulkImagesRef} onChange={handleBulkImageUpload} accept="image/*" multiple className="hidden" />
+                                    <button onClick={exportMenu} className="flex items-center gap-2 bg-teal-600/20 text-teal-400 px-4 py-2 rounded-lg font-bold hover:bg-teal-600/30 transition-colors whitespace-nowrap text-xs"><Download size={16} /> Esporta JSON</button>
+                                    <button onClick={async () => { if (await showConfirm("Conferma", "Caricare piatti dimostrativi? Verranno sincronizzati automaticamente al cloud per il menu digitale.")) { await importDemoMenu(); showToast("✅ Menu demo caricato! I piatti sono pronti per la prova.", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="flex items-center gap-2 bg-purple-600/20 text-purple-400 px-4 py-2 rounded-lg font-bold hover:bg-purple-600/30 transition-colors whitespace-nowrap text-xs"><Sparkles size={16} /> Carica Demo</button>
+                                    <div className="flex-1"></div>
+                                    <button onClick={async () => { if (await showDelete("Elimina Menu Completo", "Sei sicuro di voler eliminare tutti i piatti dal menu? Questa azione non può essere annullata.")) { await deleteAllMenuItems(); showToast("✅ Menu eliminato con successo!", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-500 transition-colors whitespace-nowrap shadow-lg shadow-red-900/20 text-xs"><Trash2 size={16} /> ELIMINA TUTTO</button>
+                                </div>
+                                {(isEditingItem || Object.keys(editingItem).length > 0) && (
+                                    <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-2xl mb-10 relative overflow-hidden animate-slide-up max-w-5xl mx-auto">
+                                        <h3 className="font-bold text-white mb-5 flex items-center gap-2 text-xl border-b border-slate-800 pb-3"><Edit2 size={20} /> {editingItem.id ? 'Modifica Piatto' : 'Crea Nuovo Piatto'}</h3>
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                            <div className="space-y-5">
+                                                <div className="flex gap-4 items-start">
+                                                    <div className="relative w-28 h-28 bg-slate-950 rounded-2xl border-2 border-slate-700 border-dashed flex items-center justify-center overflow-hidden shrink-0 group hover:border-blue-500 transition-colors">
+                                                        {editingItem.image ? (<>
+                                                            <img src={editingItem.image} alt="Preview" className="w-full h-full object-cover" />
+                                                            <button onClick={(e) => { e.stopPropagation(); setEditingItem(prev => ({ ...prev, image: undefined })); }} className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:scale-110"><X size={14} /></button>
+                                                        </>) : <ImageIcon className="text-slate-600" size={28} />}
+                                                        <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
+                                                        <div onClick={() => fileInputRef.current?.click()} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity z-10 font-bold text-xs text-white uppercase tracking-wider">Cambia</div>
+                                                    </div>
+                                                    <div className="flex-1 space-y-3">
+                                                        <div>
+                                                            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Nome Piatto</label>
+                                                            <input type="text" placeholder="Es. Spaghetti alla Carbonara" value={editingItem.name || ''} onChange={e => setEditingItem({ ...editingItem, name: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-bold text-sm focus:border-blue-500 outline-none transition-colors" />
+                                                        </div>
+                                                        <div className="flex gap-3">
+                                                            <div className="w-24">
+                                                                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Prezzo</label>
+                                                                <div className="relative">
+                                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-400 font-bold text-base">€</span>
+                                                                    <input type="number" placeholder="0.00" value={editingItem.price || ''} onChange={e => setEditingItem({ ...editingItem, price: parseFloat(e.target.value) })} className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-7 pr-3 py-2.5 text-white font-mono font-bold text-left text-sm focus:border-green-500 outline-none transition-colors" />
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Categoria</label>
+                                                                <select value={editingItem.category || Category.ANTIPASTI} onChange={e => setEditingItem({ ...editingItem, category: e.target.value as Category })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-bold text-sm focus:border-blue-500 outline-none appearance-none transition-colors cursor-pointer">
+                                                                    {Object.values(Category).map(c => <option key={c} value={c}>{c}</option>)}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <textarea placeholder="Descrizione accattivante per il menu digitale..." value={editingItem.description || ''} onChange={e => setEditingItem({ ...editingItem, description: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-purple-500 transition-colors resize-none h-24" />
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Reparto di Destinazione (Opzionale)</label>
+                                                    <select value={editingItem.specificDepartment || ''} onChange={e => setEditingItem({ ...editingItem, specificDepartment: e.target.value as Department | undefined })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-300 text-sm outline-none focus:border-purple-500 transition-colors cursor-pointer">
+                                                        <option value="">Usa Default della Categoria</option>
+                                                        <option value="Cucina">Forza Cucina</option>
+                                                        <option value="Pizzeria">Forza Pizzeria</option>
+                                                        <option value="Pub">Forza Pub</option>
+                                                        <option value="Sala">Forza Sala</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <label className="text-xs font-bold text-slate-500 uppercase">Ingredienti</label>
+                                                        <button onClick={generateIngr} disabled={!editingItem.name} className="text-xs bg-purple-600/10 text-purple-400 hover:bg-purple-600/20 px-2 py-0.5 rounded-lg font-bold flex gap-1 items-center transition-colors disabled:opacity-50"><Sparkles size={12} /> AI</button>
+                                                    </div>
+                                                    <textarea placeholder="Elenco ingredienti separati da virgola..." value={editingItem.ingredients || ''} onChange={e => setEditingItem({ ...editingItem, ingredients: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-purple-500 transition-colors resize-none h-24" />
+                                                </div>
                                             </div>
 
-                                            <div>
-                                                <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Allergeni</label>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {ALLERGENS_CONFIG.map(alg => {
-                                                        const Icon = alg.icon;
-                                                        return (
-                                                            <button key={alg.id} onClick={() => { const current = editingItem.allergens || []; setEditingItem({ ...editingItem, allergens: current.includes(alg.id) ? current.filter(a => a !== alg.id) : [...current, alg.id] }); }}
-                                                                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 ${editingItem.allergens?.includes(alg.id) ? 'bg-orange-600 border-orange-500 text-white shadow-lg shadow-orange-900/20' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600 hover:text-slate-200'}`}
-                                                            >
-                                                                <Icon size={14} className="shrink-0" />
-                                                                {alg.label}
+                                            <div className="space-y-5">
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <label className="text-xs font-bold text-slate-500 uppercase">Descrizione Menu</label>
+                                                        <button onClick={generateDesc} disabled={!editingItem.name} className="text-xs bg-purple-600/10 text-purple-400 hover:bg-purple-600/20 px-2 py-0.5 rounded-lg font-bold flex gap-1 items-center transition-colors disabled:opacity-50"><Sparkles size={12} /> AI</button>
+                                                    </div>
+                                                    <textarea placeholder="Descrizione accattivante per il menu digitale..." value={editingItem.description || ''} onChange={e => setEditingItem({ ...editingItem, description: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-purple-500 transition-colors resize-none h-24" />
+                                                </div>
+
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Allergeni</label>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {ALLERGENS_CONFIG.map(alg => {
+                                                            const Icon = alg.icon;
+                                                            return (
+                                                                <button key={alg.id} onClick={() => { const current = editingItem.allergens || []; setEditingItem({ ...editingItem, allergens: current.includes(alg.id) ? current.filter(a => a !== alg.id) : [...current, alg.id] }); }}
+                                                                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 ${editingItem.allergens?.includes(alg.id) ? 'bg-orange-600 border-orange-500 text-white shadow-lg shadow-orange-900/20' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600 hover:text-slate-200'}`}
+                                                                >
+                                                                    <Icon size={14} className="shrink-0" />
+                                                                    {alg.label}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-3 pt-3 border-t border-slate-800">
+                                                    <button onClick={() => { setEditingItem({}); setIsEditingItem(false); }} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm transition-colors">Annulla</button>
+                                                    <button onClick={handleSaveItem} disabled={!editingItem.name || !editingItem.price} className="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-green-900/20 transition-all hover:scale-[1.02] active:scale-95"><Save size={18} /> SALVA</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="space-y-8">
+                                    {menuItems.length === 0 && <div className="text-center py-20 text-slate-600"><UtensilsCrossed size={64} className="mx-auto mb-4 opacity-50" /><p className="font-bold text-xl">Menu Vuoto</p><p className="text-sm">Aggiungi il tuo primo piatto usando il pulsante "Nuovo Piatto".</p></div>}
+                                    {ADMIN_CATEGORY_ORDER.map(category => {
+                                        const categoryItems = menuItems.filter(item => item.category === category);
+                                        if (categoryItems.length === 0) return null;
+                                        return (
+                                            <div key={category} className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6">
+                                                <div className="flex items-center gap-3 mb-6">
+                                                    <div className="w-2 h-8 bg-orange-500 rounded-full"></div>
+                                                    <h3 className="text-xl font-bold text-white uppercase tracking-wide">{category}</h3>
+                                                    <span className="text-xs font-mono text-slate-500 bg-slate-800 px-2 py-1 rounded-lg border border-slate-700">{categoryItems.length}</span>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                                    {categoryItems.map(item => (
+                                                        <div key={item.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 hover:border-blue-500 transition-all group flex flex-col gap-3 shadow-lg hover:shadow-xl cursor-pointer relative" onClick={() => { setEditingItem(item); setIsEditingItem(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                                                            <div className="flex items-start gap-4">
+                                                                <div className="w-20 h-20 bg-slate-900 rounded-xl border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
+                                                                    {item.image ? <img src={item.image} className="w-full h-full object-cover" alt={item.name} /> : <Utensils size={24} className="text-slate-600" />}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <h4 className="font-bold text-white text-base line-clamp-2 leading-tight mb-1" title={item.name}>{item.name}</h4>
+                                                                    <p className="text-orange-400 font-mono font-bold text-sm">€ {item.price.toFixed(2)}</p>
+                                                                    {item.ingredients && <p className="text-[11px] text-slate-500 line-clamp-1 mt-1">{item.ingredients}</p>}
+                                                                </div>
+                                                            </div>
+                                                            {item.allergens && item.allergens.length > 0 && (
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {item.allergens.slice(0, 4).map(alg => (
+                                                                        <span key={alg} className="px-1.5 py-0.5 bg-red-900/30 text-red-400 border border-red-900/50 rounded text-[9px] font-bold uppercase tracking-wide">{alg}</span>
+                                                                    ))}
+                                                                    {item.allergens.length > 4 && <span className="px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded text-[9px] font-bold">+{item.allergens.length - 4}</span>}
+                                                                </div>
+                                                            )}
+                                                            <button onClick={(e) => { e.stopPropagation(); confirmDelete(item); }} className="absolute top-3 right-3 w-8 h-8 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-all shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100" title="Elimina piatto">
+                                                                <Trash2 size={16} />
                                                             </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-
-                                            <div className="flex gap-3 pt-3 border-t border-slate-800">
-                                                <button onClick={() => { setEditingItem({}); setIsEditingItem(false); }} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm transition-colors">Annulla</button>
-                                                <button onClick={handleSaveItem} disabled={!editingItem.name || !editingItem.price} className="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-green-900/20 transition-all hover:scale-[1.02] active:scale-95"><Save size={18} /> SALVA</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                            <div className="space-y-8">
-                                {menuItems.length === 0 && <div className="text-center py-20 text-slate-600"><UtensilsCrossed size={64} className="mx-auto mb-4 opacity-50" /><p className="font-bold text-xl">Menu Vuoto</p><p className="text-sm">Aggiungi il tuo primo piatto usando il pulsante "Nuovo Piatto".</p></div>}
-                                {ADMIN_CATEGORY_ORDER.map(category => {
-                                    const categoryItems = menuItems.filter(item => item.category === category);
-                                    if (categoryItems.length === 0) return null;
-                                    return (
-                                        <div key={category} className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6">
-                                            <div className="flex items-center gap-3 mb-6">
-                                                <div className="w-2 h-8 bg-orange-500 rounded-full"></div>
-                                                <h3 className="text-xl font-bold text-white uppercase tracking-wide">{category}</h3>
-                                                <span className="text-xs font-mono text-slate-500 bg-slate-800 px-2 py-1 rounded-lg border border-slate-700">{categoryItems.length}</span>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                                {categoryItems.map(item => (
-                                                    <div key={item.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 hover:border-blue-500 transition-all group flex flex-col gap-3 shadow-lg hover:shadow-xl cursor-pointer relative" onClick={() => { setEditingItem(item); setIsEditingItem(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                                                        <div className="flex items-start gap-4">
-                                                            <div className="w-20 h-20 bg-slate-900 rounded-xl border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
-                                                                {item.image ? <img src={item.image} className="w-full h-full object-cover" alt={item.name} /> : <Utensils size={24} className="text-slate-600" />}
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <h4 className="font-bold text-white text-base line-clamp-2 leading-tight mb-1" title={item.name}>{item.name}</h4>
-                                                                <p className="text-orange-400 font-mono font-bold text-sm">€ {item.price.toFixed(2)}</p>
-                                                                {item.ingredients && <p className="text-[11px] text-slate-500 line-clamp-1 mt-1">{item.ingredients}</p>}
-                                                            </div>
                                                         </div>
-                                                        {item.allergens && item.allergens.length > 0 && (
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {item.allergens.slice(0, 4).map(alg => (
-                                                                    <span key={alg} className="px-1.5 py-0.5 bg-red-900/30 text-red-400 border border-red-900/50 rounded text-[9px] font-bold uppercase tracking-wide">{alg}</span>
-                                                                ))}
-                                                                {item.allergens.length > 4 && <span className="px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded text-[9px] font-bold">+{item.allergens.length - 4}</span>}
-                                                            </div>
-                                                        )}
-                                                        <button onClick={(e) => { e.stopPropagation(); confirmDelete(item); }} className="absolute top-3 right-3 w-8 h-8 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-all shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100" title="Elimina piatto">
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    )}
-                    {adminTab === 'notif' && (
-                        <div className="max-w-2xl mx-auto space-y-8 animate-fade-in pb-20">
-                            <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800"><h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><ArrowRightLeft className="text-purple-500" /> Smistamento Reparti</h3><p className="text-slate-400 text-sm mb-6">Decidi in quale monitor inviare gli ordini per ogni categoria.</p><div className="space-y-4">{ADMIN_CATEGORY_ORDER.map(cat => (<div key={cat} className="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800"><span className="font-bold text-sm text-slate-300">{cat}</span><div className="relative"><select value={tempDestinations[cat] || 'Cucina'} onChange={(e) => { const newDest = { ...tempDestinations, [cat]: e.target.value as Department }; setTempDestinations(newDest); setHasUnsavedDestinations(true); }} className="appearance-none bg-slate-800 text-white text-xs font-bold py-2 pl-3 pr-8 rounded-lg border border-slate-700 outline-none focus:border-purple-500"><option value="Cucina">Cucina</option><option value="Pizzeria">Pizzeria</option><option value="Pub">Pub / Bar</option><option value="Sala">Sala (Auto)</option></select><ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} /></div></div>))}</div></div>
-                            <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800"><h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Printer className="text-blue-500" /> Stampa Scontrini (Beta)</h3><div className="space-y-3">{Object.keys(tempPrintSettings).map(key => (<div key={key} className="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800"><span className="font-bold text-sm text-slate-300">Stampa in {key}</span><button onClick={() => { const newSettings = { ...tempPrintSettings, [key]: !tempPrintSettings[key] }; setTempPrintSettings(newSettings); setHasUnsavedDestinations(true); }} className={`w-12 h-6 rounded-full p-1 transition-colors ${tempPrintSettings[key] ? 'bg-green-600' : 'bg-slate-700'}`}><div className={`w-4 h-4 rounded-full bg-white transition-transform ${tempPrintSettings[key] ? 'translate-x-6' : ''}`}></div></button></div>))}</div></div>
-                            {hasUnsavedDestinations && (<div className="sticky bottom-6"><button onClick={saveDestinations} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-lg animate-bounce flex items-center justify-center gap-2"><Save size={20} /> SALVA MODIFICHE</button></div>)}
-                        </div>
-                    )}
-                    {adminTab === 'subscription' && (
-                        <div className="max-w-6xl mx-auto animate-fade-in pb-20 space-y-8">
-                            {/* STATO ATTUALE */}
-                            <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-3xl border border-slate-700 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 text-[200px] font-black text-white/5 leading-none">
-                                    {daysRemaining !== null ? daysRemaining : '∞'}
-                                </div>
-                                <div className="relative z-10 flex justify-between items-center">
-                                    <div>
-                                        <p className="text-xs text-slate-400 font-bold uppercase mb-2 flex items-center gap-2">
-                                            {subscriptionExpired ? <AlertTriangle size={14} className="text-red-500" /> : <Check size={14} className="text-green-500" />}
-                                            STATO ATTUALE
-                                        </p>
-                                        <h3 className="text-4xl font-black text-white mb-1">
-                                            {appSettings.restaurantProfile?.planType || 'Pro'}
-                                            <span className={`ml-4 text-xs px-3 py-1 rounded-full ${subscriptionExpired ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
-                                                {subscriptionExpired ? 'SCADUTO' : 'ATTIVO'}
-                                            </span>
-                                        </h3>
-                                        <p className="text-slate-400 text-sm">
-                                            Scadenza: <span className="font-mono">{appSettings.restaurantProfile?.subscriptionEndDate ? new Date(appSettings.restaurantProfile.subscriptionEndDate).toLocaleDateString() : 'Illimitato'}</span>
-                                        </p>
-                                    </div>
-                                    {daysRemaining !== null && (
-                                        <div className="text-right">
-                                            <p className="text-6xl font-black text-white">{daysRemaining}</p>
-                                            <p className="text-xs text-slate-400 font-bold uppercase">GIORNI RIMASTI</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* SCEGLI IL TUO PIANO */}
-                            <div>
-                                <h2 className="text-2xl font-black text-white mb-6 text-center flex items-center justify-center gap-2">
-                                    <Sparkles className="text-yellow-500" size={28} />
-                                    Scegli il tuo Piano
-                                </h2>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    {/* TRIAL - Gratis */}
-                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-700 hover:border-blue-500 transition-all flex flex-col">
-                                        <h4 className="text-sm font-bold text-blue-400 uppercase tracking-wider mb-2">TRIAL</h4>
-                                        <div className="mb-4">
-                                            <p className="text-4xl font-black text-white">Gratis</p>
-                                            <p className="text-xs text-slate-500">15 Giorni</p>
-                                        </div>
-                                        <ul className="space-y-2 mb-6 flex-1 text-sm">
-                                            <li className="flex items-center gap-2 text-slate-300">
-                                                <Check size={16} className="text-blue-500" /> Tutte le funzionalità
-                                            </li>
-                                            <li className="flex items-center gap-2 text-slate-300">
-                                                <Check size={16} className="text-blue-500" /> Menu Digitale
-                                            </li>
-                                            <li className="flex items-center gap-2 text-slate-300">
-                                                <Check size={16} className="text-blue-500" /> Nessun impegno
-                                            </li>
-                                        </ul>
-                                        <button className="w-full py-3 bg-slate-800 hover:bg-blue-600 text-white font-bold rounded-xl border border-slate-700 hover:border-blue-500 transition-all">
-                                            Inizia Prova
-                                        </button>
-                                    </div>
-
-                                    {/* STANDARD MESE */}
-                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-700 hover:border-cyan-500 transition-all flex flex-col">
-                                        <h4 className="text-sm font-bold text-cyan-400 uppercase tracking-wider mb-2">STANDARD MESE</h4>
-                                        <div className="mb-4">
-                                            <p className="text-4xl font-black text-white">€ 49,90</p>
-                                            <p className="text-xs text-slate-500">/mese</p>
-                                        </div>
-                                        <ul className="space-y-2 mb-6 flex-1 text-sm">
-                                            <li className="flex items-center gap-2 text-slate-300">
-                                                <Check size={16} className="text-cyan-500" /> Tutte le funzionalità
-                                            </li>
-                                            <li className="flex items-center gap-2 text-slate-300">
-                                                <Check size={16} className="text-cyan-500" /> Multi Device Sync
-                                            </li>
-                                            <li className="flex items-center gap-2 text-slate-300">
-                                                <Check size={16} className="text-cyan-500" /> Aggiornamenti inclusi
-                                            </li>
-                                        </ul>
-                                        <button onClick={() => document.getElementById('bank-details')?.scrollIntoView({ behavior: 'smooth' })} className="w-full py-3 bg-slate-800 hover:bg-cyan-600 text-white font-bold rounded-xl border border-slate-700 hover:border-cyan-500 transition-all">
-                                            Attiva Mensile
-                                        </button>
-                                    </div>
-
-                                    {/* STANDARD ANNO - BEST VALUE */}
-                                    <div className="bg-gradient-to-br from-orange-600 to-red-600 p-6 rounded-2xl border-2 border-orange-500 flex flex-col relative transform lg:-translate-y-2 shadow-2xl shadow-orange-900/30">
-                                        <div className="absolute -top-3 -right-3 bg-yellow-400 text-black text-xs font-black px-3 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
-                                            BEST VALUE
-                                        </div>
-                                        <h4 className="text-sm font-bold text-orange-100 uppercase tracking-wider mb-2">STANDARD ANNO</h4>
-                                        <div className="mb-4">
-                                            <p className="text-4xl font-black text-white">€ 399</p>
-                                            <p className="text-xs text-orange-100">/anno</p>
-                                        </div>
-                                        <div className="bg-green-500/20 text-green-300 text-xs font-bold px-2 py-1 rounded mb-4 inline-block">
-                                            Risparmi € 200/anno
-                                        </div>
-                                        <ul className="space-y-2 mb-6 flex-1 text-sm">
-                                            <li className="flex items-center gap-2 text-white">
-                                                <Check size={16} className="text-yellow-300" /> Tutte le funzionalità
-                                            </li>
-                                            <li className="flex items-center gap-2 text-white">
-                                                <Check size={16} className="text-yellow-300" /> AI Menu Intelligence
-                                            </li>
-                                            <li className="flex items-center gap-2 text-white">
-                                                <Check size={16} className="text-yellow-300" /> Priorità Supporto
-                                            </li>
-                                            <li className="flex items-center gap-2 text-white">
-                                                <Check size={16} className="text-yellow-300" /> Setup Gratuito
-                                            </li>
-                                        </ul>
-                                        <button onClick={() => document.getElementById('bank-details')?.scrollIntoView({ behavior: 'smooth' })} className="w-full py-4 bg-white hover:bg-yellow-400 text-orange-600 font-black rounded-xl shadow-lg transition-all transform hover:scale-105 active:scale-95">
-                                            ATTIVA ANNUALE
-                                        </button>
-                                    </div>
-
-                                    {/* VIP - Contattaci */}
-                                    <div className="bg-gradient-to-br from-purple-900 to-purple-800 p-6 rounded-2xl border border-purple-500 hover:border-purple-400 transition-all flex flex-col">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Crown className="text-yellow-400" size={20} />
-                                            <h4 className="text-sm font-bold text-purple-200 uppercase tracking-wider">VIP</h4>
-                                        </div>
-                                        <div className="mb-4">
-                                            <p className="text-3xl font-black text-white">Contattaci</p>
-                                            <p className="text-xs text-purple-300">Soluzioni su misura</p>
-                                        </div>
-                                        <ul className="space-y-2 mb-6 flex-1 text-sm">
-                                            <li className="flex items-center gap-2 text-purple-200">
-                                                <Crown size={16} className="text-yellow-400" /> Funzioni Maggiori
-                                            </li>
-                                            <li className="flex items-center gap-2 text-purple-200">
-                                                <Crown size={16} className="text-yellow-400" /> Assistenza Dedicata
-                                            </li>
-                                            <li className="flex items-center gap-2 text-purple-200">
-                                                <Crown size={16} className="text-yellow-400" /> Modifiche Custom
-                                            </li>
-                                            <li className="flex items-center gap-2 text-purple-200">
-                                                <Crown size={16} className="text-yellow-400" /> Whitelabel
-                                            </li>
-                                        </ul>
-                                        <button onClick={() => window.open(`mailto:${adminContactEmail}?subject=Richiesta Piano VIP`, '_blank')} className="w-full py-3 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-xl border border-purple-500 transition-all">
-                                            Richiedi Info
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* DATI PER IL PAGAMENTO */}
-                            <div id="bank-details" className="bg-slate-900 p-8 rounded-3xl border border-slate-800">
-                                <div className="flex flex-col lg:flex-row gap-8">
-                                    {/* Sinistra - Dati Bonifico */}
-                                    <div className="flex-1">
-                                        <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                                            <CreditCard className="text-blue-500" />
-                                            Dati per il Pagamento
-                                        </h3>
-                                        <p className="text-slate-400 text-sm mb-6">
-                                            Per attivare un piano, effettua il bonifico indicando il nome del ristorante nella causale. Invia la distinta a{' '}
-                                            <a href={`mailto:${adminContactEmail}`} className="text-blue-400 hover:underline font-bold">
-                                                {adminContactEmail}
-                                            </a>{' '}
-                                            per l'attivazione immediata.
-                                        </p>
-
-                                        <div className="space-y-4">
-                                            <div className="bg-slate-950 p-4 rounded-xl border border-slate-700">
-                                                <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">IBAN</p>
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <p className="font-mono text-white text-sm select-all">{adminIban}</p>
-                                                    <button
-                                                        onClick={() => { navigator.clipboard.writeText(adminIban); showToast('IBAN copiato!', 'success'); }}
-                                                        className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
-                                                    >
-                                                        <Copy size={16} className="text-slate-500 hover:text-white" />
-                                                    </button>
+                                                    ))}
                                                 </div>
                                             </div>
-
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-slate-950 p-4 rounded-xl border border-slate-700">
-                                                    <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">INTESTATARIO</p>
-                                                    <p className="text-white text-sm font-bold">{adminHolder}</p>
-                                                </div>
-                                                <div className="bg-slate-950 p-4 rounded-xl border border-slate-700">
-                                                    <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">CAUSALE</p>
-                                                    <p className="text-white text-sm font-bold">Abbonamento Risto demo</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Destra - QR Code Pagamento */}
-                                    <div className="flex flex-col items-center justify-center bg-white p-6 rounded-2xl shadow-xl">
-                                        <div className="text-center mb-3">
-                                            <p className="text-slate-900 font-bold text-sm uppercase tracking-wider mb-1">PAGAMENTO SMART</p>
-                                            <p className="text-slate-500 text-xs">Inquadra con l'app della banca</p>
-                                        </div>
-                                        <div className="w-40 h-40 bg-slate-100 flex items-center justify-center rounded-xl border-2 border-slate-200">
-                                            <QrCode size={80} className="text-slate-400" />
-                                        </div>
-                                        <p className="text-xs text-blue-600 font-bold mt-3 uppercase">PAGAMENTO SICURO</p>
-                                    </div>
+                                        )
+                                    })}
                                 </div>
                             </div>
-                        </div>
-                    )}
-                    {adminTab === 'share' && (
-                        <div className="flex flex-col xl:flex-row gap-8 pb-20 animate-fade-in">
-                            {/* Sinistra - QR Code e Info */}
-                            <div className="flex-1 space-y-6">
-                                {/* Titolo */}
-                                <div>
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <QrCode className="text-cyan-400" size={32} />
-                                        <h3 className="text-3xl font-black text-white">Menu Digitale</h3>
+                        )}
+                        {adminTab === 'notif' && (
+                            <div className="max-w-2xl mx-auto space-y-8 animate-fade-in pb-20">
+                                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800"><h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><ArrowRightLeft className="text-purple-500" /> Smistamento Reparti</h3><p className="text-slate-400 text-sm mb-6">Decidi in quale monitor inviare gli ordini per ogni categoria.</p><div className="space-y-4">{ADMIN_CATEGORY_ORDER.map(cat => (<div key={cat} className="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800"><span className="font-bold text-sm text-slate-300">{cat}</span><div className="relative"><select value={tempDestinations[cat] || 'Cucina'} onChange={(e) => { const newDest = { ...tempDestinations, [cat]: e.target.value as Department }; setTempDestinations(newDest); setHasUnsavedDestinations(true); }} className="appearance-none bg-slate-800 text-white text-xs font-bold py-2 pl-3 pr-8 rounded-lg border border-slate-700 outline-none focus:border-purple-500"><option value="Cucina">Cucina</option><option value="Pizzeria">Pizzeria</option><option value="Pub">Pub / Bar</option><option value="Sala">Sala (Auto)</option></select><ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} /></div></div>))}</div></div>
+                                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800"><h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Printer className="text-blue-500" /> Stampa Scontrini (Beta)</h3><div className="space-y-3">{Object.keys(tempPrintSettings).map(key => (<div key={key} className="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800"><span className="font-bold text-sm text-slate-300">Stampa in {key}</span><button onClick={() => { const newSettings = { ...tempPrintSettings, [key]: !tempPrintSettings[key] }; setTempPrintSettings(newSettings); setHasUnsavedDestinations(true); }} className={`w-12 h-6 rounded-full p-1 transition-colors ${tempPrintSettings[key] ? 'bg-green-600' : 'bg-slate-700'}`}><div className={`w-4 h-4 rounded-full bg-white transition-transform ${tempPrintSettings[key] ? 'translate-x-6' : ''}`}></div></button></div>))}</div></div>
+                                {hasUnsavedDestinations && (<div className="sticky bottom-6"><button onClick={saveDestinations} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-lg animate-bounce flex items-center justify-center gap-2"><Save size={20} /> SALVA MODIFICHE</button></div>)}
+                            </div>
+                        )}
+                        {adminTab === 'subscription' && (
+                            <div className="max-w-6xl mx-auto animate-fade-in pb-20 space-y-8">
+                                {/* STATO ATTUALE */}
+                                <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-3xl border border-slate-700 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 text-[200px] font-black text-white/5 leading-none">
+                                        {daysRemaining !== null ? daysRemaining : '∞'}
                                     </div>
-                                    <p className="text-slate-400">Il tuo menu è online. Condividilo istantaneamente con i clienti.</p>
-                                </div>
-
-                                {/* QR Code Box - Gradiente Arancione */}
-                                <div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-3xl shadow-2xl max-w-sm">
-                                    <div className="bg-white p-4 rounded-2xl shadow-xl">
-                                        {qrCodeUrl ? (
-                                            <img src={qrCodeUrl} alt="Menu QR" className="w-64 h-64 mx-auto mix-blend-multiply" />
-                                        ) : (
-                                            <div className="w-64 h-64 flex items-center justify-center bg-slate-100 text-slate-400 text-xs">
-                                                QR non disponibile
+                                    <div className="relative z-10 flex justify-between items-center">
+                                        <div>
+                                            <p className="text-xs text-slate-400 font-bold uppercase mb-2 flex items-center gap-2">
+                                                {subscriptionExpired ? <AlertTriangle size={14} className="text-red-500" /> : <Check size={14} className="text-green-500" />}
+                                                STATO ATTUALE
+                                            </p>
+                                            <h3 className="text-4xl font-black text-white mb-1">
+                                                {appSettings.restaurantProfile?.planType || 'Pro'}
+                                                <span className={`ml-4 text-xs px-3 py-1 rounded-full ${subscriptionExpired ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                                                    {subscriptionExpired ? 'SCADUTO' : 'ATTIVO'}
+                                                </span>
+                                            </h3>
+                                            <p className="text-slate-400 text-sm">
+                                                Scadenza: <span className="font-mono">{appSettings.restaurantProfile?.subscriptionEndDate ? new Date(appSettings.restaurantProfile.subscriptionEndDate).toLocaleDateString() : 'Illimitato'}</span>
+                                            </p>
+                                        </div>
+                                        {daysRemaining !== null && (
+                                            <div className="text-right">
+                                                <p className="text-6xl font-black text-white">{daysRemaining}</p>
+                                                <p className="text-xs text-slate-400 font-bold uppercase">GIORNI RIMASTI</p>
                                             </div>
                                         )}
                                     </div>
-                                    <div className="mt-4 text-center">
-                                        <h4 className="text-xl font-black text-white mb-1">{profileForm.name || restaurantName}</h4>
-                                        <p className="text-white/80 text-sm">Scansiona per ordinare dal tavolo</p>
-                                    </div>
-
-                                    {/* Pulsanti Azione */}
-                                    <div className="grid grid-cols-2 gap-3 mt-6">
-                                        <button
-                                            onClick={copyToClipboard}
-                                            className="py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold rounded-xl flex items-center justify-center gap-2 border border-white/30 transition-all"
-                                        >
-                                            <Copy size={18} /> Copia Link
-                                        </button>
-                                        <button
-                                            onClick={handlePrintQR}
-                                            className="py-3 bg-white hover:bg-white/90 text-orange-600 font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg"
-                                        >
-                                            <Printer size={18} /> Stampa
-                                        </button>
-                                    </div>
                                 </div>
 
-                                {/* Link Pubblico */}
-                                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <Globe className="text-cyan-400" size={18} />
-                                        <label className="text-xs text-slate-400 font-bold uppercase">Link Pubblico</label>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            readOnly
-                                            value={digitalMenuLink}
-                                            className="flex-1 bg-slate-950 text-slate-300 p-3 rounded-lg border border-slate-700 text-xs font-mono select-all focus:border-cyan-500 outline-none"
-                                        />
-                                        <button
-                                            onClick={copyToClipboard}
-                                            className="p-3 bg-cyan-600 rounded-lg text-white hover:bg-cyan-500 transition-colors"
-                                        >
-                                            <Copy size={18} />
-                                        </button>
-                                        <button
-                                            onClick={shareLink}
-                                            className="p-3 bg-slate-800 rounded-lg text-white hover:bg-slate-700 transition-colors border border-slate-700"
-                                        >
-                                            <Share2 size={18} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                                {/* SCEGLI IL TUO PIANO */}
+                                <div>
+                                    <h2 className="text-2xl font-black text-white mb-6 text-center flex items-center justify-center gap-2">
+                                        <Sparkles className="text-yellow-500" size={28} />
+                                        Scegli il tuo Piano
+                                    </h2>
 
-                            {/* Destra - Preview iPhone */}
-                            <div className="flex-1 xl:max-w-md flex justify-center">
-                                <div className="relative">
-                                    {/* Shadow and glow effect */}
-                                    <div className="absolute inset-0 bg-gradient-to-b from-blue-500/20 to-purple-500/20 blur-3xl scale-95 -z-10"></div>
-
-                                    {/* Phone body */}
-                                    <div className="h-[700px] w-[340px] bg-gradient-to-b from-slate-800 to-slate-900 border-[12px] border-slate-950 rounded-[3.5rem] shadow-2xl relative overflow-hidden">
-                                        {/* Dynamic Island (iPhone 14 Pro style) */}
-                                        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-7 bg-black rounded-full z-30 shadow-inner"></div>
-
-                                        {/* Screen */}
-                                        <div className="absolute inset-0 bg-slate-900 rounded-[2.8rem] overflow-hidden">
-                                            {/* Menu Preview */}
-                                            <DigitalMenu
-                                                restaurantId={session?.user?.id}
-                                                isPreview
-                                                activeMenuData={menuItems}
-                                                activeRestaurantName={profileForm.name}
-                                            />
-                                        </div>
-
-                                        {/* Home Indicator */}
-                                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-white/30 rounded-full z-30"></div>
-
-                                        {/* Side buttons */}
-                                        <div className="absolute -left-[2px] top-24 w-[2px] h-8 bg-slate-950 rounded-l-sm"></div>
-                                        <div className="absolute -left-[2px] top-36 w-[2px] h-12 bg-slate-950 rounded-l-sm"></div>
-                                        <div className="absolute -left-[2px] top-52 w-[2px] h-12 bg-slate-950 rounded-l-sm"></div>
-                                        <div className="absolute -right-[2px] top-32 w-[2px] h-16 bg-slate-950 rounded-r-sm"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {adminTab === 'analytics' && (
-                        <div className="w-full min-h-full bg-slate-950 text-white p-6 pb-24 overflow-y-auto">
-                            <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
-                                {/* Header & Date Selector */}
-                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                    <div>
-                                        <h2 className="text-4xl font-black text-white mb-2">Business Intelligence</h2>
-                                        <p className="text-slate-400 text-sm flex items-center gap-2">
-                                            <MapPin size={16} className="text-slate-500" />
-                                            {profileForm.name ? profileForm.name : 'Località non impostata'}
-                                        </p>
-                                    </div>
-
-                                    <div className="flex items-center gap-4 bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 shadow-lg">
-                                        <button
-                                            onClick={() => {
-                                                const d = new Date(selectedDate);
-                                                d.setDate(d.getDate() - 1);
-                                                setSelectedDate(d);
-                                            }}
-                                            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
-                                        >
-                                            <ChevronLeft size={20} />
-                                        </button>
-                                        <div className="flex items-center gap-3 px-2">
-                                            <Calendar className="text-orange-500" size={20} />
-                                            <span className="font-bold text-lg capitalize">
-                                                {selectedDate.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'long' })}
-                                            </span>
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                const d = new Date(selectedDate);
-                                                d.setDate(d.getDate() + 1);
-                                                setSelectedDate(d);
-                                            }}
-                                            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
-                                        >
-                                            <ChevronRight size={20} />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* KPI Metrics Grid */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                                    {/* Incasso Netto */}
-                                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
-                                        <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                            <Euro size={80} />
-                                        </div>
-                                        <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
-                                            <Wallet size={14} /> Incasso Netto
-                                        </div>
-                                        <div className="text-3xl font-black text-white">
-                                            € {(analyticsData?.revenue || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </div>
-                                    </div>
-
-                                    {/* Piatti Serviti */}
-                                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
-                                        <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                            <Utensils size={80} />
-                                        </div>
-                                        <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
-                                            <Utensils size={14} /> Piatti Serviti
-                                        </div>
-                                        <div className="text-3xl font-black text-white">
-                                            {analyticsData?.totalDishes || 0}
-                                        </div>
-                                    </div>
-
-                                    {/* Tempo Medio Attesa */}
-                                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
-                                        <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                            <Clock size={80} />
-                                        </div>
-                                        <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
-                                            <History size={14} /> Tempo Medio Attesa
-                                        </div>
-                                        <div className="text-3xl font-black text-white mb-1">
-                                            0 <span className="text-base font-normal text-slate-500">min</span>
-                                        </div>
-                                        <div className="text-xs text-slate-500">Target: &lt; 20 min</div>
-                                    </div>
-
-                                    {/* Tavoli Serviti */}
-                                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
-                                        <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                            <Users size={80} />
-                                        </div>
-                                        <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
-                                            <Users size={14} /> Tavoli Serviti
-                                        </div>
-                                        <div className="text-3xl font-black text-white">
-                                            {analyticsData?.totalOrders || 0}
-                                        </div>
-                                    </div>
-
-                                    {/* Food Cost */}
-                                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
-                                        <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                            <TrendingUp size={80} />
-                                        </div>
-                                        <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
-                                            <TrendingDown size={14} /> Food Cost (Est. 32%)
-                                        </div>
-                                        <div className="text-3xl font-black text-orange-500 mb-1">
-                                            € 0
-                                        </div>
-                                        <div className="text-xs text-slate-500">Scontrino: € {(analyticsData?.avgOrder || 0).toFixed(2)}</div>
-                                    </div>
-                                </div>
-
-                                {/* Middle Section: Consumption & Top Items */}
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                    {/* Consumo Materie Prime */}
-                                    <div className="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-3xl relative min-h-[300px] flex flex-col">
-                                        <div className="flex justify-between items-start mb-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="bg-blue-500/20 p-2 rounded-lg text-blue-400">
-                                                    <Package size={24} />
-                                                </div>
-                                                <h3 className="text-xl font-bold text-white">Consumo Materie Prime</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                        {/* TRIAL - Gratis */}
+                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-700 hover:border-blue-500 transition-all flex flex-col">
+                                            <h4 className="text-sm font-bold text-blue-400 uppercase tracking-wider mb-2">TRIAL</h4>
+                                            <div className="mb-4">
+                                                <p className="text-4xl font-black text-white">Gratis</p>
+                                                <p className="text-xs text-slate-500">15 Giorni</p>
                                             </div>
-                                            <button className="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-400 transition-colors">
-                                                Calcolato su Ingredienti Menu
+                                            <ul className="space-y-2 mb-6 flex-1 text-sm">
+                                                <li className="flex items-center gap-2 text-slate-300">
+                                                    <Check size={16} className="text-blue-500" /> Tutte le funzionalità
+                                                </li>
+                                                <li className="flex items-center gap-2 text-slate-300">
+                                                    <Check size={16} className="text-blue-500" /> Menu Digitale
+                                                </li>
+                                                <li className="flex items-center gap-2 text-slate-300">
+                                                    <Check size={16} className="text-blue-500" /> Nessun impegno
+                                                </li>
+                                            </ul>
+                                            <button className="w-full py-3 bg-slate-800 hover:bg-blue-600 text-white font-bold rounded-xl border border-slate-700 hover:border-blue-500 transition-all">
+                                                Inizia Prova
                                             </button>
                                         </div>
 
-                                        <div className="flex-1 flex flex-col items-center justify-center text-slate-500 gap-4 opacity-50">
-                                            <Package size={48} strokeWidth={1} />
-                                            <div className="text-center">
-                                                <p className="text-sm">Nessun dato ingredienti disponibile.</p>
-                                                <p className="text-xs">Assicurati di aver compilato il campo "Ingredienti" nel menu.</p>
+                                        {/* STANDARD MESE */}
+                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-700 hover:border-cyan-500 transition-all flex flex-col">
+                                            <h4 className="text-sm font-bold text-cyan-400 uppercase tracking-wider mb-2">STANDARD MESE</h4>
+                                            <div className="mb-4">
+                                                <p className="text-4xl font-black text-white">€ 49,90</p>
+                                                <p className="text-xs text-slate-500">/mese</p>
                                             </div>
+                                            <ul className="space-y-2 mb-6 flex-1 text-sm">
+                                                <li className="flex items-center gap-2 text-slate-300">
+                                                    <Check size={16} className="text-cyan-500" /> Tutte le funzionalità
+                                                </li>
+                                                <li className="flex items-center gap-2 text-slate-300">
+                                                    <Check size={16} className="text-cyan-500" /> Multi Device Sync
+                                                </li>
+                                                <li className="flex items-center gap-2 text-slate-300">
+                                                    <Check size={16} className="text-cyan-500" /> Aggiornamenti inclusi
+                                                </li>
+                                            </ul>
+                                            <button onClick={() => document.getElementById('bank-details')?.scrollIntoView({ behavior: 'smooth' })} className="w-full py-3 bg-slate-800 hover:bg-cyan-600 text-white font-bold rounded-xl border border-slate-700 hover:border-cyan-500 transition-all">
+                                                Attiva Mensile
+                                            </button>
                                         </div>
-                                    </div>
 
-                                    {/* Top Piatti */}
-                                    <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl min-h-[300px]">
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <div className="bg-yellow-500/20 p-2 rounded-lg text-yellow-500">
-                                                <Trophy size={24} />
+                                        {/* STANDARD ANNO - BEST VALUE */}
+                                        <div className="bg-gradient-to-br from-orange-600 to-red-600 p-6 rounded-2xl border-2 border-orange-500 flex flex-col relative transform lg:-translate-y-2 shadow-2xl shadow-orange-900/30">
+                                            <div className="absolute -top-3 -right-3 bg-yellow-400 text-black text-xs font-black px-3 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
+                                                BEST VALUE
                                             </div>
-                                            <h3 className="text-xl font-bold text-white">Top Piatti</h3>
+                                            <h4 className="text-sm font-bold text-orange-100 uppercase tracking-wider mb-2">STANDARD ANNO</h4>
+                                            <div className="mb-4">
+                                                <p className="text-4xl font-black text-white">€ 399</p>
+                                                <p className="text-xs text-orange-100">/anno</p>
+                                            </div>
+                                            <div className="bg-green-500/20 text-green-300 text-xs font-bold px-2 py-1 rounded mb-4 inline-block">
+                                                Risparmi € 200/anno
+                                            </div>
+                                            <ul className="space-y-2 mb-6 flex-1 text-sm">
+                                                <li className="flex items-center gap-2 text-white">
+                                                    <Check size={16} className="text-yellow-300" /> Tutte le funzionalità
+                                                </li>
+                                                <li className="flex items-center gap-2 text-white">
+                                                    <Check size={16} className="text-yellow-300" /> AI Menu Intelligence
+                                                </li>
+                                                <li className="flex items-center gap-2 text-white">
+                                                    <Check size={16} className="text-yellow-300" /> Priorità Supporto
+                                                </li>
+                                                <li className="flex items-center gap-2 text-white">
+                                                    <Check size={16} className="text-yellow-300" /> Setup Gratuito
+                                                </li>
+                                            </ul>
+                                            <button onClick={() => document.getElementById('bank-details')?.scrollIntoView({ behavior: 'smooth' })} className="w-full py-4 bg-white hover:bg-yellow-400 text-orange-600 font-black rounded-xl shadow-lg transition-all transform hover:scale-105 active:scale-95">
+                                                ATTIVA ANNUALE
+                                            </button>
                                         </div>
 
-                                        <div className="space-y-4">
-                                            {analyticsData?.topItems?.length > 0 ? (
-                                                analyticsData.topItems.map((item, index) => (
-                                                    <div key={index} className="flex items-center justify-between p-3 bg-slate-950/50 rounded-xl border border-slate-800 hover:border-slate-700 transition-all">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${index === 0 ? 'bg-yellow-500 text-black' :
-                                                                index === 1 ? 'bg-slate-400 text-black' :
-                                                                    'bg-orange-700 text-white'
-                                                                }`}>
-                                                                {index + 1}
-                                                            </div>
-                                                            <span className="font-medium text-slate-200">{item[0]}</span>
-                                                        </div>
-                                                        <span className="font-bold text-slate-400">{item[1]} <span className="text-xs font-normal">ordini</span></span>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <div className="text-center py-10 text-slate-600 italic">
-                                                    Nessun dato.
-                                                </div>
-                                            )}
+                                        {/* VIP - Contattaci */}
+                                        <div className="bg-gradient-to-br from-purple-900 to-purple-800 p-6 rounded-2xl border border-purple-500 hover:border-purple-400 transition-all flex flex-col">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Crown className="text-yellow-400" size={20} />
+                                                <h4 className="text-sm font-bold text-purple-200 uppercase tracking-wider">VIP</h4>
+                                            </div>
+                                            <div className="mb-4">
+                                                <p className="text-3xl font-black text-white">Contattaci</p>
+                                                <p className="text-xs text-purple-300">Soluzioni su misura</p>
+                                            </div>
+                                            <ul className="space-y-2 mb-6 flex-1 text-sm">
+                                                <li className="flex items-center gap-2 text-purple-200">
+                                                    <Crown size={16} className="text-yellow-400" /> Funzioni Maggiori
+                                                </li>
+                                                <li className="flex items-center gap-2 text-purple-200">
+                                                    <Crown size={16} className="text-yellow-400" /> Assistenza Dedicata
+                                                </li>
+                                                <li className="flex items-center gap-2 text-purple-200">
+                                                    <Crown size={16} className="text-yellow-400" /> Modifiche Custom
+                                                </li>
+                                                <li className="flex items-center gap-2 text-purple-200">
+                                                    <Crown size={16} className="text-yellow-400" /> Whitelabel
+                                                </li>
+                                            </ul>
+                                            <button onClick={() => window.open(`mailto:${adminContactEmail}?subject=Richiesta Piano VIP`, '_blank')} className="w-full py-3 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-xl border border-purple-500 transition-all">
+                                                Richiedi Info
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* AI Supply Chain Section */}
-                                <div className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-3xl p-8 relative overflow-hidden border border-indigo-500/30 shadow-2xl">
-                                    <div className="absolute right-0 bottom-0 opacity-10 translate-y-1/3 translate-x-1/4">
-                                        <Factory size={400} />
-                                    </div>
+                                {/* DATI PER IL PAGAMENTO */}
+                                <div id="bank-details" className="bg-slate-900 p-8 rounded-3xl border border-slate-800">
+                                    <div className="flex flex-col lg:flex-row gap-8">
+                                        {/* Sinistra - Dati Bonifico */}
+                                        <div className="flex-1">
+                                            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                                                <CreditCard className="text-blue-500" />
+                                                Dati per il Pagamento
+                                            </h3>
+                                            <p className="text-slate-400 text-sm mb-6">
+                                                Per attivare un piano, effettua il bonifico indicando il nome del ristorante nella causale. Invia la distinta a{' '}
+                                                <a href={`mailto:${adminContactEmail}`} className="text-blue-400 hover:underline font-bold">
+                                                    {adminContactEmail}
+                                                </a>{' '}
+                                                per l'attivazione immediata.
+                                            </p>
 
-                                    <div className="relative z-10">
-                                        <div className="flex items-center gap-4 mb-2">
-                                            <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-md border border-white/20">
-                                                <Bot size={32} className="text-white" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-2xl font-black text-white">Supply Chain & Efficienza AI</h3>
-                                                <p className="text-indigo-200">Analisi operativa, fornitori e food cost per <span className="font-bold text-white">la tua zona</span>.</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-8 bg-black/20 backdrop-blur-sm rounded-2xl p-8 border border-white/10 text-center max-w-3xl mx-auto">
-                                            {aiAnalysisResult ? (
-                                                <div className="text-left space-y-4">
-                                                    <div className="flex items-start gap-4">
-                                                        <Sparkles className="text-yellow-400 shrink-0 mt-1" />
-                                                        <div className="prose prose-invert max-w-none">
-                                                            <p className="text-lg text-slate-200 leading-relaxed whitespace-pre-line">
-                                                                {aiAnalysisResult}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-6">
-                                                    <p className="text-lg text-slate-300">
-                                                        L'intelligenza artificiale valuterà la velocità della cucina (0 min/tavolo),<br />
-                                                        i flussi di lavoro e i consumi per suggerirti miglioramenti strutturali.
-                                                    </p>
-                                                    <div className="flex justify-center">
+                                            <div className="space-y-4">
+                                                <div className="bg-slate-950 p-4 rounded-xl border border-slate-700">
+                                                    <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">IBAN</p>
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <p className="font-mono text-white text-sm select-all">{adminIban}</p>
                                                         <button
-                                                            onClick={handleGenerateAnalysis}
-                                                            disabled={isAnalyzing}
-                                                            className="px-8 py-4 bg-white hover:bg-slate-100 text-indigo-900 font-black rounded-xl shadow-lg transition-all flex items-center gap-3 disabled:opacity-70 transform hover:scale-105"
+                                                            onClick={() => { navigator.clipboard.writeText(adminIban); showToast('IBAN copiato!', 'success'); }}
+                                                            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
                                                         >
-                                                            {isAnalyzing ? (
-                                                                <>
-                                                                    <Loader className="animate-spin" size={20} />
-                                                                    Analisi in corso...
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Sparkles size={20} className="text-indigo-600" />
-                                                                    GENERA CONSULENZA COMPLETA
-                                                                </>
-                                                            )}
+                                                            <Copy size={16} className="text-slate-500 hover:text-white" />
                                                         </button>
                                                     </div>
                                                 </div>
-                                            )}
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-700">
+                                                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">INTESTATARIO</p>
+                                                        <p className="text-white text-sm font-bold">{adminHolder}</p>
+                                                    </div>
+                                                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-700">
+                                                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">CAUSALE</p>
+                                                        <p className="text-white text-sm font-bold">Abbonamento Risto demo</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Destra - QR Code Pagamento */}
+                                        <div className="flex flex-col items-center justify-center bg-white p-6 rounded-2xl shadow-xl">
+                                            <div className="text-center mb-3">
+                                                <p className="text-slate-900 font-bold text-sm uppercase tracking-wider mb-1">PAGAMENTO SMART</p>
+                                                <p className="text-slate-500 text-xs">Inquadra con l'app della banca</p>
+                                            </div>
+                                            <div className="w-40 h-40 bg-slate-100 flex items-center justify-center rounded-xl border-2 border-slate-200">
+                                                <QrCode size={80} className="text-slate-400" />
+                                            </div>
+                                            <p className="text-xs text-blue-600 font-bold mt-3 uppercase">PAGAMENTO SICURO</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                    {adminTab === 'receipts' && (
-                        <div className="max-w-7xl mx-auto space-y-8 animate-fade-in pb-24">
-
-                            {/* Header Section with Date & Summary */}
-                            <div className="flex flex-col gap-6">
-                                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                                    <h2 className="text-4xl font-black text-white flex items-center gap-3">
-                                        <Receipt className="text-yellow-500" size={40} />
-                                        Movimenti Cassa
-                                    </h2>
-
-                                    {/* Date Selector */}
-                                    <div className="bg-slate-900 p-1.5 rounded-xl border border-slate-800 flex items-center shadow-lg">
-                                        <button
-                                            onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); }}
-                                            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
-                                        >
-                                            <ChevronLeft size={20} />
-                                        </button>
-                                        <div className="flex items-center gap-3 px-2">
-                                            <Calendar className="text-orange-500" size={20} />
-                                            <span className="font-bold text-lg capitalize text-white">
-                                                {selectedDate.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'long' })}
-                                            </span>
+                        )}
+                        {adminTab === 'share' && (
+                            <div className="flex flex-col xl:flex-row gap-8 pb-20 animate-fade-in">
+                                {/* Sinistra - QR Code e Info */}
+                                <div className="flex-1 space-y-6">
+                                    {/* Titolo */}
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <QrCode className="text-cyan-400" size={32} />
+                                            <h3 className="text-3xl font-black text-white">Menu Digitale</h3>
                                         </div>
-                                        <button
-                                            onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); }}
-                                            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
-                                        >
-                                            <ChevronRight size={20} />
-                                        </button>
+                                        <p className="text-slate-400">Il tuo menu è online. Condividilo istantaneamente con i clienti.</p>
+                                    </div>
+
+                                    {/* QR Code Box - Gradiente Arancione */}
+                                    <div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-3xl shadow-2xl max-w-sm">
+                                        <div className="bg-white p-4 rounded-2xl shadow-xl">
+                                            {qrCodeUrl ? (
+                                                <img src={qrCodeUrl} alt="Menu QR" className="w-64 h-64 mx-auto mix-blend-multiply" />
+                                            ) : (
+                                                <div className="w-64 h-64 flex items-center justify-center bg-slate-100 text-slate-400 text-xs">
+                                                    QR non disponibile
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="mt-4 text-center">
+                                            <h4 className="text-xl font-black text-white mb-1">{profileForm.name || restaurantName}</h4>
+                                            <p className="text-white/80 text-sm">Scansiona per ordinare dal tavolo</p>
+                                        </div>
+
+                                        {/* Pulsanti Azione */}
+                                        <div className="grid grid-cols-2 gap-3 mt-6">
+                                            <button
+                                                onClick={copyToClipboard}
+                                                className="py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold rounded-xl flex items-center justify-center gap-2 border border-white/30 transition-all"
+                                            >
+                                                <Copy size={18} /> Copia Link
+                                            </button>
+                                            <button
+                                                onClick={handlePrintQR}
+                                                className="py-3 bg-white hover:bg-white/90 text-orange-600 font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg"
+                                            >
+                                                <Printer size={18} /> Stampa
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Link Pubblico */}
+                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Globe className="text-cyan-400" size={18} />
+                                            <label className="text-xs text-slate-400 font-bold uppercase">Link Pubblico</label>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                value={digitalMenuLink}
+                                                className="flex-1 bg-slate-950 text-slate-300 p-3 rounded-lg border border-slate-700 text-xs font-mono select-all focus:border-cyan-500 outline-none"
+                                            />
+                                            <button
+                                                onClick={copyToClipboard}
+                                                className="p-3 bg-cyan-600 rounded-lg text-white hover:bg-cyan-500 transition-colors"
+                                            >
+                                                <Copy size={18} />
+                                            </button>
+                                            <button
+                                                onClick={shareLink}
+                                                className="p-3 bg-slate-800 rounded-lg text-white hover:bg-slate-700 transition-colors border border-slate-700"
+                                            >
+                                                <Share2 size={18} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Daily Summary Cards (Top Presentation) */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* Destra - Preview iPhone */}
+                                <div className="flex-1 xl:max-w-md flex justify-center">
+                                    <div className="relative">
+                                        {/* Shadow and glow effect */}
+                                        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/20 to-purple-500/20 blur-3xl scale-95 -z-10"></div>
+
+                                        {/* Phone body */}
+                                        <div className="h-[700px] w-[340px] bg-gradient-to-b from-slate-800 to-slate-900 border-[12px] border-slate-950 rounded-[3.5rem] shadow-2xl relative overflow-hidden">
+                                            {/* Dynamic Island (iPhone 14 Pro style) */}
+                                            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-7 bg-black rounded-full z-30 shadow-inner"></div>
+
+                                            {/* Screen */}
+                                            <div className="absolute inset-0 bg-slate-900 rounded-[2.8rem] overflow-hidden">
+                                                {/* Menu Preview */}
+                                                <DigitalMenu
+                                                    restaurantId={session?.user?.id}
+                                                    isPreview
+                                                    activeMenuData={menuItems}
+                                                    activeRestaurantName={profileForm.name}
+                                                />
+                                            </div>
+
+                                            {/* Home Indicator */}
+                                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-white/30 rounded-full z-30"></div>
+
+                                            {/* Side buttons */}
+                                            <div className="absolute -left-[2px] top-24 w-[2px] h-8 bg-slate-950 rounded-l-sm"></div>
+                                            <div className="absolute -left-[2px] top-36 w-[2px] h-12 bg-slate-950 rounded-l-sm"></div>
+                                            <div className="absolute -left-[2px] top-52 w-[2px] h-12 bg-slate-950 rounded-l-sm"></div>
+                                            <div className="absolute -right-[2px] top-32 w-[2px] h-16 bg-slate-950 rounded-r-sm"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {adminTab === 'analytics' && (
+                            <div className="w-full min-h-full bg-slate-950 text-white p-6 pb-24 overflow-y-auto">
+                                <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
+                                    {/* Header & Date Selector */}
+                                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                        <div>
+                                            <h2 className="text-4xl font-black text-white mb-2">Business Intelligence</h2>
+                                            <p className="text-slate-400 text-sm flex items-center gap-2">
+                                                <MapPin size={16} className="text-slate-500" />
+                                                {profileForm.name ? profileForm.name : 'Località non impostata'}
+                                            </p>
+                                        </div>
+
+                                        <div className="flex items-center gap-4 bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 shadow-lg">
+                                            <button
+                                                onClick={() => {
+                                                    const d = new Date(selectedDate);
+                                                    d.setDate(d.getDate() - 1);
+                                                    setSelectedDate(d);
+                                                }}
+                                                className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+                                            >
+                                                <ChevronLeft size={20} />
+                                            </button>
+                                            <div className="flex items-center gap-3 px-2">
+                                                <Calendar className="text-orange-500" size={20} />
+                                                <span className="font-bold text-lg capitalize">
+                                                    {selectedDate.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'long' })}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    const d = new Date(selectedDate);
+                                                    d.setDate(d.getDate() + 1);
+                                                    setSelectedDate(d);
+                                                }}
+                                                className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+                                            >
+                                                <ChevronRight size={20} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* KPI Metrics Grid */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                                        {/* Incasso Netto */}
+                                        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
+                                            <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                                <Euro size={80} />
+                                            </div>
+                                            <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                                                <Wallet size={14} /> Incasso Netto
+                                            </div>
+                                            <div className="text-3xl font-black text-white">
+                                                € {(analyticsData?.revenue || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </div>
+                                        </div>
+
+                                        {/* Piatti Serviti */}
+                                        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
+                                            <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                                <Utensils size={80} />
+                                            </div>
+                                            <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                                                <Utensils size={14} /> Piatti Serviti
+                                            </div>
+                                            <div className="text-3xl font-black text-white">
+                                                {analyticsData?.totalDishes || 0}
+                                            </div>
+                                        </div>
+
+                                        {/* Tempo Medio Attesa */}
+                                        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
+                                            <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                                <Clock size={80} />
+                                            </div>
+                                            <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                                                <History size={14} /> Tempo Medio Attesa
+                                            </div>
+                                            <div className="text-3xl font-black text-white mb-1">
+                                                0 <span className="text-base font-normal text-slate-500">min</span>
+                                            </div>
+                                            <div className="text-xs text-slate-500">Target: &lt; 20 min</div>
+                                        </div>
+
+                                        {/* Tavoli Serviti */}
+                                        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
+                                            <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                                <Users size={80} />
+                                            </div>
+                                            <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                                                <Users size={14} /> Tavoli Serviti
+                                            </div>
+                                            <div className="text-3xl font-black text-white">
+                                                {analyticsData?.totalOrders || 0}
+                                            </div>
+                                        </div>
+
+                                        {/* Food Cost */}
+                                        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-all shadow-lg">
+                                            <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                                <TrendingUp size={80} />
+                                            </div>
+                                            <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                                                <TrendingDown size={14} /> Food Cost (Est. 32%)
+                                            </div>
+                                            <div className="text-3xl font-black text-orange-500 mb-1">
+                                                € 0
+                                            </div>
+                                            <div className="text-xs text-slate-500">Scontrino: € {(analyticsData?.avgOrder || 0).toFixed(2)}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Middle Section: Consumption & Top Items */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                        {/* Consumo Materie Prime */}
+                                        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-3xl relative min-h-[300px] flex flex-col">
+                                            <div className="flex justify-between items-start mb-6">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="bg-blue-500/20 p-2 rounded-lg text-blue-400">
+                                                        <Package size={24} />
+                                                    </div>
+                                                    <h3 className="text-xl font-bold text-white">Consumo Materie Prime</h3>
+                                                </div>
+                                                <button className="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-400 transition-colors">
+                                                    Calcolato su Ingredienti Menu
+                                                </button>
+                                            </div>
+
+                                            <div className="flex-1 flex flex-col items-center justify-center text-slate-500 gap-4 opacity-50">
+                                                <Package size={48} strokeWidth={1} />
+                                                <div className="text-center">
+                                                    <p className="text-sm">Nessun dato ingredienti disponibile.</p>
+                                                    <p className="text-xs">Assicurati di aver compilato il campo "Ingredienti" nel menu.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Top Piatti */}
+                                        <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl min-h-[300px]">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="bg-yellow-500/20 p-2 rounded-lg text-yellow-500">
+                                                    <Trophy size={24} />
+                                                </div>
+                                                <h3 className="text-xl font-bold text-white">Top Piatti</h3>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                {analyticsData?.topItems?.length > 0 ? (
+                                                    analyticsData.topItems.map((item, index) => (
+                                                        <div key={index} className="flex items-center justify-between p-3 bg-slate-950/50 rounded-xl border border-slate-800 hover:border-slate-700 transition-all">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${index === 0 ? 'bg-yellow-500 text-black' :
+                                                                    index === 1 ? 'bg-slate-400 text-black' :
+                                                                        'bg-orange-700 text-white'
+                                                                    }`}>
+                                                                    {index + 1}
+                                                                </div>
+                                                                <span className="font-medium text-slate-200">{item[0]}</span>
+                                                            </div>
+                                                            <span className="font-bold text-slate-400">{item[1]} <span className="text-xs font-normal">ordini</span></span>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <div className="text-center py-10 text-slate-600 italic">
+                                                        Nessun dato.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* AI Supply Chain Section */}
+                                    <div className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-3xl p-8 relative overflow-hidden border border-indigo-500/30 shadow-2xl">
+                                        <div className="absolute right-0 bottom-0 opacity-10 translate-y-1/3 translate-x-1/4">
+                                            <Factory size={400} />
+                                        </div>
+
+                                        <div className="relative z-10">
+                                            <div className="flex items-center gap-4 mb-2">
+                                                <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-md border border-white/20">
+                                                    <Bot size={32} className="text-white" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-2xl font-black text-white">Supply Chain & Efficienza AI</h3>
+                                                    <p className="text-indigo-200">Analisi operativa, fornitori e food cost per <span className="font-bold text-white">la tua zona</span>.</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-8 bg-black/20 backdrop-blur-sm rounded-2xl p-8 border border-white/10 text-center max-w-3xl mx-auto">
+                                                {aiAnalysisResult ? (
+                                                    <div className="text-left space-y-4">
+                                                        <div className="flex items-start gap-4">
+                                                            <Sparkles className="text-yellow-400 shrink-0 mt-1" />
+                                                            <div className="prose prose-invert max-w-none">
+                                                                <p className="text-lg text-slate-200 leading-relaxed whitespace-pre-line">
+                                                                    {aiAnalysisResult}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-6">
+                                                        <p className="text-lg text-slate-300">
+                                                            L'intelligenza artificiale valuterà la velocità della cucina (0 min/tavolo),<br />
+                                                            i flussi di lavoro e i consumi per suggerirti miglioramenti strutturali.
+                                                        </p>
+                                                        <div className="flex justify-center">
+                                                            <button
+                                                                onClick={handleGenerateAnalysis}
+                                                                disabled={isAnalyzing}
+                                                                className="px-8 py-4 bg-white hover:bg-slate-100 text-indigo-900 font-black rounded-xl shadow-lg transition-all flex items-center gap-3 disabled:opacity-70 transform hover:scale-105"
+                                                            >
+                                                                {isAnalyzing ? (
+                                                                    <>
+                                                                        <Loader className="animate-spin" size={20} />
+                                                                        Analisi in corso...
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Sparkles size={20} className="text-indigo-600" />
+                                                                        GENERA CONSULENZA COMPLETA
+                                                                    </>
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {adminTab === 'receipts' && (
+                            <div className="max-w-7xl mx-auto space-y-8 animate-fade-in pb-24">
+
+                                {/* Header Section with Date & Summary */}
+                                <div className="flex flex-col gap-6">
+                                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                                        <h2 className="text-4xl font-black text-white flex items-center gap-3">
+                                            <Receipt className="text-yellow-500" size={40} />
+                                            Movimenti Cassa
+                                        </h2>
+
+                                        {/* Date Selector */}
+                                        <div className="bg-slate-900 p-1.5 rounded-xl border border-slate-800 flex items-center shadow-lg">
+                                            <button
+                                                onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); }}
+                                                className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+                                            >
+                                                <ChevronLeft size={20} />
+                                            </button>
+                                            <div className="flex items-center gap-3 px-2">
+                                                <Calendar className="text-orange-500" size={20} />
+                                                <span className="font-bold text-lg capitalize text-white">
+                                                    {selectedDate.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'long' })}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); }}
+                                                className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+                                            >
+                                                <ChevronRight size={20} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Daily Summary Cards (Top Presentation) */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        {(() => {
+                                            // Use ordersForAnalytics (guaranteed to be defined in App scope)
+                                            const dayOrders = ordersForAnalytics.filter(o => {
+                                                const orderDate = new Date(o.timestamp);
+                                                return orderDate.toDateString() === selectedDate.toDateString();
+                                            });
+                                            // Fix: Access item.menuItem.price instead of item.price
+                                            const totalRevenue = dayOrders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + (i.menuItem.price * i.quantity), 0), 0);
+                                            const totalReceipts = dayOrders.length;
+                                            const avgReceipt = totalReceipts > 0 ? totalRevenue / totalReceipts : 0;
+
+                                            return (
+                                                <>
+                                                    <div className="bg-slate-900/80 backdrop-blur border border-slate-800 p-5 rounded-2xl flex items-center gap-4 relative overflow-hidden">
+                                                        <div className="absolute right-0 top-0 p-4 opacity-5"><Euro size={80} /></div>
+                                                        <div className="bg-emerald-500/10 p-3 rounded-xl text-emerald-400">
+                                                            <Wallet size={32} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Incasso Giornaliero</p>
+                                                            <p className="text-3xl font-black text-white">€ {totalRevenue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-slate-900/80 backdrop-blur border border-slate-800 p-5 rounded-2xl flex items-center gap-4 relative overflow-hidden">
+                                                        <div className="absolute right-0 top-0 p-4 opacity-5"><Receipt size={80} /></div>
+                                                        <div className="bg-blue-500/10 p-3 rounded-xl text-blue-400">
+                                                            <Printer size={32} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Scontrini Emessi</p>
+                                                            <p className="text-3xl font-black text-white">{totalReceipts}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-slate-900/80 backdrop-blur border border-slate-800 p-5 rounded-2xl flex items-center gap-4 relative overflow-hidden">
+                                                        <div className="absolute right-0 top-0 p-4 opacity-5"><TrendingUp size={80} /></div>
+                                                        <div className="bg-purple-500/10 p-3 rounded-xl text-purple-400">
+                                                            <BarChart3 size={32} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Scontrino Medio</p>
+                                                            <p className="text-3xl font-black text-white">€ {avgReceipt.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
+
+                                {/* Receipts List */}
+                                <div className="bg-slate-950 rounded-3xl border border-slate-800/50 p-6 shadow-2xl">
                                     {(() => {
-                                        // Use ordersForAnalytics (guaranteed to be defined in App scope)
                                         const dayOrders = ordersForAnalytics.filter(o => {
                                             const orderDate = new Date(o.timestamp);
                                             return orderDate.toDateString() === selectedDate.toDateString();
-                                        });
-                                        // Fix: Access item.menuItem.price instead of item.price
-                                        const totalRevenue = dayOrders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + (i.menuItem.price * i.quantity), 0), 0);
-                                        const totalReceipts = dayOrders.length;
-                                        const avgReceipt = totalReceipts > 0 ? totalRevenue / totalReceipts : 0;
+                                        }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+                                        if (dayOrders.length === 0) {
+                                            return (
+                                                <div className="text-center py-20 flex flex-col items-center">
+                                                    <div className="bg-slate-900 p-6 rounded-full mb-4 opacity-50">
+                                                        <Receipt size={48} className="text-slate-500" />
+                                                    </div>
+                                                    <h3 className="text-xl font-bold text-white mb-2">Nessun movimento</h3>
+                                                    <p className="text-slate-500 max-w-sm">
+                                                        Non ci sono scontrini emessi per la data selezionata.
+                                                        Gli ordini completati appariranno qui automaticamente.
+                                                    </p>
+                                                </div>
+                                            );
+                                        }
 
                                         return (
-                                            <>
-                                                <div className="bg-slate-900/80 backdrop-blur border border-slate-800 p-5 rounded-2xl flex items-center gap-4 relative overflow-hidden">
-                                                    <div className="absolute right-0 top-0 p-4 opacity-5"><Euro size={80} /></div>
-                                                    <div className="bg-emerald-500/10 p-3 rounded-xl text-emerald-400">
-                                                        <Wallet size={32} />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Incasso Giornaliero</p>
-                                                        <p className="text-3xl font-black text-white">€ {totalRevenue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="bg-slate-900/80 backdrop-blur border border-slate-800 p-5 rounded-2xl flex items-center gap-4 relative overflow-hidden">
-                                                    <div className="absolute right-0 top-0 p-4 opacity-5"><Receipt size={80} /></div>
-                                                    <div className="bg-blue-500/10 p-3 rounded-xl text-blue-400">
-                                                        <Printer size={32} />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Scontrini Emessi</p>
-                                                        <p className="text-3xl font-black text-white">{totalReceipts}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="bg-slate-900/80 backdrop-blur border border-slate-800 p-5 rounded-2xl flex items-center gap-4 relative overflow-hidden">
-                                                    <div className="absolute right-0 top-0 p-4 opacity-5"><TrendingUp size={80} /></div>
-                                                    <div className="bg-purple-500/10 p-3 rounded-xl text-purple-400">
-                                                        <BarChart3 size={32} />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Scontrino Medio</p>
-                                                        <p className="text-3xl font-black text-white">€ {avgReceipt.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                                    </div>
-                                                </div>
-                                            </>
-                                        );
-                                    })()}
-                                </div>
-                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                                {dayOrders.map(order => {
+                                                    const orderTime = new Date(order.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                                                    // Fix: Access item.menuItem.price
+                                                    const orderTotal = order.items.reduce((sum, item) => sum + (item.menuItem.price * item.quantity), 0);
 
-                            {/* Receipts List */}
-                            <div className="bg-slate-950 rounded-3xl border border-slate-800/50 p-6 shadow-2xl">
-                                {(() => {
-                                    const dayOrders = ordersForAnalytics.filter(o => {
-                                        const orderDate = new Date(o.timestamp);
-                                        return orderDate.toDateString() === selectedDate.toDateString();
-                                    }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-                                    if (dayOrders.length === 0) {
-                                        return (
-                                            <div className="text-center py-20 flex flex-col items-center">
-                                                <div className="bg-slate-900 p-6 rounded-full mb-4 opacity-50">
-                                                    <Receipt size={48} className="text-slate-500" />
-                                                </div>
-                                                <h3 className="text-xl font-bold text-white mb-2">Nessun movimento</h3>
-                                                <p className="text-slate-500 max-w-sm">
-                                                    Non ci sono scontrini emessi per la data selezionata.
-                                                    Gli ordini completati appariranno qui automaticamente.
-                                                </p>
-                                            </div>
-                                        );
-                                    }
-
-                                    return (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                            {dayOrders.map(order => {
-                                                const orderTime = new Date(order.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-                                                // Fix: Access item.menuItem.price
-                                                const orderTotal = order.items.reduce((sum, item) => sum + (item.menuItem.price * item.quantity), 0);
-
-                                                return (
-                                                    <div key={order.id} className="bg-white text-slate-900 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 flex flex-col">
-                                                        {/* Receipt Header Style */}
-                                                        <div className="bg-slate-100 p-4 border-b border-dashed border-slate-300 flex justify-between items-center">
-                                                            <div>
-                                                                <span className="block text-xs text-slate-500 font-bold uppercase tracking-wider">Tavolo</span>
-                                                                <span className="text-2xl font-black text-slate-800">{order.tableNumber}</span>
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <span className="block text-xs text-slate-500 font-bold uppercase tracking-wider">{orderTime}</span>
-                                                                <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${order.status === 'Servito' ? 'bg-green-100 text-green-700' :
-                                                                    order.status === 'Pronto' ? 'bg-yellow-100 text-yellow-700' :
-                                                                        'bg-slate-200 text-slate-600'
-                                                                    }`}>
-                                                                    {order.status}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Items List */}
-                                                        <div className="p-4 flex-1 max-h-[250px] overflow-y-auto">
-                                                            <ul className="space-y-2 text-sm font-mono">
-                                                                <li className="text-center text-xs text-slate-400 mb-2">--- INIZIO SCONTRINO ---</li>
-                                                                {order.items.map((item, idx) => (
-                                                                    <li key={idx} className="flex justify-between items-start border-b border-slate-100 pb-1 last:border-0">
-                                                                        <span className="font-bold w-8">{item.quantity}x</span>
-                                                                        <span className="flex-1 truncate mr-2">{item.menuItem.name}</span>
-                                                                        <span className="text-slate-600">€ {(item.menuItem.price * item.quantity).toFixed(2)}</span>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
-
-                                                        {/* Total & Actions */}
-                                                        <div className="bg-slate-50 p-4 border-t border-dashed border-slate-300">
-                                                            <div className="flex justify-between items-end mb-4">
-                                                                <span className="text-slate-500 font-bold uppercase text-xs">Totale Complessivo</span>
-                                                                <span className="text-3xl font-black text-slate-900">€ {orderTotal.toFixed(2)}</span>
+                                                    return (
+                                                        <div key={order.id} className="bg-white text-slate-900 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 flex flex-col">
+                                                            {/* Receipt Header Style */}
+                                                            <div className="bg-slate-100 p-4 border-b border-dashed border-slate-300 flex justify-between items-center">
+                                                                <div>
+                                                                    <span className="block text-xs text-slate-500 font-bold uppercase tracking-wider">Tavolo</span>
+                                                                    <span className="text-2xl font-black text-slate-800">{order.tableNumber}</span>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <span className="block text-xs text-slate-500 font-bold uppercase tracking-wider">{orderTime}</span>
+                                                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${order.status === 'Servito' ? 'bg-green-100 text-green-700' :
+                                                                        order.status === 'Pronto' ? 'bg-yellow-100 text-yellow-700' :
+                                                                            'bg-slate-200 text-slate-600'
+                                                                        }`}>
+                                                                        {order.status}
+                                                                    </span>
+                                                                </div>
                                                             </div>
 
-                                                            <div className="grid grid-cols-2 gap-3">
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const printWindow = window.open('', '', 'width=300,height=600');
-                                                                        if (printWindow) {
-                                                                            printWindow.document.write(`
+                                                            {/* Items List */}
+                                                            <div className="p-4 flex-1 max-h-[250px] overflow-y-auto">
+                                                                <ul className="space-y-2 text-sm font-mono">
+                                                                    <li className="text-center text-xs text-slate-400 mb-2">--- INIZIO SCONTRINO ---</li>
+                                                                    {order.items.map((item, idx) => (
+                                                                        <li key={idx} className="flex justify-between items-start border-b border-slate-100 pb-1 last:border-0">
+                                                                            <span className="font-bold w-8">{item.quantity}x</span>
+                                                                            <span className="flex-1 truncate mr-2">{item.menuItem.name}</span>
+                                                                            <span className="text-slate-600">€ {(item.menuItem.price * item.quantity).toFixed(2)}</span>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+
+                                                            {/* Total & Actions */}
+                                                            <div className="bg-slate-50 p-4 border-t border-dashed border-slate-300">
+                                                                <div className="flex justify-between items-end mb-4">
+                                                                    <span className="text-slate-500 font-bold uppercase text-xs">Totale Complessivo</span>
+                                                                    <span className="text-3xl font-black text-slate-900">€ {orderTotal.toFixed(2)}</span>
+                                                                </div>
+
+                                                                <div className="grid grid-cols-2 gap-3">
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const printWindow = window.open('', '', 'width=300,height=600');
+                                                                            if (printWindow) {
+                                                                                printWindow.document.write(`
                                                                                 <html>
                                                                                 <head>
                                                                                     <title>Scontrino Tavolo ${order.tableNumber}</title>
@@ -1637,100 +1649,115 @@ export default function App() {
                                                                                 </body>
                                                                                 </html>
                                                                             `);
-                                                                            printWindow.document.close();
-                                                                        }
-                                                                    }}
-                                                                    className="py-2.5 bg-slate-900 hover:bg-black text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
-                                                                >
-                                                                    <Printer size={16} /> Stampa
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const receiptText = `${restaurantName}\nTavolo: ${order.tableNumber}\nData: ${new Date(order.timestamp).toLocaleString('it-IT')}\n--------------------------------\n${order.items.map(i => `${i.quantity}x ${i.menuItem.name} ... € ${(i.menuItem.price * i.quantity).toFixed(2)}`).join('\n')}\n--------------------------------\nTOTALE: € ${orderTotal.toFixed(2)}`;
-                                                                        alert(receiptText);
-                                                                    }}
-                                                                    className="py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-md"
-                                                                >
-                                                                    <Eye size={16} /> Anteprima
-                                                                </button>
+                                                                                printWindow.document.close();
+                                                                            }
+                                                                        }}
+                                                                        className="py-2.5 bg-slate-900 hover:bg-black text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
+                                                                    >
+                                                                        <Printer size={16} /> Stampa
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const receiptText = `${restaurantName}\nTavolo: ${order.tableNumber}\nData: ${new Date(order.timestamp).toLocaleString('it-IT')}\n--------------------------------\n${order.items.map(i => `${i.quantity}x ${i.menuItem.name} ... € ${(i.menuItem.price * i.quantity).toFixed(2)}`).join('\n')}\n--------------------------------\nTOTALE: € ${orderTotal.toFixed(2)}`;
+                                                                            alert(receiptText);
+                                                                        }}
+                                                                        className="py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-md"
+                                                                    >
+                                                                        <Eye size={16} /> Anteprima
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-                        </div>
-                    )}
-                    {adminTab === 'ai' && (
-                        <div className="max-w-2xl mx-auto space-y-8 animate-fade-in pb-20">
-                            <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                <h3 className="font-bold text-white mb-4 flex items-center gap-2"><Key className="text-yellow-500" /> Configurazione API</h3>
-                                <p className="text-slate-400 text-sm mb-4">Inserisci la tua Google Gemini API Key per abilitare le funzioni intelligenti.</p>
-                                <div className="flex gap-2">
-                                    <input type="password" value={apiKeyInput} onChange={(e) => setApiKeyInput(e.target.value)} placeholder="Incolla la tua API Key qui..." className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-yellow-500" />
-                                    <button onClick={handleSaveApiKey} className="bg-yellow-600 hover:bg-yellow-500 text-white font-bold px-6 py-3 rounded-xl transition-colors">Salva</button>
-                                </div>
-                                <p className="text-xs text-slate-500 mt-2">Non hai una chiave? <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-400 hover:underline">Richiedila qui</a>.</p>
-                            </div>
-
-                            <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex flex-col h-[500px]">
-                                <h3 className="font-bold text-white mb-4 flex items-center gap-2"><Bot className="text-blue-400" /> Chef Assistant</h3>
-                                <div className="flex-1 bg-slate-950 rounded-xl border border-slate-700 p-4 overflow-y-auto mb-4">
-                                    {chatResponse ? (
-                                        <div className="flex gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0"><Bot size={16} className="text-white" /></div>
-                                            <div className="bg-slate-800 p-3 rounded-r-xl rounded-bl-xl text-sm leading-relaxed text-slate-200">{chatResponse}</div>
-                                        </div>
-                                    ) : (
-                                        <p className="text-slate-500 text-center text-sm mt-10">Chiedimi qualcosa sul menu, sugli allergeni o per un consiglio!</p>
-                                    )}
-                                </div>
-                                <div className="flex gap-2">
-                                    <input type="text" value={chatQuery} onChange={(e) => setChatQuery(e.target.value)} placeholder="Fai una domanda allo Chef AI..." className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500" onKeyDown={(e) => e.key === 'Enter' && handleAskChef()} />
-                                    <button onClick={handleAskChef} disabled={isChatting} className="bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl transition-colors disabled:opacity-50">{isChatting ? <Loader className="animate-spin" /> : <Send size={20} />}</button>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             </div>
-                        </div>
-                    )
-                    }
-                    {
-                        adminTab === 'info' && (
-                            <div className="max-w-3xl mx-auto space-y-8 animate-fade-in pb-20">
-                                <h2 className="text-3xl font-black text-white mb-4">Supporto & Info</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                        <h3 className="font-bold text-white mb-4">Contatti Assistenza</h3>
-                                        <ul className="space-y-4">
-                                            <li className="flex items-center gap-3 text-slate-300"><Mail className="text-blue-500" /> {adminContactEmail}</li>
-                                            <li className="flex items-center gap-3 text-slate-300"><Phone className="text-green-500" /> {adminPhone}</li>
-                                            <li className="flex items-center gap-3 text-slate-300"><Globe className="text-purple-500" /> www.ristosync.com</li>
-                                        </ul>
+                        )}
+                        {adminTab === 'ai' && (
+                            <div className="max-w-2xl mx-auto space-y-8 animate-fade-in pb-20">
+                                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                    <h3 className="font-bold text-white mb-4 flex items-center gap-2"><Key className="text-yellow-500" /> Configurazione API</h3>
+                                    <p className="text-slate-400 text-sm mb-4">Inserisci la tua Google Gemini API Key per abilitare le funzioni intelligenti.</p>
+                                    <div className="flex gap-2">
+                                        <input type="password" value={apiKeyInput} onChange={(e) => setApiKeyInput(e.target.value)} placeholder="Incolla la tua API Key qui..." className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-yellow-500" />
+                                        <button onClick={handleSaveApiKey} className="bg-yellow-600 hover:bg-yellow-500 text-white font-bold px-6 py-3 rounded-xl transition-colors">Salva</button>
                                     </div>
-                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                        <h3 className="font-bold text-white mb-4">Informazioni App</h3>
-                                        <ul className="space-y-4">
-                                            <li className="flex justify-between text-sm"><span className="text-slate-500">Versione</span><span className="text-white font-mono">2.4.0 (Cloud)</span></li>
-                                            <li className="flex justify-between text-sm"><span className="text-slate-500">Stato Sync</span><span className="text-green-400 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Online</span></li>
-                                            <li className="flex justify-between text-sm"><span className="text-slate-500">Storage</span><span className="text-white font-mono">Supabase Enterprise</span></li>
-                                        </ul>
-                                    </div>
+                                    <p className="text-xs text-slate-500 mt-2">Non hai una chiave? <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-400 hover:underline">Richiedila qui</a>.</p>
                                 </div>
 
-                                <div className="bg-red-900/10 border border-red-500/30 p-6 rounded-2xl">
-                                    <h3 className="font-bold text-red-400 mb-2 flex items-center gap-2"><AlertTriangle /> Area Pericolosa</h3>
-                                    <p className="text-slate-400 text-sm mb-4">Queste azioni sono irreversibili.</p>
-                                    <div className="flex gap-4">
-                                        <button onClick={async () => { if (await showConfirm("Factory Reset", "Cancellare TUTTO (Ordini e Menu)? Questa azione è irreversibile!")) { await performFactoryReset(); await showAlert("Successo", "Reset completato!"); window.location.reload(); } }} className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-bold text-sm transition-colors shadow-lg">Factory Reset</button>
+                                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex flex-col h-[500px]">
+                                    <h3 className="font-bold text-white mb-4 flex items-center gap-2"><Bot className="text-blue-400" /> Chef Assistant</h3>
+                                    <div className="flex-1 bg-slate-950 rounded-xl border border-slate-700 p-4 overflow-y-auto mb-4">
+                                        {chatResponse ? (
+                                            <div className="flex gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0"><Bot size={16} className="text-white" /></div>
+                                                <div className="bg-slate-800 p-3 rounded-r-xl rounded-bl-xl text-sm leading-relaxed text-slate-200">{chatResponse}</div>
+                                            </div>
+                                        ) : (
+                                            <p className="text-slate-500 text-center text-sm mt-10">Chiedimi qualcosa sul menu, sugli allergeni o per un consiglio!</p>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <input type="text" value={chatQuery} onChange={(e) => setChatQuery(e.target.value)} placeholder="Fai una domanda allo Chef AI..." className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500" onKeyDown={(e) => e.key === 'Enter' && handleAskChef()} />
+                                        <button onClick={handleAskChef} disabled={isChatting} className="bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl transition-colors disabled:opacity-50">{isChatting ? <Loader className="animate-spin" /> : <Send size={20} />}</button>
                                     </div>
                                 </div>
                             </div>
                         )
-                    }
+                        }
+                        {
+                            adminTab === 'info' && (
+                                <div className="max-w-3xl mx-auto space-y-8 animate-fade-in pb-20">
+                                    <h2 className="text-3xl font-black text-white mb-4">Supporto & Info</h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                            <h3 className="font-bold text-white mb-4">Contatti Assistenza</h3>
+                                            <ul className="space-y-4">
+                                                <li className="flex items-center gap-3 text-slate-300"><Mail className="text-blue-500" /> {adminContactEmail}</li>
+                                                <li className="flex items-center gap-3 text-slate-300"><Phone className="text-green-500" /> {adminPhone}</li>
+                                                <li className="flex items-center gap-3 text-slate-300"><Globe className="text-purple-500" /> www.ristosync.com</li>
+                                            </ul>
+                                        </div>
+                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                            <h3 className="font-bold text-white mb-4">Informazioni App</h3>
+                                            <ul className="space-y-4">
+                                                <li className="flex justify-between text-sm"><span className="text-slate-500">Versione</span><span className="text-white font-mono">2.4.0 (Cloud)</span></li>
+                                                <li className="flex justify-between text-sm"><span className="text-slate-500">Stato Sync</span><span className="text-green-400 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Online</span></li>
+                                                <li className="flex justify-between text-sm"><span className="text-slate-500">Storage</span><span className="text-white font-mono">Supabase Enterprise</span></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-red-900/10 border border-red-500/30 p-6 rounded-2xl">
+                                        <h3 className="font-bold text-red-400 mb-2 flex items-center gap-2"><AlertTriangle /> Area Pericolosa</h3>
+                                        <p className="text-slate-400 text-sm mb-4">Queste azioni sono irreversibili.</p>
+                                        <div className="flex gap-4">
+                                            <button onClick={async () => { if (await showConfirm("Factory Reset", "Cancellare TUTTO (Ordini e Menu)? Questa azione è irreversibile!")) { await performFactoryReset(); await showAlert("Successo", "Reset completato!"); window.location.reload(); } }} className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-bold text-sm transition-colors shadow-lg">Factory Reset</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        }
+                    </div >
                 </div >
-            </div >
+                <CustomDialog
+                    isOpen={dialogState.isOpen}
+                    title={dialogState.title}
+                    message={dialogState.message}
+                    type={dialogState.type}
+                    onConfirm={dialogState.onConfirm}
+                    onCancel={closeDialog}
+                />
+                <Toast
+                    isOpen={toastState.isOpen}
+                    message={toastState.message}
+                    type={toastState.type}
+                    onClose={closeToast}
+                />
+            </>
         );
     }
 
