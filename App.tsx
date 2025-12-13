@@ -6,7 +6,7 @@ import SuperAdminDashboard from './components/SuperAdminDashboard';
 import DigitalMenu from './components/DigitalMenu';
 import CustomDialog from './components/CustomDialog';
 import Toast from './components/Toast';
-import { ChefHat, Smartphone, User, Settings, Bell, Utensils, X, Save, Plus, Trash2, Edit2, Wheat, Milk, Egg, Nut, Fish, Bean, Flame, Leaf, Info, LogOut, Bot, Key, Database, ShieldCheck, Lock, AlertTriangle, Mail, RefreshCw, Send, Printer, Mic, MicOff, TrendingUp, BarChart3, Calendar, ChevronLeft, ChevronRight, DollarSign, History, Receipt, UtensilsCrossed, Eye, ArrowRight, QrCode, Share2, Copy, MapPin, Store, Phone, Globe, Star, Pizza, CakeSlice, Wine, Sandwich, MessageCircle, FileText, PhoneCall, Sparkles, Loader, Facebook, Instagram, Youtube, Linkedin, Music, Compass, FileSpreadsheet, Image as ImageIcon, Upload, FileImage, ExternalLink, CreditCard, Banknote, Briefcase, Clock, Check, ListPlus, ArrowRightLeft, Code2, Cookie, Shield, Wrench, Download, CloudUpload, BookOpen, EyeOff, LayoutGrid, ArrowLeft, PlayCircle, ChevronDown, FileJson, Wallet, Crown, Zap, ShieldCheck as ShieldIcon, Trophy, Timer, LifeBuoy, Minus, Hash, Euro, TrendingDown, Package, Factory, Users, Lightbulb, Headphones, Cloud, BarChart } from 'lucide-react';
+import { ChefHat, Smartphone, User, Settings, Bell, Utensils, X, Save, Plus, Trash2, Edit2, Wheat, Milk, Egg, Nut, Fish, Bean, Flame, Leaf, Info, LogOut, Bot, Key, Database, ShieldCheck, Lock, AlertTriangle, Mail, RefreshCw, Send, Printer, Mic, MicOff, TrendingUp, BarChart3, Calendar, ChevronLeft, ChevronRight, DollarSign, History, Receipt, UtensilsCrossed, Eye, ArrowRight, QrCode, Share2, Copy, MapPin, Store, Phone, Globe, Star, Pizza, CakeSlice, Wine, Sandwich, MessageCircle, FileText, PhoneCall, Sparkles, Loader, Facebook, Instagram, Youtube, Linkedin, Music, Compass, FileSpreadsheet, Image as ImageIcon, Upload, FileImage, ExternalLink, CreditCard, Banknote, Briefcase, Clock, Check, ListPlus, ArrowRightLeft, Code2, Cookie, Shield, Wrench, Download, CloudUpload, BookOpen, EyeOff, LayoutGrid, ArrowLeft, PlayCircle, ChevronDown, FileJson, Wallet, Crown, Zap, ShieldCheck as ShieldIcon, Trophy, Timer, LifeBuoy, Minus, Hash, Euro, TrendingDown, Package, Factory, Users, Lightbulb, Headphones, Cloud, BarChart, Camera } from 'lucide-react';
 import { getWaiterName, saveWaiterName, getMenuItems, addMenuItem, updateMenuItem, deleteMenuItem, getNotificationSettings, saveNotificationSettings, initSupabaseSync, getGoogleApiKey, saveGoogleApiKey, getAppSettings, saveAppSettings, getOrders, deleteHistoryByDate, performFactoryReset, deleteAllMenuItems, importDemoMenu } from './services/storageService';
 import { supabase, signOut, isSupabaseConfigured, SUPER_ADMIN_EMAIL } from './services/supabase';
 import { askChefAI, generateRestaurantAnalysis, generateDishDescription, generateDishIngredients, generateRestaurantDescription } from './services/geminiService';
@@ -70,6 +70,7 @@ export default function App() {
     const bulkInputRef = useRef<HTMLInputElement>(null);
     const bulkImagesRef = useRef<HTMLInputElement>(null);
     const logoInputRef = useRef<HTMLInputElement>(null);
+    const mainContentRef = useRef<HTMLDivElement>(null);
 
     // Profile AI State
     const [isGeneratingBio, setIsGeneratingBio] = useState(false);
@@ -636,7 +637,7 @@ export default function App() {
                         <div className="p-4 border-t border-slate-800"><button onClick={() => setShowAdmin(false)} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl font-bold transition-colors"><ArrowLeft size={18} /> Torna alla Home</button></div>
                     </div>
 
-                    <div className="flex-1 h-screen overflow-y-auto bg-slate-950 p-6 md:p-10 custom-scroll">
+                    <div ref={mainContentRef} className="flex-1 h-screen overflow-y-auto bg-slate-950 p-6 md:p-10 custom-scroll">
                         {adminTab === 'profile' && (
                             <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-20">
                                 <h2 className="text-3xl font-black text-white mb-8">Profilo Ristorante</h2>
@@ -797,7 +798,7 @@ export default function App() {
                         )}
                         {adminTab === 'menu' && (
                             <div className="max-w-6xl mx-auto animate-fade-in">
-                                <div className="flex justify-between items-center mb-8"><div><h2 className="text-3xl font-black text-white mb-2">Gestione Menu</h2><p className="text-slate-400">Aggiungi, modifica o rimuovi piatti dal tuo menu digitale.</p></div><div className="flex gap-3"><button onClick={() => { setEditingItem({}); setIsEditingItem(!isEditingItem); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg transition-transform active:scale-95 ${isEditingItem ? 'bg-slate-700 text-white' : 'bg-green-600 hover:bg-green-500 text-white shadow-green-600/20'}`}>{isEditingItem ? <X size={20} /> : <Plus size={20} />} {isEditingItem ? 'Chiudi Editor' : 'NUOVO PIATTO'}</button></div></div>
+                                <div className="flex justify-between items-center mb-8"><div><h2 className="text-3xl font-black text-white mb-2">Gestione Menu</h2><p className="text-slate-400">Aggiungi, modifica o rimuovi piatti dal tuo menu digitale.</p></div><div className="flex gap-3"><button onClick={() => { setEditingItem({}); setIsEditingItem(!isEditingItem); mainContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg transition-transform active:scale-95 ${isEditingItem ? 'bg-slate-700 text-white' : 'bg-green-600 hover:bg-green-500 text-white shadow-green-600/20'}`}>{isEditingItem ? <X size={20} /> : <Plus size={20} />} {isEditingItem ? 'Chiudi Editor' : 'NUOVO PIATTO'}</button></div></div>
                                 <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg"><div className="flex items-center gap-4"><div className="p-3 bg-blue-600/20 text-blue-400 rounded-xl"><LayoutGrid size={24} /></div><div><h3 className="font-bold text-white text-lg">Configurazione Sala</h3><p className="text-xs text-slate-400 font-medium">Imposta il numero di tavoli attivi nel ristorante.</p></div></div><div className="flex items-center gap-3 bg-slate-950 p-1.5 rounded-xl border border-slate-700"><button onClick={() => handleUpdateTableCount(-1)} className="w-10 h-10 flex items-center justify-center bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors"><Minus size={18} strokeWidth={3} /></button><span className="font-black text-3xl w-16 text-center text-white">{appSettings.restaurantProfile?.tableCount || 12}</span><button onClick={() => handleUpdateTableCount(1)} className="w-10 h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded-lg text-white shadow-lg shadow-blue-600/20 transition-colors"><Plus size={18} strokeWidth={3} /></button></div></div>
                                 <div className="bg-slate-900/50 backdrop-blur-sm p-4 rounded-2xl border border-slate-800/50 mb-8">
                                     {/* Toolbar Row */}
@@ -822,6 +823,7 @@ export default function App() {
                                                 <ImageIcon size={14} /> Foto Bulk
                                             </button>
                                             <input type="file" ref={bulkImagesRef} onChange={handleBulkImageUpload} accept="image/*" multiple className="hidden" />
+
                                             <button onClick={async () => { if (await showConfirm("Conferma", "Caricare piatti dimostrativi? Verranno sincronizzati automaticamente al cloud per il menu digitale.")) { await importDemoMenu(); showToast("✅ Menu demo caricato! I piatti sono pronti per la prova.", "success"); setTimeout(() => window.location.reload(), 2000); } }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-semibold text-xs text-slate-300 hover:bg-purple-600/20 hover:text-purple-400 transition-all" title="Carica piatti dimostrativi">
                                                 <Sparkles size={14} /> Demo
                                             </button>
@@ -939,7 +941,7 @@ export default function App() {
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                                     {categoryItems.map(item => (
-                                                        <div key={item.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 hover:border-blue-500 transition-all group flex flex-col gap-3 shadow-lg hover:shadow-xl cursor-pointer relative" onClick={() => { setEditingItem(item); setIsEditingItem(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                                                        <div key={item.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 hover:border-blue-500 transition-all group flex flex-col gap-3 shadow-lg hover:shadow-xl cursor-pointer relative" onClick={() => { setEditingItem(item); setIsEditingItem(true); mainContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                                                             <div className="flex items-start gap-4">
                                                                 <div className="w-20 h-20 bg-slate-900 rounded-xl border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
                                                                     {item.image ? <img src={item.image} className="w-full h-full object-cover" alt={item.name} /> : <Utensils size={24} className="text-slate-600" />}
@@ -1993,6 +1995,7 @@ export default function App() {
                         )}
                     </div >
                 </div >
+
                 <CustomDialog
                     isOpen={dialogState.isOpen}
                     title={dialogState.title}
