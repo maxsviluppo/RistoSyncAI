@@ -48,8 +48,9 @@ export interface AgentInfo {
 export interface RestaurantProfile {
   name?: string; // Nome Visualizzato (Insegna)
   description?: string; // Bio/Descrizione pubblica
+  logo?: string; // Logo del ristorante (base64 o URL) - formato quadrato consigliato 400x400
   tableCount?: number; // Configurable table count
-  
+
   // Dati Fatturazione
   businessName?: string; // Ragione Sociale
   responsiblePerson?: string; // Nome e Cognome Responsabile
@@ -58,21 +59,21 @@ export interface RestaurantProfile {
   pecEmail?: string;
   address?: string; // Sede Legale
   billingAddress?: string; // Sede Fatturazione (se diversa)
-  
+
   // Contatti
   phoneNumber?: string; // Cellulare
   landlineNumber?: string; // Fisso
   whatsappNumber?: string; // WhatsApp
   email?: string; // Email Contatto/Fatturazione
   website?: string;
-  
+
   socials?: SocialLinks;
-  
+
   // Subscription Fields
   subscriptionEndDate?: string; // ISO Date String
   planType?: 'Trial' | 'Pro' | 'Enterprise' | 'Free' | 'Demo';
   subscriptionCost?: string; // Custom cost set by Admin (string to allow formatting like "29.90")
-  
+
   // Agent Data
   agent?: AgentInfo;
 }
@@ -93,7 +94,7 @@ export interface MenuItem {
   ingredients?: string; // New: Specific ingredients field
   allergens?: string[]; // Array of allergen names (e.g., 'Glutine', 'Latte')
   image?: string; // Base64 encoded image
-  
+
   // Combo / Menu Completo specific fields
   isCombo?: boolean;
   comboItems?: string[]; // Array of IDs of other dishes included
@@ -107,11 +108,11 @@ export interface OrderItem {
   completed?: boolean; // Kitchen finished cooking (Global or Single Item)
   served?: boolean;    // Waiter delivered to table
   isAddedLater?: boolean; // New: Tracks items added via modification
-  
+
   // NEW: Tracks which specific sub-items of a Combo are done.
   // Example: ['pizza_id_1'] means the pizza part is done/cooked.
-  comboCompletedParts?: string[]; 
-  
+  comboCompletedParts?: string[];
+
   // NEW: Tracks which specific sub-items have been SERVED to the table.
   comboServedParts?: string[];
 }

@@ -69,6 +69,7 @@ export default function App() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const bulkInputRef = useRef<HTMLInputElement>(null);
     const bulkImagesRef = useRef<HTMLInputElement>(null);
+    const logoInputRef = useRef<HTMLInputElement>(null);
 
     // Profile AI State
     const [isGeneratingBio, setIsGeneratingBio] = useState(false);
@@ -324,6 +325,31 @@ export default function App() {
                     const ctx = canvas.getContext('2d');
                     ctx?.drawImage(img, 0, 0, width, height);
                     setEditingItem((prev: Partial<MenuItem>) => ({ ...prev, image: canvas.toDataURL('image/jpeg', 0.5) }));
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const img = new Image();
+                img.src = reader.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const SIZE = 400; // Logo size 400x400
+                    canvas.width = SIZE;
+                    canvas.height = SIZE;
+                    const ctx = canvas.getContext('2d');
+                    // Center crop for square logo
+                    const minDim = Math.min(img.width, img.height);
+                    const sx = (img.width - minDim) / 2;
+                    const sy = (img.height - minDim) / 2;
+                    ctx?.drawImage(img, sx, sy, minDim, minDim, 0, 0, SIZE, SIZE);
+                    setProfileForm((prev: RestaurantProfile) => ({ ...prev, logo: canvas.toDataURL('image/png', 0.9) }));
                 };
             };
             reader.readAsDataURL(file);
@@ -618,9 +644,44 @@ export default function App() {
                                     <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Store className="text-blue-500" /> Dati Pubblici</h3>
                                     <p className="text-slate-400 text-sm mb-6">Questi dati appariranno nel Menu Digitale.</p>
                                     <div className="space-y-4">
-                                        <div>
-                                            <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Insegna (Nome Ristorante)</label>
-                                            <input type="text" value={profileForm.name || ''} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white font-bold focus:border-blue-500 outline-none" />
+                                        {/* LOGO + NAME ROW */}
+                                        <div className="flex gap-4 items-start">
+                                            {/* Logo Upload */}
+                                            <div className="shrink-0">
+                                                <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Logo (Opzionale)</label>
+                                                <div
+                                                    onClick={() => logoInputRef.current?.click()}
+                                                    className="relative w-24 h-24 bg-slate-950 border-2 border-dashed border-slate-700 rounded-2xl flex items-center justify-center cursor-pointer hover:border-orange-500 transition-all group overflow-hidden"
+                                                >
+                                                    {profileForm.logo ? (
+                                                        <>
+                                                            <img src={profileForm.logo} alt="Logo" className="w-full h-full object-cover" />
+                                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                <span className="text-[10px] text-white font-bold uppercase">Cambia</span>
+                                                            </div>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setProfileForm({ ...profileForm, logo: undefined }); }}
+                                                                className="absolute top-1 right-1 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-500 transition-colors z-50"
+                                                            >
+                                                                <X size={12} />
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <div className="text-center p-2">
+                                                            <ChefHat size={24} className="mx-auto text-slate-600 group-hover:text-orange-500 transition-colors" />
+                                                            <span className="text-[8px] text-slate-600 mt-1 block">400x400</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <input type="file" ref={logoInputRef} onChange={handleLogoUpload} accept="image/*" className="hidden" />
+                                                <p className="text-[8px] text-slate-600 mt-1 text-center">Formato quadrato</p>
+                                            </div>
+                                            {/* Name Input */}
+                                            <div className="flex-1">
+                                                <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Insegna (Nome Ristorante)</label>
+                                                <input type="text" value={profileForm.name || ''} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white font-bold focus:border-blue-500 outline-none" />
+                                                <p className="text-[10px] text-slate-600 mt-1">Il nome e il logo appariranno nel Menu Digitale</p>
+                                            </div>
                                         </div>
                                         <div>
                                             <div className="flex justify-between items-center mb-1">

@@ -31,6 +31,7 @@ const ALLERGENS_ICONS: Record<string, any> = {
 const DigitalMenu: React.FC<DigitalMenuProps> = ({ restaurantId, isPreview = false, activeMenuData, activeRestaurantName }) => {
     const [menuItems, setMenuItems] = useState<MenuItem[]>(activeMenuData || []);
     const [restaurantName, setRestaurantName] = useState(activeRestaurantName || 'Menu Digitale');
+    const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
     const [socials, setSocials] = useState<SocialLinks>({});
     // If data is provided via props, we are not loading.
     const [loading, setLoading] = useState(!activeMenuData);
@@ -70,6 +71,9 @@ const DigitalMenu: React.FC<DigitalMenuProps> = ({ restaurantId, isPreview = fal
                     setRestaurantName(profile.restaurant_name);
                     if (profile.settings?.restaurantProfile?.socials) {
                         setSocials(profile.settings.restaurantProfile.socials);
+                    }
+                    if (profile.settings?.restaurantProfile?.logo) {
+                        setRestaurantLogo(profile.settings.restaurantProfile.logo);
                     }
                 } else if (profileError) {
                     console.error("Profile Fetch Error:", profileError);
@@ -240,9 +244,16 @@ const DigitalMenu: React.FC<DigitalMenuProps> = ({ restaurantId, isPreview = fal
             <div className={`bg-slate-900 text-white relative shadow-lg z-20 border-b border-slate-800 ${isPreview ? 'rounded-b-2xl pt-8 pb-3' : 'pt-4 pb-4 sticky top-0'}`}>
                 <div className="px-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 shadow-lg shadow-orange-600/20">
-                            <ChefHat size={isPreview ? 18 : 22} className="text-white" />
-                        </div>
+                        {/* Logo or Default Icon */}
+                        {restaurantLogo ? (
+                            <div className={`${isPreview ? 'w-10 h-10' : 'w-12 h-12'} rounded-xl overflow-hidden shadow-lg border-2 border-orange-500/30`}>
+                                <img src={restaurantLogo} alt="Logo" className="w-full h-full object-cover" />
+                            </div>
+                        ) : (
+                            <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 shadow-lg shadow-orange-600/20">
+                                <ChefHat size={isPreview ? 18 : 22} className="text-white" />
+                            </div>
+                        )}
                         <h1 className={`${isPreview ? 'text-lg' : 'text-xl'} font-bold tracking-tight leading-none truncate max-w-[200px] text-white`}>{restaurantName}</h1>
                     </div>
                     {/* Optional Status Indicator or Mini Icon */}
@@ -253,21 +264,18 @@ const DigitalMenu: React.FC<DigitalMenuProps> = ({ restaurantId, isPreview = fal
                 </div>
             </div>
 
-            {/* CATEGORY NAV (STICKY BELOW HEADER) */}
-            <div className={`sticky z-10 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm ${isPreview ? 'top-0 py-2' : 'top-[60px] py-3'}`}>
+            {/* CATEGORY NAV - ELEGANT DARK STYLE */}
+            <div className={`sticky z-10 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 ${isPreview ? 'top-0 py-2' : 'top-[60px] py-3'}`}>
                 <div className="flex overflow-x-auto gap-2 px-4 no-scrollbar snap-x">
                     {visibleCategories.map(cat => (
                         <button
                             key={cat}
                             onClick={() => scrollToCategory(cat)}
-                            className={`flex items-center gap-2 rounded-xl whitespace-nowrap font-bold transition-all snap-center shadow-sm border ${isPreview ? 'px-3 py-1.5 text-[10px]' : 'px-4 py-2 text-xs'} ${activeCategory === cat ? 'bg-orange-600 text-white border-orange-500 shadow-orange-900/30 scale-105' : 'bg-white text-slate-600 border-gray-300 hover:bg-gray-100 hover:text-slate-900'}`}
+                            className={`flex items-center gap-1.5 rounded-full whitespace-nowrap font-bold transition-all snap-center ${isPreview ? 'px-3 py-1.5 text-[10px]' : 'px-4 py-2 text-xs'} ${activeCategory === cat ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 hover:text-white'}`}
                         >
                             {getCategoryIcon(cat, isPreview ? 12 : 14)} {cat}
                         </button>
                     ))}
-                    {visibleCategories.length === 0 && (
-                        <div className="w-full text-center text-xs text-slate-500 py-2 italic">Nessuna categoria disponibile</div>
-                    )}
                 </div>
             </div>
 
@@ -276,10 +284,15 @@ const DigitalMenu: React.FC<DigitalMenuProps> = ({ restaurantId, isPreview = fal
                 {visibleCategories.map(cat => {
                     const items = menuItems.filter(i => i.category === cat);
                     return (
-                        <div key={cat} id={`cat-${cat}`} className="scroll-mt-36">
-                            <div className={`flex items-center gap-2 mb-3 ${isPreview ? 'mt-2' : 'mt-0'}`}>
-                                <h2 className={`${isPreview ? 'text-base' : 'text-lg'} font-black text-slate-900 uppercase tracking-tight`}>{cat}</h2>
-                                <div className="h-px bg-gray-300 flex-1 ml-2"></div>
+                        <div key={cat} id={`cat-${cat}`} className="scroll-mt-32">
+                            {/* CATEGORY SEPARATOR - ORANGE STYLE */}
+                            <div className={`flex items-center gap-3 ${isPreview ? 'mb-3 mt-4' : 'mb-4 mt-6'}`}>
+                                <div className="h-px bg-gradient-to-r from-transparent via-orange-400 to-transparent flex-1"></div>
+                                <div className={`flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-full shadow-lg shadow-orange-500/30 ${isPreview ? 'text-xs' : 'text-sm'}`}>
+                                    {getCategoryIcon(cat, isPreview ? 14 : 16)}
+                                    <span className="font-black uppercase tracking-wider">{cat}</span>
+                                </div>
+                                <div className="h-px bg-gradient-to-r from-transparent via-orange-400 to-transparent flex-1"></div>
                             </div>
 
                             <div className={`grid ${isPreview ? 'gap-3' : 'gap-4'}`}>
