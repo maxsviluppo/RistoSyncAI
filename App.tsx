@@ -6,7 +6,7 @@ import SuperAdminDashboard from './components/SuperAdminDashboard';
 import DigitalMenu from './components/DigitalMenu';
 import CustomDialog from './components/CustomDialog';
 import Toast from './components/Toast';
-import { ChefHat, Smartphone, User, Settings, Bell, Utensils, X, Save, Plus, Trash2, Edit2, Wheat, Milk, Egg, Nut, Fish, Bean, Flame, Leaf, Info, LogOut, Bot, Key, Database, ShieldCheck, Lock, AlertTriangle, Mail, RefreshCw, Send, Printer, Mic, MicOff, TrendingUp, BarChart3, Calendar, ChevronLeft, ChevronRight, DollarSign, History, Receipt, UtensilsCrossed, Eye, ArrowRight, QrCode, Share2, Copy, MapPin, Store, Phone, Globe, Star, Pizza, CakeSlice, Wine, Sandwich, MessageCircle, FileText, PhoneCall, Sparkles, Loader, Facebook, Instagram, Youtube, Linkedin, Music, Compass, FileSpreadsheet, Image as ImageIcon, Upload, FileImage, ExternalLink, CreditCard, Banknote, Briefcase, Clock, Check, ListPlus, ArrowRightLeft, Code2, Cookie, Shield, Wrench, Download, CloudUpload, BookOpen, EyeOff, LayoutGrid, ArrowLeft, PlayCircle, ChevronDown, FileJson, Wallet, Crown, Zap, ShieldCheck as ShieldIcon, Trophy, Timer, LifeBuoy, Minus, Hash, Euro, TrendingDown, Package, Factory, Users } from 'lucide-react';
+import { ChefHat, Smartphone, User, Settings, Bell, Utensils, X, Save, Plus, Trash2, Edit2, Wheat, Milk, Egg, Nut, Fish, Bean, Flame, Leaf, Info, LogOut, Bot, Key, Database, ShieldCheck, Lock, AlertTriangle, Mail, RefreshCw, Send, Printer, Mic, MicOff, TrendingUp, BarChart3, Calendar, ChevronLeft, ChevronRight, DollarSign, History, Receipt, UtensilsCrossed, Eye, ArrowRight, QrCode, Share2, Copy, MapPin, Store, Phone, Globe, Star, Pizza, CakeSlice, Wine, Sandwich, MessageCircle, FileText, PhoneCall, Sparkles, Loader, Facebook, Instagram, Youtube, Linkedin, Music, Compass, FileSpreadsheet, Image as ImageIcon, Upload, FileImage, ExternalLink, CreditCard, Banknote, Briefcase, Clock, Check, ListPlus, ArrowRightLeft, Code2, Cookie, Shield, Wrench, Download, CloudUpload, BookOpen, EyeOff, LayoutGrid, ArrowLeft, PlayCircle, ChevronDown, FileJson, Wallet, Crown, Zap, ShieldCheck as ShieldIcon, Trophy, Timer, LifeBuoy, Minus, Hash, Euro, TrendingDown, Package, Factory, Users, Lightbulb, Headphones, Cloud, BarChart } from 'lucide-react';
 import { getWaiterName, saveWaiterName, getMenuItems, addMenuItem, updateMenuItem, deleteMenuItem, getNotificationSettings, saveNotificationSettings, initSupabaseSync, getGoogleApiKey, saveGoogleApiKey, getAppSettings, saveAppSettings, getOrders, deleteHistoryByDate, performFactoryReset, deleteAllMenuItems, importDemoMenu } from './services/storageService';
 import { supabase, signOut, isSupabaseConfigured, SUPER_ADMIN_EMAIL } from './services/supabase';
 import { askChefAI, generateRestaurantAnalysis, generateDishDescription, generateDishIngredients, generateRestaurantDescription } from './services/geminiService';
@@ -1769,39 +1769,121 @@ export default function App() {
                             </div>
                         )
                         }
-                        {
-                            adminTab === 'info' && (
-                                <div className="max-w-3xl mx-auto space-y-8 animate-fade-in pb-20">
-                                    <h2 className="text-3xl font-black text-white mb-4">Supporto & Info</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                            <h3 className="font-bold text-white mb-4">Contatti Assistenza</h3>
-                                            <ul className="space-y-4">
-                                                <li className="flex items-center gap-3 text-slate-300"><Mail className="text-blue-500" /> {adminContactEmail}</li>
-                                                <li className="flex items-center gap-3 text-slate-300"><Phone className="text-green-500" /> {adminPhone}</li>
-                                                <li className="flex items-center gap-3 text-slate-300"><Globe className="text-purple-500" /> www.ristosync.com</li>
-                                            </ul>
+                        {adminTab === 'info' && (
+                            <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-20">
+                                <h2 className="text-3xl font-black text-white mb-4">Benvenuto in RistoSync!</h2>
+
+                                {/* HERO PRESENTATION */}
+                                <div className="bg-gradient-to-br from-orange-600 to-red-600 p-8 rounded-3xl shadow-2xl text-white">
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                                            <ChefHat size={32} className="text-white" />
                                         </div>
-                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                            <h3 className="font-bold text-white mb-4">Informazioni App</h3>
-                                            <ul className="space-y-4">
-                                                <li className="flex justify-between text-sm"><span className="text-slate-500">Versione</span><span className="text-white font-mono">2.4.0 (Cloud)</span></li>
-                                                <li className="flex justify-between text-sm"><span className="text-slate-500">Stato Sync</span><span className="text-green-400 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Online</span></li>
-                                                <li className="flex justify-between text-sm"><span className="text-slate-500">Storage</span><span className="text-white font-mono">Supabase Enterprise</span></li>
-                                            </ul>
+                                        <div>
+                                            <h3 className="text-2xl font-black">RistoSync AI</h3>
+                                            <p className="text-white/80 text-sm">Il Sistema Gestionale Smart per il Tuo Ristorante</p>
                                         </div>
                                     </div>
-
-                                    <div className="bg-red-900/10 border border-red-500/30 p-6 rounded-2xl">
-                                        <h3 className="font-bold text-red-400 mb-2 flex items-center gap-2"><AlertTriangle /> Area Pericolosa</h3>
-                                        <p className="text-slate-400 text-sm mb-4">Queste azioni sono irreversibili.</p>
-                                        <div className="flex gap-4">
-                                            <button onClick={async () => { if (await showConfirm("Factory Reset", "Cancellare TUTTO (Ordini e Menu)? Questa azione è irreversibile!")) { await performFactoryReset(); await showAlert("Successo", "Reset completato!"); window.location.reload(); } }} className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-bold text-sm transition-colors shadow-lg">Factory Reset</button>
+                                    <p className="text-white/90 leading-relaxed mb-6">
+                                        RistoSync è la soluzione completa per gestire ordini, menu e comunicazione tra sala e cucina in tempo reale.
+                                        Progettato per ristoranti, pizzerie, pub e bar che vogliono digitalizzare il proprio servizio senza complicazioni.
+                                    </p>
+                                    <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 border border-white/30">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                                                <Check size={20} className="text-white" />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-lg">🎉 Prova Gratuita 15 Giorni</p>
+                                                <p className="text-white/80 text-sm">Tutte le funzionalità sbloccate per testare l'app senza limiti!</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            )
-                        }
+
+                                {/* HOW IT WORKS - TUTORIAL */}
+                                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                    <h3 className="font-bold text-white mb-6 flex items-center gap-2 text-xl">
+                                        <Lightbulb className="text-yellow-500" /> Come Funziona
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">1</div>
+                                                <h4 className="font-bold text-white">Configura il Menu</h4>
+                                            </div>
+                                            <p className="text-slate-400 text-sm">Vai in "Gestione Menu" e aggiungi i tuoi piatti con prezzi, ingredienti e allergeni. Puoi anche importare da file JSON o usare l'AI!</p>
+                                        </div>
+                                        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center text-white font-bold">2</div>
+                                                <h4 className="font-bold text-white">Imposta le Postazioni</h4>
+                                            </div>
+                                            <p className="text-slate-400 text-sm">In "Impostazioni" configura dove vanno gli ordini: Cucina, Pizzeria, Pub. Ogni postazione riceverà solo i suoi piatti.</p>
+                                        </div>
+                                        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold">3</div>
+                                                <h4 className="font-bold text-white">Cameriere Prende Ordini</h4>
+                                            </div>
+                                            <p className="text-slate-400 text-sm">Il cameriere usa il suo tablet/telefono per inserire gli ordini. Seleziona il tavolo, aggiunge i piatti e invia alla cucina in un tap!</p>
+                                        </div>
+                                        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold">4</div>
+                                                <h4 className="font-bold text-white">Cucina Riceve e Conferma</h4>
+                                            </div>
+                                            <p className="text-slate-400 text-sm">In cucina vedono l'ordine in tempo reale. Quando è pronto, marcano come completato e il cameriere viene notificato!</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* FEATURES */}
+                                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                    <h3 className="font-bold text-white mb-6 flex items-center gap-2 text-xl">
+                                        <Star className="text-orange-500" /> Funzionalità Principali
+                                    </h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                        {[
+                                            { icon: <QrCode size={20} />, label: "Menu Digitale QR" },
+                                            { icon: <Smartphone size={20} />, label: "Ordini da Tablet" },
+                                            { icon: <Bell size={20} />, label: "Notifiche Real-Time" },
+                                            { icon: <BarChart size={20} />, label: "Analytics & Report" },
+                                            { icon: <Sparkles size={20} />, label: "AI Integrata" },
+                                            { icon: <Receipt size={20} />, label: "Scontrini Digitali" },
+                                            { icon: <Users size={20} />, label: "Multi-Postazione" },
+                                            { icon: <Cloud size={20} />, label: "Sync Cloud" },
+                                            { icon: <Printer size={20} />, label: "Stampa Ordini" },
+                                        ].map((f, i) => (
+                                            <div key={i} className="flex items-center gap-2 bg-slate-800/50 px-3 py-2 rounded-lg text-sm">
+                                                <span className="text-orange-500">{f.icon}</span>
+                                                <span className="text-slate-300 font-medium">{f.label}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* CONTACT & APP INFO */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                        <h3 className="font-bold text-white mb-4 flex items-center gap-2"><Headphones className="text-blue-500" /> Contatti Assistenza</h3>
+                                        <ul className="space-y-4">
+                                            <li className="flex items-center gap-3 text-slate-300"><Mail className="text-blue-500" /> {adminContactEmail}</li>
+                                            <li className="flex items-center gap-3 text-slate-300"><Phone className="text-green-500" /> {adminPhone}</li>
+                                            <li className="flex items-center gap-3 text-slate-300"><Globe className="text-purple-500" /> www.ristosync.com</li>
+                                        </ul>
+                                    </div>
+                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                        <h3 className="font-bold text-white mb-4 flex items-center gap-2"><Info className="text-slate-400" /> Informazioni App</h3>
+                                        <ul className="space-y-4">
+                                            <li className="flex justify-between text-sm"><span className="text-slate-500">Versione</span><span className="text-white font-mono">2.4.0 (Cloud)</span></li>
+                                            <li className="flex justify-between text-sm"><span className="text-slate-500">Stato Sync</span><span className="text-green-400 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>Online</span></li>
+                                            <li className="flex justify-between text-sm"><span className="text-slate-500">Storage</span><span className="text-white font-mono">Supabase Enterprise</span></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div >
                 </div >
                 <CustomDialog
