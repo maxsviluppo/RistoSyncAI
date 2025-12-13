@@ -38,12 +38,12 @@ export default function CustomDialog({
                 <div className="p-6">
                     <div className="flex items-start gap-4 mb-4">
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${type === 'confirm' ? 'bg-orange-600/20' :
-                                type === 'success' ? 'bg-green-600/20' :
-                                    type === 'delete' ? 'bg-red-600/20' :
-                                        'bg-blue-600/20'
+                            type === 'success' ? 'bg-blue-600/20' :
+                                type === 'delete' ? 'bg-red-600/20' :
+                                    'bg-blue-600/20'
                             }`}>
                             {type === 'confirm' && <AlertTriangle className="text-orange-500" size={24} />}
-                            {type === 'success' && <CheckCircle className="text-green-500" size={24} />}
+                            {type === 'success' && <CheckCircle className="text-blue-500" size={24} />}
                             {type === 'delete' && <Trash2 className="text-red-500" size={24} />}
                             {type === 'alert' && <AlertTriangle className="text-blue-500" size={24} />}
                         </div>
@@ -65,9 +65,9 @@ export default function CustomDialog({
                     <button
                         onClick={handleConfirm}
                         className={`flex-1 px-6 py-3 font-bold rounded-xl transition-all shadow-lg ${type === 'confirm' ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-900/20' :
-                                type === 'success' ? 'bg-green-600 hover:bg-green-500 text-white shadow-green-900/20' :
-                                    type === 'delete' ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/20' :
-                                        'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20'
+                            type === 'success' ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20' :
+                                type === 'delete' ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/20' :
+                                    'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20'
                             }`}
                     >
                         {type === 'confirm' || type === 'delete' ? confirmText : 'OK'}
