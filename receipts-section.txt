@@ -1,0 +1,188 @@
+// Temporary file to hold the receipts section code
+// This will be inserted into App.tsx
+
+{adminTab === 'receipts' && (
+    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-20">
+        <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-black text-white flex items-center gap-3">
+                <Receipt className="text-yellow-500" size={32} />
+                Scontrini Cassa
+            </h2>
+            <div className="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                <button onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); }} className="p-2 hover:bg-slate-800 rounded-lg"><ChevronLeft size={16} /></button>
+                <span className="font-bold text-sm w-32 text-center">{selectedDate.toLocaleDateString()}</span>
+                <button onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); }} className="p-2 hover:bg-slate-800 rounded-lg"><ChevronRight size={16} /></button>
+            </div>
+        </div>
+
+        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+            <div className="space-y-4">
+                {(() => {
+                    const dayOrders = orders.filter(o => {
+                        const orderDate = new Date(o.timestamp);
+                        return orderDate.toDateString() === selectedDate.toDateString() && o.status === 'DELIVERED';
+                    }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+                    if (dayOrders.length === 0) {
+                        return (
+                            <div className="text-center py-12">
+                                <Receipt size={48} className="mx-auto mb-4 text-slate-600 opacity-50" />
+                                <p className="text-slate-500 font-bold">Nessuno scontrino per questa data</p>
+                                <p className="text-slate-600 text-sm mt-2">Gli scontrini appariranno qui quando gli ordini saranno completati</p>
+                            </div>
+                        );
+                    }
+
+                    return dayOrders.map(order => {
+                        const orderTime = new Date(order.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                        const orderTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+                        return (
+                            <div key={order.id} className="bg-slate-950 p-5 rounded-xl border border-slate-800 hover:border-slate-700 transition-all">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-yellow-600 rounded-xl flex items-center justify-center font-black text-white text-lg">
+                                            {order.tableNumber}
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-white text-lg">Tavolo {order.tableNumber}</h3>
+                                            <p className="text-slate-400 text-sm flex items-center gap-2">
+                                                <Clock size={14} /> {orderTime}
+                                                {order.waiterName && <span className="text-slate-600">• {order.waiterName}</span>}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-2xl font-black text-white">€ {orderTotal.toFixed(2)}</p>
+                                        <p className="text-slate-500 text-xs">{order.items.length} {order.items.length === 1 ? 'articolo' : 'articoli'}</p>
+                                    </div>
+                                </div>
+
+                                <div className="border-t border-slate-800 pt-4 mb-4">
+                                    <div className="space-y-2">
+                                        {order.items.map((item, idx) => (
+                                            <div key={idx} className="flex justify-between items-center text-sm">
+                                                <span className="text-slate-300">
+                                                    <span className="font-mono text-slate-500 mr-2">{item.quantity}x</span>
+                                                    {item.name}
+                                                </span>
+                                                <span className="font-mono text-slate-400">€ {(item.price * item.quantity).toFixed(2)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button 
+                                        onClick={() => {
+                                            const printWindow = window.open('', '', 'width=300,height=600');
+                                            if (printWindow) {
+                                                printWindow.document.write(`
+                                                    <html>
+                                                    <head>
+                                                        <title>Scontrino Tavolo ${order.tableNumber}</title>
+                                                        <style>
+                                                            body { font-family: monospace; padding: 20px; max-width: 300px; }
+                                                            h1 { text-align: center; font-size: 18px; margin-bottom: 10px; }
+                                                            .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+                                                            .item { display: flex; justify-content: space-between; margin: 5px 0; }
+                                                            .total { border-top: 2px solid #000; padding-top: 10px; margin-top: 10px; font-weight: bold; font-size: 16px; }
+                                                            .footer { text-align: center; margin-top: 20px; font-size: 12px; }
+                                                        </style>
+                                                    </head>
+                                                    <body>
+                                                        <div class="header">
+                                                            <h1>${restaurantName}</h1>
+                                                            <p>Tavolo: ${order.tableNumber}</p>
+                                                            <p>${new Date(order.timestamp).toLocaleString('it-IT')}</p>
+                                                            ${order.waiterName ? `<p>Cameriere: ${order.waiterName}</p>` : ''}
+                                                        </div>
+                                                        ${order.items.map(item => `
+                                                            <div class="item">
+                                                                <span>${item.quantity}x ${item.name}</span>
+                                                                <span>€ ${(item.price * item.quantity).toFixed(2)}</span>
+                                                            </div>
+                                                        `).join('')}
+                                                        <div class="total">
+                                                            <div class="item">
+                                                                <span>TOTALE</span>
+                                                                <span>€ ${orderTotal.toFixed(2)}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="footer">
+                                                            <p>Grazie per la visita!</p>
+                                                            <p>Powered by RistoSync AI</p>
+                                                        </div>
+                                                        <script>window.print();</script>
+                                                    </body>
+                                                    </html>
+                                                `);
+                                                printWindow.document.close();
+                                            }
+                                        }}
+                                        className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Printer size={18} /> Stampa
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            const receiptText = `
+${restaurantName}
+Tavolo: ${order.tableNumber}
+${new Date(order.timestamp).toLocaleString('it-IT')}
+${order.waiterName ? `Cameriere: ${order.waiterName}` : ''}
+${'='.repeat(30)}
+${order.items.map(item => `${item.quantity}x ${item.name} - € ${(item.price * item.quantity).toFixed(2)}`).join('\n')}
+${'='.repeat(30)}
+TOTALE: € ${orderTotal.toFixed(2)}
+                                            `.trim();
+                                            navigator.clipboard.writeText(receiptText);
+                                            alert('Scontrino copiato negli appunti!');
+                                        }}
+                                        className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Eye size={18} /> Visualizza
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    });
+                })()}
+            </div>
+        </div>
+
+        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+            <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+                <BarChart3 className="text-yellow-500" /> Riepilogo Giornaliero
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {(() => {
+                    const dayOrders = orders.filter(o => {
+                        const orderDate = new Date(o.timestamp);
+                        return orderDate.toDateString() === selectedDate.toDateString() && o.status === 'DELIVERED';
+                    });
+                    const totalRevenue = dayOrders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + (i.price * i.quantity), 0), 0);
+                    const totalReceipts = dayOrders.length;
+                    const avgReceipt = totalReceipts > 0 ? totalRevenue / totalReceipts : 0;
+
+                    return (
+                        <>
+                            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                                <p className="text-slate-400 text-xs font-bold uppercase mb-1">Incasso Totale</p>
+                                <p className="text-2xl font-black text-white">€ {totalRevenue.toFixed(2)}</p>
+                            </div>
+                            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                                <p className="text-slate-400 text-xs font-bold uppercase mb-1">Scontrini Emessi</p>
+                                <p className="text-2xl font-black text-white">{totalReceipts}</p>
+                            </div>
+                            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                                <p className="text-slate-400 text-xs font-bold uppercase mb-1">Scontrino Medio</p>
+                                <p className="text-2xl font-black text-white">€ {avgReceipt.toFixed(2)}</p>
+                            </div>
+                        </>
+                    );
+                })()}
+            </div>
+        </div>
+    </div>
+)}
