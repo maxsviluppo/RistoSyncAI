@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus } from '../types';
-import { getOrders, getTableCount, getAppSettings } from '../services/storageService';
-import { User, ChefHat, CheckCircle, Clock, AlertTriangle, Home, Users, Calendar, X, Receipt } from 'lucide-react';
+import { getOrders, getTableCount, getAppSettings, resetAllTableDataService } from '../services/storageService';
+import { User, ChefHat, CheckCircle, Clock, AlertTriangle, Home, Users, Calendar, X, Receipt, Trash2 } from 'lucide-react';
 import { Category } from '../types';
 
 interface TableMonitorProps {
@@ -13,6 +13,7 @@ const TableMonitor: React.FC<TableMonitorProps> = ({ onExit }) => {
     const [tableCount, setTableCount] = useState(12);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [selectedTable, setSelectedTable] = useState<string | null>(null);
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
 
     const loadData = () => {
         setOrders(getOrders() || []);
@@ -134,6 +135,13 @@ const TableMonitor: React.FC<TableMonitorProps> = ({ onExit }) => {
                     >
                         <Home size={20} />
                         Esci
+                    </button>
+                    <button
+                        onClick={() => setShowResetConfirm(true)}
+                        className="bg-red-900/40 hover:bg-red-600 text-red-200 hover:text-white p-3 rounded-xl font-bold transition-all border border-red-800 ml-2 shadow-lg hover:shadow-red-900/40"
+                        title="Reset Emergenza Dati"
+                    >
+                        <Trash2 size={20} />
                     </button>
                 </div>
             </div>
@@ -267,10 +275,7 @@ const TableMonitor: React.FC<TableMonitorProps> = ({ onExit }) => {
             {/* Footer Legend */}
             <div className="bg-slate-900/80 backdrop-blur-md border-t border-slate-700 px-6 py-3">
                 <div className="flex items-center justify-center gap-8 text-xs text-slate-400">
-                    <div className="flex items-center gap-2">
-                        <Users size={14} className="text-purple-400" />
-                        <span>Tavolo Condiviso</span>
-                    </div>
+
                     <div className="flex items-center gap-2">
                         <Clock size={14} className="text-blue-400" />
                         <span>Tempo Trascorso</span>
@@ -346,6 +351,50 @@ const TableMonitor: React.FC<TableMonitorProps> = ({ onExit }) => {
                                     <p className="text-xs mt-2">Il tavolo è libero o l'ordine è stato completato.</p>
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* RESET CONFIRMATION MODAL */}
+            {showResetConfirm && (
+                <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+                    <div className="bg-slate-900 border-2 border-red-500/50 w-full max-w-sm rounded-3xl p-8 shadow-2xl shadow-red-900/50 animate-bounce-in relative overflow-hidden">
+                        {/* Background Effect */}
+                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-red-600/20 rounded-full blur-3xl pointer-events-none" />
+
+                        <div className="flex flex-col items-center text-center gap-4 relative z-10">
+                            <div className="w-16 h-16 rounded-full bg-red-900/30 border-2 border-red-500 flex items-center justify-center mb-2 shadow-[0_0_20px_rgba(239,68,68,0.3)]">
+                                <AlertTriangle size={32} className="text-red-500 animate-pulse" />
+                            </div>
+
+                            <h3 className="text-2xl font-black text-white">Reset Totale?</h3>
+
+                            <div className="bg-slate-950/50 p-4 rounded-2xl border border-slate-800 w-full">
+                                <p className="text-slate-400 text-sm leading-relaxed">
+                                    Stai per cancellare tutte le <span className="text-purple-400 font-bold">Prenotazioni</span> e le <span className="text-blue-400 font-bold">Collaborazioni</span> attive.
+                                    <br /><br />
+                                    <span className="text-red-400 font-bold text-xs uppercase tracking-widest">Azione Irreversibile</span>
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3 w-full mt-2">
+                                <button
+                                    onClick={() => setShowResetConfirm(false)}
+                                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition-all border border-slate-700"
+                                >
+                                    Annulla
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        await resetAllTableDataService();
+                                        setTimeout(() => window.location.reload(), 500);
+                                    }}
+                                    className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl shadow-lg shadow-red-600/30 transition-all active:scale-95 border border-red-500"
+                                >
+                                    CONFERMA
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

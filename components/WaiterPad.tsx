@@ -7,7 +7,7 @@ import {
     toggleOrderItemCompletion, serveItem,
     getWaiterName, logoutWaiter, getMenuItems,
     freeTable, getAppSettings, getAutomations, getTableCount,
-    resetAllTableDataService, fetchSettingsFromCloud
+    fetchSettingsFromCloud
 } from '../services/storageService';
 import {
     LogOut, Plus, Search, Utensils, CheckCircle,
@@ -558,19 +558,7 @@ const WaiterPad: React.FC<WaiterPadProps> = ({ onExit }) => {
                     <button onClick={handleLogout} className="bg-slate-700 p-2 rounded-full text-slate-300 hover:text-white hover:bg-red-600 transition-colors" title="Cambia Cameriere (Logout)">
                         <LogOut size={20} />
                     </button>
-                    <button
-                        onClick={async () => {
-                            if (confirm('RESET TOTALE TAVOLI? CANCELLA PRENOTAZIONI E COLLABORAZIONI?')) {
-                                await resetAllTableDataService();
-                                setTimeout(loadData, 500);
-                                alert('Reset Effettuato. Ricarica la pagina se necessario.');
-                            }
-                        }}
-                        className="bg-red-900/50 border border-red-500/50 p-2 rounded-full text-red-200 hover:text-white hover:bg-red-600 transition-colors ml-2"
-                        title="RESET EMERGENCY"
-                    >
-                        <Trash2 size={20} />
-                    </button>
+
                 </div>
             </div>
 
