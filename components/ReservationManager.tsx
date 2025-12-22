@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, Clock, Users, Phone, Mail, MapPin, Euro, CreditCard, X, Check, Edit2, Trash2, AlertCircle, User, History, Plus, Search, Filter, ChevronDown, Baby, Gift, Briefcase, Heart, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Users, Phone, Mail, MapPin, Euro, CreditCard, X, Check, Edit2, Trash2, AlertCircle, User, History, Plus, Search, Filter, ChevronDown, Baby, Gift, Briefcase, Heart, XCircle, ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
 import { Reservation, Customer, ReservationStatus, PaymentMethod, Deposit } from '../types';
+import { getReservationsFromCloud, getCustomersFromCloud, saveReservationToCloud, saveCustomerToCloud } from '../services/storageService';
 
 interface ReservationManagerProps {
     onClose: () => void;
@@ -11,18 +12,65 @@ interface ReservationManagerProps {
 const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showToast, showConfirm }) => {
     const [view, setView] = useState<'grid' | 'form' | 'customer'>('grid');
     const [reservations, setReservations] = useState<Reservation[]>([]);
-    const [allReservations, setAllReservations] = useState<Reservation[]>([]); // All reservations for calendar indicators
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [selectedTable, setSelectedTable] = useState<string | null>(null);
     const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<ReservationStatus | 'all'>('all');
+    const [tableCount, setTableCount] = useState(12);
+    const [occupancy, setOccupancy] = useState<Record<string, number>>({}); // Mappa: Data -> Num. Prenotazioni
+
+    useEffect(() => {
+        loadSettings();
+        syncWithCloud();
+        // Listener spostati nell'effect dipendente dalla data per closure corretta
+    }, []);
+
+    const loadSettings = () => {
+        const settings = localStorage.getItem('ristosync_app_settings');
+        if (settings) {
+            try {
+                const parsed = JSON.parse(settings);
+                if (parsed.restaurantProfile && parsed.restaurantProfile.tableCount) {
+                    setTableCount(parsed.restaurantProfile.tableCount);
+                }
+            } catch (e) { console.error("Error loading settings:", e); }
+        }
+    };
+
+    const syncWithCloud = async () => {
+        try {
+            const cloudRes = await getReservationsFromCloud();
+            if (cloudRes && cloudRes.length > 0) {
+                localStorage.setItem('reservations', JSON.stringify(cloudRes));
+                loadReservations();
+                const updateOcc = () => { // Copy of updateOccupancy logic to avoid scope issues if defined later
+                    try {
+                        const counts: Record<string, number> = {};
+                        cloudRes.forEach(r => {
+                            if (r.status !== 'Cancellato' && r.status !== 'Non Presentato') {
+                                counts[r.reservationDate] = (counts[r.reservationDate] || 0) + 1;
+                            }
+                        });
+                        setOccupancy(counts);
+                    } catch (e) { }
+                };
+                updateOcc();
+            }
+            const cloudCust = await getCustomersFromCloud();
+            if (cloudCust && cloudCust.length > 0) {
+                localStorage.setItem('customers', JSON.stringify(cloudCust));
+                loadCustomers();
+            }
+        } catch (e) {
+            console.error("Cloud sync failed (offline?)", e);
+        }
+    };
 
     // Ref for date picker
     const dateInputRef = useRef<HTMLInputElement>(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
-    const [calendarMonth, setCalendarMonth] = useState(new Date());
 
     // Form state
     const [formData, setFormData] = useState({
@@ -42,42 +90,49 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
     });
 
     const [foundCustomer, setFoundCustomer] = useState<Customer | null>(null);
-    const [tableCount, setTableCount] = useState(20);
 
     // Load data
     useEffect(() => {
         loadReservations();
         loadCustomers();
-        loadTableCount();
-    }, [selectedDate]);
+        updateOccupancy();
 
-    // Listen for settings changes
-    useEffect(() => {
-        const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'ristosync_app_settings') {
-                loadTableCount();
-            }
-        };
+        const handleSettingsUpdate = () => loadSettings();
+        // Re-definisco i listener qui per catturare la 'selectedDate' aggiornata nella closure di loadReservations
+        const handleResUpdate = () => { loadReservations(); updateOccupancy(); };
+        const handleCustUpdate = () => loadCustomers();
 
-        window.addEventListener('storage', handleStorageChange);
-
-        // Also listen for custom event for same-window updates
-        const handleSettingsUpdate = () => {
-            loadTableCount();
-        };
-        window.addEventListener('settings-updated', handleSettingsUpdate);
+        window.addEventListener('local-settings-update', handleSettingsUpdate);
+        window.addEventListener('local-reservations-update', handleResUpdate);
+        window.addEventListener('local-customers-update', handleCustUpdate);
 
         return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            window.removeEventListener('settings-updated', handleSettingsUpdate);
+            window.removeEventListener('local-settings-update', handleSettingsUpdate);
+            window.removeEventListener('local-reservations-update', handleResUpdate);
+            window.removeEventListener('local-customers-update', handleCustUpdate);
         };
-    }, []);
+    }, [selectedDate]);
+
+    const updateOccupancy = () => {
+        const stored = localStorage.getItem('reservations');
+        if (stored) {
+            try {
+                const all: Reservation[] = JSON.parse(stored);
+                const counts: Record<string, number> = {};
+                all.forEach(r => {
+                    if (r.status !== ReservationStatus.CANCELLED && r.status !== ReservationStatus.NO_SHOW) {
+                        counts[r.reservationDate] = (counts[r.reservationDate] || 0) + 1;
+                    }
+                });
+                setOccupancy(counts);
+            } catch (e) { console.error("Error parsing reservations for occupancy", e); }
+        }
+    };
 
     const loadReservations = () => {
         const stored = localStorage.getItem('reservations');
         if (stored) {
             const all: Reservation[] = JSON.parse(stored);
-            setAllReservations(all); // Store all reservations for calendar
             const filtered = all.filter(r => r.reservationDate === selectedDate);
             setReservations(filtered);
         }
@@ -87,15 +142,6 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
         const stored = localStorage.getItem('customers');
         if (stored) {
             setCustomers(JSON.parse(stored));
-        }
-    };
-
-    const loadTableCount = () => {
-        const settingsData = localStorage.getItem('ristosync_app_settings');
-        if (settingsData) {
-            const settings = JSON.parse(settingsData);
-            const count = settings.restaurantProfile?.tableCount || 20;
-            setTableCount(count);
         }
     };
 
@@ -110,6 +156,8 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
         }
         localStorage.setItem('reservations', JSON.stringify(all));
         loadReservations();
+        updateOccupancy();
+        saveReservationToCloud(reservation);
     };
 
     const saveCustomer = (customer: Customer) => {
@@ -123,9 +171,9 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
         }
         localStorage.setItem('customers', JSON.stringify(all));
         loadCustomers();
+        saveCustomerToCloud(customer);
     };
 
-    // Search customer by phone or name
     const searchCustomer = (query: string) => {
         const found = customers.find(c =>
             c.phone.includes(query) ||
@@ -148,75 +196,45 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
         }
     };
 
-    const handleSubmitReservation = () => {
-        if (!selectedTable) {
-            showToast('⚠️ Seleziona un tavolo', 'error');
-            return;
+    const getTableStatus = (tableNum: string) => {
+        const tableRes = reservations.find(r => r.tableNumber === tableNum && r.status !== ReservationStatus.CANCELLED && r.status !== ReservationStatus.COMPLETED);
+        if (tableRes) {
+            if (tableRes.status === ReservationStatus.SEATED) return 'seated';
+            return 'reserved';
         }
+        return 'free';
+    };
 
-        if (!formData.customerPhone || !formData.customerFirstName || !formData.customerLastName) {
-            showToast('⚠️ Compila tutti i campi obbligatori', 'error');
-            return;
+    const handleTableClick = (tableNum: string) => {
+        const status = getTableStatus(tableNum);
+        if (status === 'free') {
+            setSelectedTable(tableNum);
+            setFormData(prev => ({ ...prev, numberOfGuests: 2 }));
+            setEditingReservation(null);
+            setView('form');
+        } else {
+            const res = reservations.find(r => r.tableNumber === tableNum && r.status !== ReservationStatus.CANCELLED && r.status !== ReservationStatus.COMPLETED);
+            if (res) {
+                setEditingReservation(res);
+                setSelectedTable(res.tableNumber);
+                setFormData({
+                    customerPhone: res.customerPhone,
+                    customerFirstName: res.customerName.split(' ')[0] || '',
+                    customerLastName: res.customerName.split(' ').slice(1).join(' ') || '',
+                    customerEmail: res.customerEmail || '',
+                    customerCity: '',
+                    numberOfGuests: res.numberOfGuests,
+                    numberOfChildren: res.numberOfChildren || 0,
+                    reservationTime: res.reservationTime,
+                    specialRequests: res.specialRequests || '',
+                    occasion: res.occasion || '',
+                    highChair: res.highChair || false,
+                    depositAmount: res.depositAmount || 0,
+                    depositMethod: res.depositMethod || 'cash',
+                });
+                setView('form');
+            }
         }
-
-        // Create or update customer
-        let customer = foundCustomer;
-        if (!customer) {
-            customer = {
-                id: `customer_${Date.now()}`,
-                firstName: formData.customerFirstName,
-                lastName: formData.customerLastName,
-                phone: formData.customerPhone,
-                email: formData.customerEmail,
-                city: formData.customerCity,
-                createdAt: Date.now(),
-                totalVisits: 0,
-                totalSpent: 0,
-            };
-            saveCustomer(customer);
-        }
-
-        // Create reservation
-        const reservation: Reservation = {
-            id: editingReservation?.id || `res_${Date.now()}`,
-            tableNumber: selectedTable,
-            customerId: customer.id,
-            customerName: `${formData.customerFirstName} ${formData.customerLastName}`,
-            customerPhone: formData.customerPhone,
-            numberOfGuests: formData.numberOfGuests,
-            numberOfChildren: formData.numberOfChildren,
-            reservationDate: selectedDate,
-            reservationTime: formData.reservationTime,
-            status: ReservationStatus.PENDING,
-            createdAt: editingReservation?.createdAt || Date.now(),
-            updatedAt: Date.now(),
-            specialRequests: formData.specialRequests,
-            occasion: formData.occasion,
-            highChair: formData.highChair,
-            depositAmount: formData.depositAmount,
-            depositPaid: formData.depositAmount > 0,
-            depositMethod: formData.depositMethod,
-        };
-
-        // Save deposit if amount > 0
-        if (formData.depositAmount > 0) {
-            const deposit: Deposit = {
-                id: `dep_${Date.now()}`,
-                reservationId: reservation.id,
-                amount: formData.depositAmount,
-                paymentMethod: formData.depositMethod,
-                paidAt: Date.now(),
-            };
-            const deposits = JSON.parse(localStorage.getItem('deposits') || '[]');
-            deposits.push(deposit);
-            localStorage.setItem('deposits', JSON.stringify(deposits));
-            reservation.depositId = deposit.id;
-        }
-
-        saveReservation(reservation);
-        showToast('✅ Prenotazione salvata con successo!', 'success');
-        resetForm();
-        setView('grid');
     };
 
     const resetForm = () => {
@@ -238,65 +256,120 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
         setFoundCustomer(null);
         setSelectedTable(null);
         setEditingReservation(null);
+        setSearchQuery('');
     };
 
-    const handleCancelReservation = async (reservation: Reservation) => {
-        const confirmed = await showConfirm(
-            'Cancellare Prenotazione?',
-            `Vuoi cancellare la prenotazione di ${reservation.customerName}?`
-        );
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [reservationToDelete, setReservationToDelete] = useState<Reservation | null>(null);
 
-        if (confirmed) {
-            reservation.status = ReservationStatus.CANCELLED;
-            reservation.cancelledAt = Date.now();
-            saveReservation(reservation);
+    const handleCancelReservation = (reservation: Reservation) => {
+        setReservationToDelete(reservation);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = () => {
+        if (reservationToDelete) {
+            const updatedRes = { ...reservationToDelete, status: ReservationStatus.CANCELLED, cancelledAt: Date.now() };
+            saveReservation(updatedRes);
             showToast('Prenotazione cancellata', 'info');
-        }
-    };
-
-    const getTableStatus = (tableNum: string) => {
-        const res = reservations.find(r => r.tableNumber === tableNum && r.status !== ReservationStatus.CANCELLED && r.status !== ReservationStatus.COMPLETED);
-        if (!res) return 'free';
-
-        // Check if table should be blocked 2 hours before arrival
-        const now = new Date();
-        const [hours, minutes] = res.reservationTime.split(':').map(Number);
-        const reservationDateTime = new Date(res.reservationDate);
-        reservationDateTime.setHours(hours, minutes, 0, 0);
-        const twoHoursBefore = new Date(reservationDateTime.getTime() - 2 * 60 * 60 * 1000);
-
-        if (res.status === ReservationStatus.PENDING) {
-            // If we're within 2 hours of reservation time, show as reserved
-            if (now >= twoHoursBefore) {
-                return 'reserved';
+            if (editingReservation?.id === reservationToDelete.id) {
+                resetForm();
+                setView('grid');
             }
-            return 'reserved'; // Always show reserved for pending
-        }
-        if (res.status === ReservationStatus.SEATED) return 'seated';
-        return 'active';
-    };
-
-    const getTableColor = (status: string) => {
-        switch (status) {
-            case 'free': return 'bg-slate-800 border-slate-700';
-            case 'reserved': return 'bg-blue-900/30 border-blue-500';
-            case 'seated': return 'bg-yellow-900/30 border-yellow-500';
-            case 'active': return 'bg-green-900/30 border-green-500';
-            default: return 'bg-slate-800 border-slate-700';
+            setShowDeleteConfirm(false);
+            setReservationToDelete(null);
         }
     };
 
-    // Check if all tables are booked for a specific date
-    const isDateFullyBooked = (dateStr: string): boolean => {
-        const dateReservations = allReservations.filter(
-            r => r.reservationDate === dateStr &&
-                r.status !== ReservationStatus.CANCELLED &&
-                r.status !== ReservationStatus.COMPLETED
-        );
-        return dateReservations.length >= tableCount;
-    };
+    const handleSubmitReservation = () => {
+        if (!selectedTable) {
+            showToast('⚠️ Seleziona un tavolo', 'error');
+            return;
+        }
 
-    const tables = Array.from({ length: tableCount }, (_, i) => (i + 1).toString());
+        if (!formData.customerPhone || !formData.customerFirstName) {
+            showToast('⚠️ Compila almeno Nome e Telefono', 'error');
+            return;
+        }
+
+        // Create or update customer
+        let customer = foundCustomer;
+
+        // Search by phone if not found via search tool
+        if (!customer && formData.customerPhone) {
+            customer = customers.find(c => c.phone === formData.customerPhone) || null;
+        }
+
+        if (!customer) {
+            customer = {
+                id: `customer_${Date.now()}`,
+                firstName: formData.customerFirstName,
+                lastName: formData.customerLastName,
+                phone: formData.customerPhone,
+                email: formData.customerEmail,
+                city: formData.customerCity,
+                createdAt: Date.now(),
+                totalVisits: 0,
+                totalSpent: 0,
+                vip: false
+            };
+            saveCustomer(customer);
+        } else {
+            // Update existing customer data if changed
+            const updatedCustomer = {
+                ...customer,
+                firstName: formData.customerFirstName,
+                lastName: formData.customerLastName,
+                email: formData.customerEmail || customer.email,
+                city: formData.customerCity || customer.city
+            };
+            saveCustomer(updatedCustomer);
+        }
+
+        // Create reservation
+        const reservation: Reservation = {
+            id: editingReservation?.id || `res_${Date.now()}`,
+            tableNumber: selectedTable,
+            customerId: customer.id,
+            customerName: `${formData.customerFirstName} ${formData.customerLastName}`.trim(),
+            customerPhone: formData.customerPhone,
+            customerEmail: formData.customerEmail,
+            numberOfGuests: formData.numberOfGuests,
+            numberOfChildren: formData.numberOfChildren,
+            reservationDate: selectedDate,
+            reservationTime: formData.reservationTime,
+            status: editingReservation ? editingReservation.status : ReservationStatus.PENDING,
+            createdAt: editingReservation?.createdAt || Date.now(),
+            updatedAt: Date.now(),
+            specialRequests: formData.specialRequests,
+            occasion: formData.occasion,
+            highChair: formData.highChair,
+            depositAmount: formData.depositAmount,
+            depositPaid: formData.depositAmount > 0,
+            depositMethod: formData.depositMethod,
+        };
+
+        // Handle Deposit (simple implementation)
+        if (formData.depositAmount > 0 && !editingReservation) {
+            const deposit: Deposit = {
+                id: `dep_${Date.now()}`,
+                reservationId: reservation.id,
+                amount: formData.depositAmount,
+                paymentMethod: formData.depositMethod,
+                paidAt: Date.now(),
+            };
+            const storedDeps = localStorage.getItem('deposits');
+            const deposits = storedDeps ? JSON.parse(storedDeps) : [];
+            deposits.push(deposit);
+            localStorage.setItem('deposits', JSON.stringify(deposits));
+            reservation.depositId = deposit.id;
+        }
+
+        saveReservation(reservation);
+        showToast('✅ Prenotazione salvata con successo!', 'success');
+        resetForm();
+        setView('grid');
+    };
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -326,120 +399,96 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                                 <ChevronDown size={16} className={`text-purple-300 transition-all ${showDatePicker ? 'rotate-180' : ''}`} />
                             </button>
 
-
-                            {/* Custom Calendar Picker */}
+                            {/* Custom Date Picker Dropdown */}
                             {showDatePicker && (
-                                <div className="absolute top-full mt-2 right-0 bg-slate-900 border-2 border-purple-500/50 rounded-2xl shadow-2xl p-5 z-50 min-w-[360px] backdrop-blur-sm">
+                                <div className="absolute top-full mt-2 right-0 bg-slate-900 border-2 border-purple-500/50 rounded-2xl shadow-2xl p-6 z-50 w-[400px]">
                                     {/* Calendar Header */}
                                     <div className="flex items-center justify-between mb-4">
                                         <button
                                             onClick={() => {
-                                                const newMonth = new Date(calendarMonth);
-                                                newMonth.setMonth(newMonth.getMonth() - 1);
-                                                // Don't allow going before current month
-                                                const today = new Date();
-                                                if (newMonth.getMonth() >= today.getMonth() || newMonth.getFullYear() > today.getFullYear()) {
-                                                    setCalendarMonth(newMonth);
-                                                }
+                                                const newDate = new Date(selectedDate);
+                                                newDate.setMonth(newDate.getMonth() - 1);
+                                                setSelectedDate(newDate.toISOString().split('T')[0]);
                                             }}
-                                            className="w-8 h-8 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center transition-colors"
+                                            className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-xl flex items-center justify-center transition-colors"
                                         >
-                                            <ChevronLeft size={16} className="text-purple-400" />
+                                            <ChevronLeft size={20} className="text-white" />
                                         </button>
                                         <div className="text-center">
-                                            <div className="text-lg font-black text-white capitalize">
-                                                {calendarMonth.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+                                            <div className="text-lg font-black text-white">
+                                                {new Date(selectedDate).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => {
-                                                const newMonth = new Date(calendarMonth);
-                                                newMonth.setMonth(newMonth.getMonth() + 1);
-                                                // Don't allow going beyond 12 months from now
+                                                const newDate = new Date(selectedDate);
                                                 const maxDate = new Date();
-                                                maxDate.setMonth(maxDate.getMonth() + 12);
-                                                if (newMonth <= maxDate) {
-                                                    setCalendarMonth(newMonth);
+                                                maxDate.setFullYear(maxDate.getFullYear() + 1);
+                                                newDate.setMonth(newDate.getMonth() + 1);
+                                                if (newDate <= maxDate) {
+                                                    setSelectedDate(newDate.toISOString().split('T')[0]);
                                                 }
                                             }}
-                                            className="w-8 h-8 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center transition-colors"
+                                            className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-xl flex items-center justify-center transition-colors"
                                         >
-                                            <ChevronRight size={16} className="text-purple-400" />
+                                            <ChevronRight size={20} className="text-white" />
                                         </button>
                                     </div>
 
-                                    {/* Day Names */}
-                                    <div className="grid grid-cols-7 gap-1 mb-2">
+                                    {/* Weekday Headers */}
+                                    <div className="grid grid-cols-7 gap-2 mb-2">
                                         {['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].map(day => (
-                                            <div key={day} className="text-center text-xs font-bold text-slate-500 py-2">
+                                            <div key={day} className="text-center text-xs font-bold text-slate-500 uppercase">
                                                 {day}
                                             </div>
                                         ))}
                                     </div>
 
-                                    {/* Calendar Grid */}
-                                    <div className="grid grid-cols-7 gap-1">
+                                    {/* Calendar Days */}
+                                    <div className="grid grid-cols-7 gap-2 mb-4">
                                         {(() => {
-                                            const year = calendarMonth.getFullYear();
-                                            const month = calendarMonth.getMonth();
+                                            const currentDate = new Date(selectedDate);
+                                            const year = currentDate.getFullYear();
+                                            const month = currentDate.getMonth();
                                             const firstDay = new Date(year, month, 1);
                                             const lastDay = new Date(year, month + 1, 0);
-                                            const daysInMonth = lastDay.getDate();
-
-                                            // Get the day of week (0 = Sunday, 1 = Monday, etc.)
-                                            // Adjust so Monday = 0
-                                            let startDay = firstDay.getDay() - 1;
-                                            if (startDay === -1) startDay = 6; // Sunday becomes 6
-
+                                            const startingDayOfWeek = (firstDay.getDay() + 6) % 7; // Adjust for Monday start
                                             const days = [];
-                                            const today = new Date();
-                                            today.setHours(0, 0, 0, 0);
 
-                                            const maxDate = new Date();
-                                            maxDate.setMonth(maxDate.getMonth() + 12);
-                                            maxDate.setHours(23, 59, 59, 999);
-
-                                            // Empty cells for days before month starts
-                                            for (let i = 0; i < startDay; i++) {
-                                                days.push(
-                                                    <div key={`empty-${i}`} className="aspect-square" />
-                                                );
+                                            // Empty cells before month starts
+                                            for (let i = 0; i < startingDayOfWeek; i++) {
+                                                days.push(<div key={`empty-${i}`} className="h-10" />);
                                             }
 
                                             // Days of the month
-                                            for (let day = 1; day <= daysInMonth; day++) {
-                                                const date = new Date(year, month, day);
-                                                date.setHours(0, 0, 0, 0);
-                                                const dateStr = date.toISOString().split('T')[0];
+                                            for (let day = 1; day <= lastDay.getDate(); day++) {
+                                                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                                                 const isSelected = dateStr === selectedDate;
-                                                const isToday = date.getTime() === today.getTime();
-                                                const isPast = date < today;
-                                                const isFuture = date > maxDate;
-                                                const isDisabled = isPast || isFuture;
-                                                const isFullyBooked = isDateFullyBooked(dateStr);
+                                                const isToday = dateStr === new Date().toISOString().split('T')[0];
+                                                const isPast = new Date(dateStr) < new Date(new Date().toISOString().split('T')[0]);
+                                                const dailyCount = occupancy[dateStr] || 0;
+                                                const isFull = dailyCount >= tableCount;
 
                                                 days.push(
                                                     <button
                                                         key={day}
                                                         onClick={() => {
-                                                            if (!isDisabled) {
-                                                                setSelectedDate(dateStr);
-                                                                setShowDatePicker(false);
-                                                            }
+                                                            setSelectedDate(dateStr);
+                                                            setShowDatePicker(false);
                                                         }}
-                                                        disabled={isDisabled}
-                                                        className={`aspect-square rounded-lg font-bold text-sm transition-all flex items-center justify-center relative ${isSelected
-                                                                ? 'bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-lg scale-105 ring-2 ring-purple-400'
-                                                                : isToday
-                                                                    ? 'bg-purple-900/30 border-2 border-purple-500 text-purple-300 hover:bg-purple-900/50'
-                                                                    : isDisabled
-                                                                        ? 'bg-slate-800/30 text-slate-600 cursor-not-allowed'
-                                                                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:scale-105 border border-slate-700'
+                                                        disabled={isPast}
+                                                        className={`h-10 rounded-xl font-bold text-sm transition-all relative ${isSelected
+                                                            ? 'bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-lg scale-105'
+                                                            : isToday
+                                                                ? 'bg-purple-900/30 border-2 border-purple-500 text-purple-300 hover:bg-purple-900/50'
+                                                                : isPast
+                                                                    ? 'bg-slate-950 text-slate-700 cursor-not-allowed'
+                                                                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
                                                             }`}
                                                     >
                                                         {day}
-                                                        {isFullyBooked && !isDisabled && (
-                                                            <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full shadow-lg" title="Tutto prenotato" />
+                                                        {isFull && !isSelected && !isPast && (
+                                                            <div className="absolute bottom-1 right-1/2 translate-x-1/2 w-1.5 h-1.5 rounded-full bg-red-500 shadow-sm ring-1 ring-slate-900" title={`Tutto Esaurito (${dailyCount}/${tableCount})`}></div>
                                                         )}
                                                     </button>
                                                 );
@@ -449,32 +498,16 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                                         })()}
                                     </div>
 
-                                    {/* Quick Actions */}
-                                    <div className="mt-4 pt-4 border-t border-slate-800 flex gap-2">
-                                        <button
-                                            onClick={() => {
-                                                const today = new Date();
-                                                setSelectedDate(today.toISOString().split('T')[0]);
-                                                setCalendarMonth(today);
-                                                setShowDatePicker(false);
-                                            }}
-                                            className="flex-1 bg-purple-900/30 hover:bg-purple-900/50 border border-purple-500 text-purple-300 font-bold py-2 rounded-lg text-sm transition-colors"
-                                        >
-                                            Oggi
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                const tomorrow = new Date();
-                                                tomorrow.setDate(tomorrow.getDate() + 1);
-                                                setSelectedDate(tomorrow.toISOString().split('T')[0]);
-                                                setCalendarMonth(tomorrow);
-                                                setShowDatePicker(false);
-                                            }}
-                                            className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-bold py-2 rounded-lg text-sm transition-colors"
-                                        >
-                                            Domani
-                                        </button>
-                                    </div>
+                                    {/* Today Button */}
+                                    <button
+                                        onClick={() => {
+                                            setSelectedDate(new Date().toISOString().split('T')[0]);
+                                            setShowDatePicker(false);
+                                        }}
+                                        className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg"
+                                    >
+                                        Oggi
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -519,65 +552,70 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                                 </button>
                             </div>
 
-                            {/* Tables Grid */}
-                            <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-                                {tables.map(tableNum => {
-                                    const status = getTableStatus(tableNum);
-                                    const reservation = reservations.find(r => r.tableNumber === tableNum && r.status !== ReservationStatus.CANCELLED && r.status !== ReservationStatus.COMPLETED);
+                            {/* Tables Grid Visualization */}
+                            <div className="mb-8">
+                                <h3 className="text-xl font-black text-white mb-4 flex items-center gap-2">
+                                    <LayoutGrid size={24} className="text-purple-500" />
+                                    Mappa Tavoli ({new Date(selectedDate).toLocaleDateString('it-IT')})
+                                </h3>
+                                <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                                    {Array.from({ length: tableCount }, (_, i) => i + 1).map(num => {
+                                        const tableNum = num.toString();
+                                        const status = getTableStatus(tableNum);
 
-                                    return (
-                                        <button
-                                            key={tableNum}
-                                            onClick={() => {
-                                                if (status === 'free') {
-                                                    setSelectedTable(tableNum);
-                                                    setView('form');
-                                                } else if (reservation) {
-                                                    setEditingReservation(reservation);
-                                                    setSelectedTable(tableNum);
-                                                    // Populate form with reservation data
-                                                    setFormData({
-                                                        customerPhone: reservation.customerPhone,
-                                                        customerFirstName: reservation.customerName.split(' ')[0] || '',
-                                                        customerLastName: reservation.customerName.split(' ').slice(1).join(' ') || '',
-                                                        customerEmail: '',
-                                                        customerCity: '',
-                                                        numberOfGuests: reservation.numberOfGuests,
-                                                        numberOfChildren: reservation.numberOfChildren || 0,
-                                                        reservationTime: reservation.reservationTime,
-                                                        specialRequests: reservation.specialRequests || '',
-                                                        occasion: reservation.occasion || '',
-                                                        highChair: reservation.highChair || false,
-                                                        depositAmount: reservation.depositAmount || 0,
-                                                        depositMethod: reservation.depositMethod || 'cash',
-                                                    });
-                                                    setView('form');
-                                                }
-                                            }}
-                                            className={`aspect-square ${getTableColor(status)} border-2 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 hover:shadow-xl relative group`}
-                                        >
-                                            <span className="text-2xl font-black text-white">{tableNum}</span>
-                                            {reservation && (
-                                                <>
-                                                    <div className="text-xs text-slate-300 font-bold text-center">
-                                                        {reservation.customerName.split(' ')[0]}
+                                        // Find active reservation for this table
+                                        const res = reservations.find(r =>
+                                            r.tableNumber === tableNum &&
+                                            r.status !== ReservationStatus.CANCELLED &&
+                                            r.status !== ReservationStatus.COMPLETED
+                                        );
+
+                                        let bgClass = "bg-slate-800 border-slate-700 hover:border-slate-500 text-slate-400";
+                                        let icon = <Check size={16} />;
+                                        let label = "Libero";
+
+                                        if (status === 'reserved') {
+                                            bgClass = "bg-purple-900/30 border-purple-500 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.2)]";
+                                            icon = <Calendar size={16} />;
+                                            label = "Prenotato";
+                                        } else if (status === 'seated') {
+                                            bgClass = "bg-yellow-900/30 border-yellow-500 text-yellow-300 shadow-[0_0_15px_rgba(234,179,8,0.2)]";
+                                            icon = <Users size={16} />;
+                                            label = "A Tavola";
+                                        }
+
+                                        return (
+                                            <button
+                                                key={num}
+                                                onClick={() => handleTableClick(tableNum)}
+                                                className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center p-2 transition-all hover:scale-105 active:scale-95 relative group ${bgClass}`}
+                                            >
+                                                <span className={`font-black mb-1 transition-all ${res ? 'text-xl' : 'text-2xl'}`}>{num}</span>
+
+                                                {res ? (
+                                                    <div className="flex flex-col items-center w-full animate-in fade-in slide-in-from-bottom-2">
+                                                        <div className="text-[10px] font-bold text-white truncate w-full text-center px-0.5 mb-0.5">
+                                                            {res.customerName.split(' ')[0]}
+                                                        </div>
+                                                        <div className="flex items-center justify-center gap-2 w-full opacity-90">
+                                                            <span className="flex items-center gap-0.5 text-[10px]">
+                                                                <Users size={10} />
+                                                                {res.numberOfGuests}
+                                                                {res.numberOfChildren ? <span className="text-[9px] opacity-80">+{res.numberOfChildren}👶</span> : ''}
+                                                            </span>
+                                                            <span className="flex items-center gap-0.5 text-[10px]"><Clock size={10} /> {res.reservationTime}</span>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex items-center gap-1 text-xs text-slate-400">
-                                                        <Users size={12} />
-                                                        {reservation.numberOfGuests}{reservation.numberOfChildren ? ` +${reservation.numberOfChildren}` : ''}
+                                                ) : (
+                                                    <div className="flex flex-col items-center">
+                                                        {icon}
+                                                        <span className="text-[10px] uppercase font-bold mt-1">{label}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-1 text-xs text-slate-400">
-                                                        <Clock size={12} />
-                                                        {reservation.reservationTime}
-                                                    </div>
-                                                </>
-                                            )}
-                                            {status === 'free' && (
-                                                <span className="text-xs text-slate-500 font-bold">Libero</span>
-                                            )}
-                                        </button>
-                                    );
-                                })}
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
 
                             {/* Reservations List */}
@@ -585,12 +623,12 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                                 <h3 className="text-xl font-black text-white mb-4">Prenotazioni del Giorno</h3>
                                 <div className="space-y-3">
                                     {reservations
+                                        .filter(r => r.status !== ReservationStatus.CANCELLED && r.status !== ReservationStatus.COMPLETED)
                                         .filter(r => filterStatus === 'all' || r.status === filterStatus)
                                         .sort((a, b) => a.reservationTime.localeCompare(b.reservationTime))
                                         .map(res => (
                                             <div
                                                 key={res.id}
-                                                className="bg-slate-800 border border-slate-700 rounded-xl p-4 flex items-center justify-between hover:border-purple-500 transition-colors cursor-pointer group"
                                                 onClick={() => {
                                                     setEditingReservation(res);
                                                     setSelectedTable(res.tableNumber);
@@ -612,9 +650,10 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                                                     });
                                                     setView('form');
                                                 }}
+                                                className="bg-slate-800 border border-slate-700 rounded-xl p-4 flex items-center justify-between hover:border-purple-500 transition-colors cursor-pointer"
                                             >
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                    <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center">
                                                         <span className="text-white font-black text-lg">{res.tableNumber}</span>
                                                     </div>
                                                     <div>
@@ -635,7 +674,7 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                                                     )}
                                                     <button
                                                         onClick={(e) => {
-                                                            e.stopPropagation(); // Prevent triggering the parent div's onClick
+                                                            e.stopPropagation();
                                                             handleCancelReservation(res);
                                                         }}
                                                         className="w-8 h-8 bg-red-900/30 hover:bg-red-900/50 border border-red-500 rounded-lg flex items-center justify-center transition-colors"
@@ -928,11 +967,9 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                                         </button>
                                         {editingReservation && (
                                             <button
-                                                onClick={async () => {
+                                                onClick={() => {
                                                     if (editingReservation) {
-                                                        await handleCancelReservation(editingReservation);
-                                                        resetForm();
-                                                        setView('grid');
+                                                        handleCancelReservation(editingReservation);
                                                     }
                                                 }}
                                                 className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
@@ -955,7 +992,46 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                     )}
                 </div>
             </div>
-        </div>
+
+
+            {/* Local Delete Confirmation Dialog */}
+            {
+                showDeleteConfirm && (
+                    <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
+                        <div className="bg-slate-900 border border-slate-700 p-8 rounded-3xl shadow-2xl max-w-sm w-full animate-in zoom-in-95 duration-200">
+                            <div className="flex flex-col items-center text-center gap-4">
+                                <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-2 border border-red-500/20 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+                                    <AlertCircle size={40} className="text-red-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black text-white mb-2">Sicuro?</h3>
+                                    <p className="text-slate-400 leading-relaxed">
+                                        Vuoi davvero cancellare questa prenotazione? <br />L'azione è irreversibile.
+                                    </p>
+                                </div>
+                                <div className="flex gap-3 w-full mt-4">
+                                    <button
+                                        onClick={() => {
+                                            setShowDeleteConfirm(false);
+                                            setReservationToDelete(null);
+                                        }}
+                                        className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-xl transition-colors"
+                                    >
+                                        Annulla
+                                    </button>
+                                    <button
+                                        onClick={confirmDelete}
+                                        className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-red-900/40 hover:-translate-y-1"
+                                    >
+                                        Cancella
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 };
 

@@ -1,5 +1,5 @@
 
-import { Order, OrderStatus, OrderItem, MenuItem, AppSettings, Category, Department, NotificationSettings } from '../types';
+import { Order, OrderStatus, OrderItem, MenuItem, AppSettings, Category, Department, NotificationSettings, Reservation, Customer, ReservationStatus } from '../types';
 import { supabase } from './supabase';
 
 const STORAGE_KEY = 'ristosync_orders';
@@ -86,7 +86,13 @@ export const initSupabaseSync = async () => {
         // MARKETING SYNC
         await fetchPromotionsFromCloud();
         await fetchAutomationsFromCloud();
+        await fetchPromotionsFromCloud();
+        await fetchAutomationsFromCloud();
         await fetchSocialFromCloud();
+
+        // SYNC PRENOTAZIONI & CLIENTI
+        await syncReservationsDown();
+        await syncCustomersDown();
 
         // 2. Sync Profile Settings (API KEY)
         const { data: profile } = await supabase.from('profiles').select('google_api_key').eq('id', currentUserId).single();
@@ -110,6 +116,9 @@ export const initSupabaseSync = async () => {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'marketing_promotions', filter: `user_id=eq.${currentUserId}` }, () => { fetchPromotionsFromCloud(); })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'marketing_automations', filter: `user_id=eq.${currentUserId}` }, () => { fetchAutomationsFromCloud(); })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'social_posts', filter: `user_id=eq.${currentUserId}` }, () => { fetchSocialFromCloud(); })
+            // RESERVATIONS & CUSTOMERS REALTIME
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations', filter: `user_id=eq.${currentUserId}` }, () => { syncReservationsDown(); })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'customers', filter: `user_id=eq.${currentUserId}` }, () => { syncCustomersDown(); })
             .subscribe();
 
         // 4. Fallback Polling (Heartbeat) - Settings polled every 5s for collaboration notifications
@@ -1110,4 +1119,160 @@ export const resetAllTableDataService = async () => {
     };
     await saveAppSettings(newSettings);
     console.log("All table data reset!");
+};
+
+// --- RESERVATION MANAGEMENT (CLOUD SYNC) ---
+
+export const getReservationsFromCloud = async (): Promise<Reservation[]> => {
+    if (!supabase || !currentUserId) return [];
+
+    // Fetch active reservations (or all history? maybe limit to last 30 days + future)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data, error } = await supabase
+        .from('reservations')
+        .select('*')
+        .eq('user_id', currentUserId)
+        .gte('reservation_date', thirtyDaysAgo.toISOString().split('T')[0]);
+
+    if (error) {
+        console.error("Error fetching reservations:", error);
+        return [];
+    }
+
+    return data.map((r: any) => ({
+        id: r.id,
+        tableNumber: r.table_number,
+        customerId: r.customer_id,
+        customerName: r.customer_name,
+        customerPhone: r.customer_phone,
+        numberOfGuests: r.number_of_guests,
+        numberOfChildren: r.number_of_children,
+        reservationDate: r.reservation_date,
+        reservationTime: r.reservation_time,
+        status: r.status as ReservationStatus,
+        specialRequests: r.special_requests,
+        occasion: r.occasion,
+        highChair: r.high_chair,
+        depositAmount: r.deposit_amount,
+        depositPaid: r.deposit_paid,
+        depositMethod: r.deposit_method,
+        createdAt: new Date(r.created_at).getTime(),
+        updatedAt: new Date(r.updated_at).getTime(),
+        waiterAssigned: r.waiter_assigned,
+        cancelReason: r.cancel_reason,
+        cancelledAt: r.cancelled_at ? new Date(r.cancelled_at).getTime() : undefined
+    }));
+};
+
+export const saveReservationToCloud = async (reservation: Reservation) => {
+    if (!supabase || !currentUserId) return;
+
+    const payload = {
+        id: reservation.id,
+        user_id: currentUserId,
+        table_number: reservation.tableNumber,
+        customer_id: reservation.customerId,
+        customer_name: reservation.customerName,
+        customer_phone: reservation.customerPhone,
+        number_of_guests: reservation.numberOfGuests,
+        number_of_children: reservation.numberOfChildren,
+        reservation_date: reservation.reservationDate,
+        reservation_time: reservation.reservationTime,
+        status: reservation.status,
+        special_requests: reservation.specialRequests,
+        occasion: reservation.occasion,
+        high_chair: reservation.highChair,
+        deposit_amount: reservation.depositAmount,
+        deposit_paid: reservation.depositPaid,
+        deposit_method: reservation.depositMethod,
+        waiter_assigned: reservation.waiterAssigned,
+        cancel_reason: reservation.cancelReason,
+        cancelled_at: reservation.cancelledAt ? new Date(reservation.cancelledAt).toISOString() : null,
+        updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase.from('reservations').upsert(payload);
+    if (error) console.error("Cloud Save Error (Reservation):", error);
+};
+
+export const deleteReservationFromCloud = async (id: string) => {
+    if (!supabase || !currentUserId) return;
+    await supabase.from('reservations').delete().eq('id', id);
+};
+
+
+// --- CUSTOMER MANAGEMENT (CLOUD SYNC) ---
+
+export const getCustomersFromCloud = async (): Promise<Customer[]> => {
+    if (!supabase || !currentUserId) return [];
+
+    const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('user_id', currentUserId);
+
+    if (error) {
+        console.error("Error fetching customers:", error);
+        return [];
+    }
+
+    return data.map((c: any) => ({
+        id: c.id,
+        firstName: c.first_name,
+        lastName: c.last_name,
+        phone: c.phone,
+        email: c.email,
+        city: c.city,
+        notes: c.notes,
+        totalVisits: c.total_visits,
+        createdAt: new Date(c.created_at).getTime(),
+        lastVisit: c.last_visit ? new Date(c.last_visit).getTime() : undefined,
+        totalSpent: c.total_spent,
+        preferredTable: c.preferred_table,
+        allergies: c.allergies
+    }));
+};
+
+export const saveCustomerToCloud = async (customer: Customer) => {
+    if (!supabase || !currentUserId) return;
+
+    const payload = {
+        id: customer.id,
+        user_id: currentUserId,
+        first_name: customer.firstName,
+        last_name: customer.lastName,
+        phone: customer.phone,
+        email: customer.email,
+        city: customer.city,
+        notes: customer.notes,
+        total_visits: customer.totalVisits,
+        total_spent: customer.totalSpent,
+        preferred_table: customer.preferredTable,
+        allergies: customer.allergies,
+        last_visit: customer.lastVisit ? new Date(customer.lastVisit).toISOString() : null
+    };
+
+    const { error } = await supabase.from('customers').upsert(payload);
+    if (error) console.error("Cloud Save Error (Customer):", error);
+};
+
+// --- SYNC HELPERS (Downstream + Notify) ---
+
+export const syncReservationsDown = async () => {
+    const data = await getReservationsFromCloud();
+    // Always save, even if empty (to handle clear deletes from other devices?) 
+    // Actually, getReservationsFromCloud returns active ones. If list is empty, maybe we have 0 reservations.
+    // Safe to overwrite local cache.
+    localStorage.setItem('reservations', JSON.stringify(data));
+    window.dispatchEvent(new Event('local-reservations-update'));
+};
+
+export const syncCustomersDown = async () => {
+    const data = await getCustomersFromCloud();
+    if (data) {
+        localStorage.setItem('customers', JSON.stringify(data));
+        window.dispatchEvent(new Event('local-customers-update'));
+    }
 };

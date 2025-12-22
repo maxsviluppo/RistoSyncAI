@@ -1287,7 +1287,7 @@ export function App() {
                     <div className="relative z-10 w-full max-w-7xl mx-auto px-4 mt-5">
                         <button
                             onClick={() => setShowReservations(true)}
-                            className="group w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white font-black py-6 rounded-2xl flex items-center justify-center gap-4 transition-all duration-300 shadow-2xl hover:shadow-purple-500/50 transform hover:scale-[1.02] active:scale-[0.98] border-2 border-purple-400/30 hover:border-purple-300 overflow-hidden relative"
+                            className="group w-full bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 hover:from-orange-500 hover:via-red-500 hover:to-orange-500 text-white font-black py-6 rounded-2xl flex items-center justify-center gap-4 transition-all duration-300 shadow-2xl hover:shadow-orange-500/50 transform hover:scale-[1.02] active:scale-[0.98] border-2 border-orange-400/30 hover:border-orange-300 overflow-hidden relative"
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 group-hover:animate-shimmer"></div>
                             <Calendar size={32} className="group-hover:rotate-12 transition-transform duration-300 drop-shadow-lg" />
@@ -1334,6 +1334,7 @@ export function App() {
                         <nav className="flex-1 overflow-y-auto p-4 space-y-2">
                             <button onClick={() => setAdminTab('profile')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'profile' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Store size={18} /> Profilo Ristorante</button>
                             <button onClick={() => setAdminTab('menu')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'menu' ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Utensils size={18} /> Gestione Menu</button>
+                            <button onClick={() => setAdminTab('customers')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'customers' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Users size={18} /> Gestione Clienti</button>
                             <button onClick={() => setAdminTab('share')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'share' ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><QrCode size={18} /> Menu Digitale/Cartaceo</button>
                             <button onClick={() => setAdminTab('messages')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all relative ${adminTab === 'messages' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
                                 <Mail size={18} /> Messaggi / News
@@ -1346,7 +1347,6 @@ export function App() {
                             <button onClick={() => setAdminTab('ai')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'ai' ? 'bg-pink-600 text-white shadow-lg shadow-pink-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Bot size={18} /> AI Intelligence</button>
                             <button onClick={() => setAdminTab('marketing')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'marketing' ? 'bg-pink-500 text-white shadow-lg shadow-pink-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Megaphone size={18} /> Marketing <span className="ml-auto bg-blue-600 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Beta</span></button>
                             <button onClick={() => setAdminTab('delivery')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'delivery' ? 'bg-green-600 text-white shadow-lg shadow-green-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Bike size={18} /> Piattaforme Delivery</button>
-                            <button onClick={() => setAdminTab('customers')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'customers' ? 'bg-teal-600 text-white shadow-lg shadow-teal-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Users size={18} /> Gestione Clienti</button>
                             <button onClick={() => setAdminTab('info')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'info' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Info size={18} /> Info & Supporto</button>
                         </nav>
                         <div className="p-4 border-t border-slate-800"><button onClick={() => setShowAdmin(false)} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl font-bold transition-colors"><ArrowLeft size={18} /> Torna alla Home</button></div>
@@ -3117,17 +3117,11 @@ export function App() {
                                 )}
                             </div>
                         )}
-
                         {adminTab === 'customers' && (
-                            <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-20">
-                                <h2 className="text-3xl font-black text-white mb-4 flex items-center gap-3"><Users size={32} className="text-teal-500" /> Gestione Clienti</h2>
-                                <p className="text-slate-400 mb-8">Gestisci i tuoi clienti prenotati. Visualizza, modifica ed elimina i dati dei clienti che hanno effettuato prenotazioni.</p>
-
-                                <CustomerManager
-                                    showToast={showToast}
-                                    showConfirm={showConfirm}
-                                />
-                            </div>
+                            <CustomerManager
+                                showToast={showToast}
+                                showConfirm={showConfirm}
+                            />
                         )}
                     </div >
                 </div >
