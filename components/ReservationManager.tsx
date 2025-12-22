@@ -181,7 +181,7 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
 
         const cloudResult = await saveCustomerToCloud(customer);
         if (!cloudResult.success) {
-            showToast('⚠️ Errore salvataggio Cliente su Cloud', 'warning');
+            showToast('⚠️ Errore salvataggio Cliente su Cloud', 'error');
             return false;
         }
         return true;
@@ -297,96 +297,109 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
     };
 
     const handleSubmitReservation = async () => {
-        if (!selectedTable) {
-            showToast('⚠️ Seleziona un tavolo', 'error');
-            return;
-        }
+        console.log("🚀 SUBMIT START");
+        try {
+            if (!selectedTable) {
+                showToast('⚠️ Seleziona un tavolo', 'error');
+                return;
+            }
 
-        if (!formData.customerPhone || !formData.customerFirstName) {
-            showToast('⚠️ Compila almeno Nome e Telefono', 'error');
-            return;
-        }
+            if (!formData.customerPhone || !formData.customerFirstName) {
+                showToast('⚠️ Compila almeno Nome e Telefono', 'error');
+                return;
+            }
 
-        showToast('Salvataggio in corso...', 'info');
+            showToast('Salvataggio in corso...', 'info');
 
-        // Create or update customer
-        let customer = foundCustomer;
+            // Create or update customer
+            let customer = foundCustomer;
 
-        // Search by phone if not found via search tool
-        if (!customer && formData.customerPhone) {
-            customer = customers.find(c => c.phone === formData.customerPhone) || null;
-        }
+            // Search by phone if not found via search tool
+            if (!customer && formData.customerPhone) {
+                customer = customers.find(c => c.phone === formData.customerPhone) || null;
+            }
 
-        if (!customer) {
-            customer = {
-                id: `customer_${Date.now()}`,
-                firstName: formData.customerFirstName,
-                lastName: formData.customerLastName,
-                phone: formData.customerPhone,
-                email: formData.customerEmail,
-                city: formData.customerCity,
-                createdAt: Date.now(),
-                totalVisits: 0,
-                totalSpent: 0,
-                vip: false
+            if (!customer) {
+                customer = {
+                    id: `customer_${Date.now()}`,
+                    firstName: formData.customerFirstName,
+                    lastName: formData.customerLastName,
+                    phone: formData.customerPhone,
+                    email: formData.customerEmail,
+                    city: formData.customerCity,
+                    createdAt: Date.now(),
+                    totalVisits: 0,
+                    totalSpent: 0,
+                    vip: false
+                };
+                console.log("Creating new customer...");
+                await saveCustomer(customer);
+            } else {
+                // Update existing customer data if changed
+                const updatedCustomer = {
+                    ...customer,
+                    firstName: formData.customerFirstName,
+                    lastName: formData.customerLastName,
+                    email: formData.customerEmail || customer.email,
+                    city: formData.customerCity || customer.city
+                };
+                console.log("Updating customer...");
+                await saveCustomer(updatedCustomer);
+            }
+
+            // Create reservation
+            const reservation: Reservation = {
+                id: editingReservation?.id || `res_${Date.now()}`,
+                tableNumber: selectedTable,
+                customerId: customer.id,
+                customerName: `${formData.customerFirstName} ${formData.customerLastName}`.trim(),
+                customerPhone: formData.customerPhone,
+                customerEmail: formData.customerEmail,
+                numberOfGuests: formData.numberOfGuests,
+                numberOfChildren: formData.numberOfChildren,
+                reservationDate: formData.reservationDate,
+                reservationTime: formData.reservationTime,
+                status: editingReservation ? editingReservation.status : ReservationStatus.PENDING,
+                createdAt: editingReservation?.createdAt || Date.now(),
+                updatedAt: Date.now(),
+                specialRequests: formData.specialRequests,
+                occasion: formData.occasion,
+                highChair: formData.highChair,
+                depositAmount: formData.depositAmount,
+                depositPaid: formData.depositAmount > 0,
+                depositMethod: formData.depositMethod,
             };
-            await saveCustomer(customer);
-        } else {
-            // Update existing customer data if changed
-            const updatedCustomer = {
-                ...customer,
-                firstName: formData.customerFirstName,
-                lastName: formData.customerLastName,
-                email: formData.customerEmail || customer.email,
-                city: formData.customerCity || customer.city
-            };
-            await saveCustomer(updatedCustomer);
-        }
 
-        // Create reservation
-        const reservation: Reservation = {
-            id: editingReservation?.id || `res_${Date.now()}`,
-            tableNumber: selectedTable,
-            customerId: customer.id,
-            customerName: `${formData.customerFirstName} ${formData.customerLastName}`.trim(),
-            customerPhone: formData.customerPhone,
-            customerEmail: formData.customerEmail,
-            numberOfGuests: formData.numberOfGuests,
-            numberOfChildren: formData.numberOfChildren,
-            reservationDate: formData.reservationDate, // Usa la data del form
-            reservationTime: formData.reservationTime,
-            status: editingReservation ? editingReservation.status : ReservationStatus.PENDING,
-            createdAt: editingReservation?.createdAt || Date.now(),
-            updatedAt: Date.now(),
-            specialRequests: formData.specialRequests,
-            occasion: formData.occasion,
-            highChair: formData.highChair,
-            depositAmount: formData.depositAmount,
-            depositPaid: formData.depositAmount > 0,
-            depositMethod: formData.depositMethod,
-        };
+            // Handle Deposit (simple implementation)
+            if (formData.depositAmount > 0 && !editingReservation) {
+                const deposit: Deposit = {
+                    id: `dep_${Date.now()}`,
+                    reservationId: reservation.id,
+                    amount: formData.depositAmount,
+                    paymentMethod: formData.depositMethod,
+                    paidAt: Date.now(),
+                };
+                const storedDeps = localStorage.getItem('deposits');
+                const deposits = storedDeps ? JSON.parse(storedDeps) : [];
+                deposits.push(deposit);
+                localStorage.setItem('deposits', JSON.stringify(deposits));
+                reservation.depositId = deposit.id;
+            }
 
-        // Handle Deposit (simple implementation)
-        if (formData.depositAmount > 0 && !editingReservation) {
-            const deposit: Deposit = {
-                id: `dep_${Date.now()}`,
-                reservationId: reservation.id,
-                amount: formData.depositAmount,
-                paymentMethod: formData.depositMethod,
-                paidAt: Date.now(),
-            };
-            const storedDeps = localStorage.getItem('deposits');
-            const deposits = storedDeps ? JSON.parse(storedDeps) : [];
-            deposits.push(deposit);
-            localStorage.setItem('deposits', JSON.stringify(deposits));
-            reservation.depositId = deposit.id;
-        }
+            console.log("Saving Reservation...");
+            const success = await saveReservation(reservation);
+            console.log("Save Result:", success);
 
-        const success = await saveReservation(reservation);
-        if (success) {
-            showToast('✅ Prenotazione salvata e sincronizzata!', 'success');
-            resetForm();
-            setView('grid');
+            if (success) {
+                showToast('✅ Prenotazione salvata e sincronizzata!', 'success');
+                resetForm();
+                setView('grid');
+            } else {
+                alert("Errore salvataggio: Impossibile sincronizzare col Cloud. Controlla la connessione o l'autenticazione.");
+            }
+        } catch (e: any) {
+            console.error("CRITICAL ERROR handleSubmit:", e);
+            alert("Errore Critico: " + (e.message || e));
         }
     };
 
