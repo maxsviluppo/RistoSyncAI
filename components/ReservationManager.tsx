@@ -146,7 +146,7 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
         }
     };
 
-    const saveReservation = async (reservation: Reservation): Promise<boolean> => {
+    const saveReservation = async (reservation: Reservation): Promise<string | null> => {
         const stored = localStorage.getItem('reservations');
         const all: Reservation[] = stored ? JSON.parse(stored) : [];
         const index = all.findIndex(r => r.id === reservation.id);
@@ -161,13 +161,14 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
 
         const cloudResult = await saveReservationToCloud(reservation);
         if (!cloudResult.success) {
-            showToast('⚠️ Salvato solo locale. Errore Cloud: ' + (cloudResult.error?.message || 'Errore Sync'), 'error');
-            return false;
+            const msg = cloudResult.error?.message || JSON.stringify(cloudResult.error) || 'Errore Sconosciuto';
+            showToast('⚠️ Errore Cloud: ' + msg, 'error');
+            return msg;
         }
-        return true;
+        return null;
     };
 
-    const saveCustomer = async (customer: Customer): Promise<boolean> => {
+    const saveCustomer = async (customer: Customer): Promise<string | null> => {
         const stored = localStorage.getItem('customers');
         const all: Customer[] = stored ? JSON.parse(stored) : [];
         const index = all.findIndex(c => c.id === customer.id);
@@ -181,10 +182,11 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
 
         const cloudResult = await saveCustomerToCloud(customer);
         if (!cloudResult.success) {
-            showToast('⚠️ Errore salvataggio Cliente su Cloud', 'error');
-            return false;
+            const msg = cloudResult.error?.message || JSON.stringify(cloudResult.error) || 'Errore Sconosciuto';
+            showToast('⚠️ Errore Cloud Cliente: ' + msg, 'error');
+            return msg;
         }
-        return true;
+        return null;
     };
 
     const searchCustomer = (query: string) => {
@@ -387,15 +389,15 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
             }
 
             console.log("Saving Reservation...");
-            const success = await saveReservation(reservation);
-            console.log("Save Result:", success);
+            const errorMsg = await saveReservation(reservation);
+            console.log("Save Result:", errorMsg);
 
-            if (success) {
+            if (!errorMsg) {
                 showToast('✅ Prenotazione salvata e sincronizzata!', 'success');
                 resetForm();
                 setView('grid');
             } else {
-                alert("Errore salvataggio: Impossibile sincronizzare col Cloud. Controlla la connessione o l'autenticazione.");
+                alert("ERRORE SUPABASE:\n" + errorMsg + "\n\nControlla le Policy RLS su Supabase o l'Autenticazione.");
             }
         } catch (e: any) {
             console.error("CRITICAL ERROR handleSubmit:", e);
