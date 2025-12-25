@@ -1,6 +1,7 @@
 /**
  * WhatsApp Business Cloud API Service
  * Official Meta API integration for sending WhatsApp messages
+ * (Fixed import path case sensitivity)
  */
 
 export interface WhatsAppConfig {
