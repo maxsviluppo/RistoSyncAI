@@ -304,7 +304,6 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                     specialRequests: res.specialRequests || '',
                     occasion: res.occasion || '',
                     highChair: res.highChair || false,
-                    highChair: res.highChair || false,
                     depositAmount: res.depositAmount || '',
                     depositMethod: res.depositMethod || 'cash',
                 });
@@ -326,7 +325,6 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
             reservationTime: '20:00',
             specialRequests: '',
             occasion: '',
-            highChair: false,
             highChair: false,
             depositAmount: '',
             depositMethod: 'cash',

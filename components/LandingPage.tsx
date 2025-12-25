@@ -24,7 +24,9 @@ import {
   Bell,
   FileText,
   Camera,
-  ChefHat
+  ChefHat,
+  Calendar,
+  MessageCircle
 } from 'lucide-react';
 
 // Promo Timer Component
@@ -278,6 +280,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToApp }) => 
 
   return (
     <div className="landing-page">
+      {/* Announcement Strip */}
+      <div 
+        className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-green-600 text-white font-bold py-2.5 px-4 text-center cursor-pointer relative z-50 flex items-center justify-center gap-2 shadow-lg"
+        onClick={() => document.getElementById('new-features')?.scrollIntoView({ behavior: 'smooth' })}
+      >
+        <span className="animate-pulse">✨</span>
+        <span className="uppercase tracking-wide text-xs md:text-sm">Novità: Prenotazione Tavoli e Marketing WhatsApp Disponibili!</span>
+        <ArrowRight size={16} className="ml-1" />
+      </div>
+
       {/* Header */}
       <header className={`landing-header ${scrolled ? 'scrolled' : ''}`}>
         <div className="landing-container">
@@ -417,6 +429,151 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToApp }) => 
           </h2>
         </div>
       </div>
+
+      {/* NEW FEATURES HIGHLIGHT BANNER */}
+      <section id="new-features" className="landing-section relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full filter blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-green-500 rounded-full filter blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+
+        <div className="landing-container relative z-10">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-green-600 text-white font-black text-sm mb-6 shadow-2xl animate-bounce">
+              <Sparkles size={20} className="animate-spin" />
+              NUOVE FUNZIONALITÀ DISPONIBILI ORA!
+              <Sparkles size={20} className="animate-spin" />
+            </div>
+            <h2 className="text-4xl md:text-6xl font-black text-white mb-4">
+              Prenotazioni & Marketing
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-green-400">
+                Portati al Livello Successivo
+              </span>
+            </h2>
+            <p className="text-slate-300 max-w-3xl mx-auto text-lg md:text-xl">
+              Gestisci le prenotazioni dei tavoli e lancia campagne marketing WhatsApp professionali.
+              Tutto integrato nella tua piattaforma RistoSync.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            {/* Table Reservations Feature */}
+            <div className="group relative bg-gradient-to-br from-blue-900/40 to-blue-600/20 border-2 border-blue-500/50 rounded-3xl p-8 hover:scale-105 transition-all duration-300 shadow-2xl hover:shadow-blue-500/50">
+              <div className="absolute -top-4 -right-4 bg-blue-500 text-white px-4 py-2 rounded-full text-xs font-black uppercase shadow-lg animate-pulse">
+                Nuovo!
+              </div>
+
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-blue-500/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Calendar className="w-8 h-8 text-blue-400" />
+                </div>
+                <h3 className="text-3xl font-black text-white">
+                  Prenotazione Tavoli
+                </h3>
+              </div>
+
+              <p className="text-slate-300 text-lg mb-6">
+                Sistema completo di gestione prenotazioni con conferme automatiche,
+                promemoria SMS, gestione liste d'attesa e ottimizzazione intelligente dei posti.
+              </p>
+
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center gap-3 text-blue-300">
+                  <CheckCircle2 className="w-5 h-5 text-blue-400 shrink-0" />
+                  <span className="font-semibold">Conferme automatiche via SMS/Email</span>
+                </div>
+                <div className="flex items-center gap-3 text-blue-300">
+                  <CheckCircle2 className="w-5 h-5 text-blue-400 shrink-0" />
+                  <span className="font-semibold">Gestione liste d'attesa intelligente</span>
+                </div>
+                <div className="flex items-center gap-3 text-blue-300">
+                  <CheckCircle2 className="w-5 h-5 text-blue-400 shrink-0" />
+                  <span className="font-semibold">Riduzione no-show fino al 70%</span>
+                </div>
+                <div className="flex items-center gap-3 text-blue-300">
+                  <CheckCircle2 className="w-5 h-5 text-blue-400 shrink-0" />
+                  <span className="font-semibold">Dashboard real-time occupazione tavoli</span>
+                </div>
+              </div>
+
+              <div className="bg-blue-500/20 border border-blue-400/30 rounded-xl p-4 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-blue-300 text-sm font-bold">Risparmio Medio</div>
+                    <div className="text-white text-2xl font-black">15 ore/settimana</div>
+                  </div>
+                  <TrendingUp className="w-12 h-12 text-blue-400 opacity-50" />
+                </div>
+              </div>
+            </div>
+
+            {/* WhatsApp Marketing Feature */}
+            <div className="group relative bg-gradient-to-br from-green-900/40 to-green-600/20 border-2 border-green-500/50 rounded-3xl p-8 hover:scale-105 transition-all duration-300 shadow-2xl hover:shadow-green-500/50">
+              <div className="absolute -top-4 -right-4 bg-green-500 text-white px-4 py-2 rounded-full text-xs font-black uppercase shadow-lg animate-pulse">
+                Nuovo!
+              </div>
+
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-green-500/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <MessageCircle className="w-8 h-8 text-green-400" />
+                </div>
+                <h3 className="text-3xl font-black text-white">
+                  Marketing WhatsApp
+                </h3>
+              </div>
+
+              <p className="text-slate-300 text-lg mb-6">
+                Campagne marketing professionali via WhatsApp Business API con Meta.
+                Messaggi personalizzati, automazioni avanzate e analytics dettagliati.
+              </p>
+
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center gap-3 text-green-300">
+                  <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />
+                  <span className="font-semibold">Integrazione Meta WhatsApp Business API</span>
+                </div>
+                <div className="flex items-center gap-3 text-green-300">
+                  <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />
+                  <span className="font-semibold">Messaggi personalizzati automatici</span>
+                </div>
+                <div className="flex items-center gap-3 text-green-300">
+                  <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />
+                  <span className="font-semibold">Tasso di apertura del 98%</span>
+                </div>
+                <div className="flex items-center gap-3 text-green-300">
+                  <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />
+                  <span className="font-semibold">Segmentazione clienti avanzata</span>
+                </div>
+              </div>
+
+              <div className="bg-green-500/20 border border-green-400/30 rounded-xl p-4 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-green-300 text-sm font-bold">Tasso Conversione</div>
+                    <div className="text-white text-2xl font-black">+45% vendite</div>
+                  </div>
+                  <TrendingUp className="w-12 h-12 text-green-400 opacity-50" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA Button */}
+          <div className="text-center mt-12">
+            <button
+              className="group relative inline-flex items-center gap-3 px-8 py-5 bg-gradient-to-r from-blue-600 via-purple-600 to-green-600 text-white font-black text-xl rounded-2xl shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 hover:scale-110"
+              onClick={onNavigateToApp}
+            >
+              <Zap className="w-6 h-6 animate-pulse" />
+              <span>Prova Subito le Nuove Funzionalità</span>
+              <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+            </button>
+            <p className="text-slate-400 text-sm mt-4">
+              15 giorni di prova gratuita • Nessuna carta di credito richiesta
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* AI Powerhouse Section */}
       <section className="landing-section relative">
