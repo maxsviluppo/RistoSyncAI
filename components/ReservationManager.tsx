@@ -86,7 +86,7 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
         specialRequests: '',
         occasion: '',
         highChair: false,
-        depositAmount: 0,
+        depositAmount: '' as number | string,
         depositMethod: 'cash' as PaymentMethod,
     });
 
@@ -304,7 +304,8 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                     specialRequests: res.specialRequests || '',
                     occasion: res.occasion || '',
                     highChair: res.highChair || false,
-                    depositAmount: res.depositAmount || 0,
+                    highChair: res.highChair || false,
+                    depositAmount: res.depositAmount || '',
                     depositMethod: res.depositMethod || 'cash',
                 });
                 setView('form');
@@ -326,7 +327,8 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
             specialRequests: '',
             occasion: '',
             highChair: false,
-            depositAmount: 0,
+            highChair: false,
+            depositAmount: '',
             depositMethod: 'cash',
         });
         setFoundCustomer(null);
@@ -408,6 +410,8 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                 await saveCustomer(updatedCustomer);
             }
 
+            const finalDepositAmount = Number(formData.depositAmount) || 0;
+
             // Create reservation
             const reservation: Reservation = {
                 id: editingReservation?.id || generateUUID(),
@@ -426,17 +430,17 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                 specialRequests: formData.specialRequests,
                 occasion: formData.occasion,
                 highChair: formData.highChair,
-                depositAmount: formData.depositAmount,
-                depositPaid: formData.depositAmount > 0,
+                depositAmount: finalDepositAmount,
+                depositPaid: finalDepositAmount > 0,
                 depositMethod: formData.depositMethod,
             };
 
             // Handle Deposit (simple implementation)
-            if (formData.depositAmount > 0 && !editingReservation) {
+            if (finalDepositAmount > 0 && !editingReservation) {
                 const deposit: Deposit = {
                     id: generateUUID(),
                     reservationId: reservation.id,
-                    amount: formData.depositAmount,
+                    amount: finalDepositAmount,
                     paymentMethod: formData.depositMethod,
                     paidAt: Date.now(),
                 };
@@ -1151,7 +1155,7 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                                                     min="0"
                                                     step="0.01"
                                                     value={formData.depositAmount}
-                                                    onChange={(e) => setFormData({ ...formData, depositAmount: parseFloat(e.target.value) || 0 })}
+                                                    onChange={(e) => setFormData({ ...formData, depositAmount: e.target.value })}
                                                     className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-green-500"
                                                 />
                                             </div>

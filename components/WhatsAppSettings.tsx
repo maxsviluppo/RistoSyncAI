@@ -33,6 +33,24 @@ const WhatsAppSettings: React.FC<WhatsAppSettingsProps> = ({ showToast }) => {
     };
 
     const handleSave = () => {
+        // Validation: Check for Google API Key confusion
+        if (accessToken.startsWith('AIza')) {
+            showToast('⚠️ Errore: Hai inserito una Google API Key (inizia con AIza) al posto del Token WhatsApp (inizia con EAA).', 'error');
+            return;
+        }
+
+        // Validation: Check for correct Facebook Token format
+        if (!accessToken.startsWith('EAA')) {
+            showToast('⚠️ Attenzione: Il Token WhatsApp dovrebbe iniziare con "EAA". Controlla di aver copiato il token corretto.', 'info');
+            // We allow saving but warn the user
+        }
+
+        // Validation: Phone Number ID should be numeric
+        if (!/^\d+$/.test(phoneNumberId)) {
+            showToast('⚠️ Il Phone Number ID deve contenere solo numeri.', 'error');
+            return;
+        }
+
         const settings = getAppSettings();
 
         const updatedSettings = {

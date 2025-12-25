@@ -254,6 +254,7 @@ export interface Customer {
   preferredTable?: string;
   allergies?: string[];
   vip?: boolean; // Cliente VIP
+  gender?: 'male' | 'female' | 'other';
 }
 
 export interface Deposit {
