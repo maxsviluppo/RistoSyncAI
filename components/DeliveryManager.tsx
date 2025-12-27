@@ -395,10 +395,17 @@ Esempio output:
     const renderPlatformColumn = (platformKey: string) => {
         const platform = PLATFORMS[platformKey];
         // Filter orders by tableNumber pattern (e.g., DEL_JUST-EAT_123 or ASP_PHONE_456)
+        // AND exclude orders where ALL items are completed
         const platformOrders = orders.filter(o => {
             const table = o.tableNumber?.toUpperCase() || '';
-            return table.includes(platformKey.toUpperCase().replace('-', '_')) ||
+            const matchesPlatform = table.includes(platformKey.toUpperCase().replace('-', '_')) ||
                 table.includes(platformKey.toUpperCase());
+
+            if (!matchesPlatform) return false;
+
+            // Check if all items are completed - if so, hide the order
+            const allItemsCompleted = o.items.every(item => item.completed);
+            return !allItemsCompleted;
         });
 
         return (
@@ -634,7 +641,11 @@ Esempio output:
 
     const renderListView = () => {
         // LOGICA DI FILTRO E ORDINAMENTO
-        let processedOrders = [...orders];
+        // First, filter out orders where ALL items are completed
+        let processedOrders = orders.filter(o => {
+            const allItemsCompleted = o.items.every(item => item.completed);
+            return !allItemsCompleted;
+        });
 
         // 1. Filtro per Piattaforma
         if (filterPlatform !== 'ALL') {

@@ -673,24 +673,36 @@ export const deleteHistoryByDate = async (targetDate: Date) => {
 };
 
 export const freeTable = async (tableNumber: string) => {
+    // 1. Archive Orders
     const orders = getOrders();
-    const tableOrders = orders.filter(o => o.tableNumber === tableNumber);
-    const otherOrders = orders.filter(o => o.tableNumber !== tableNumber);
+    const tableOrders = orders.filter(o => o.tableNumber === tableNumber && o.status !== OrderStatus.DELIVERED);
 
-    const archivedOrders = tableOrders.map(o => ({
-        ...o,
-        status: OrderStatus.DELIVERED,
-        tableNumber: `${o.tableNumber}_HISTORY`,
-        timestamp: Date.now()
-    }));
+    // Only process if there are active orders to archive
+    if (tableOrders.length > 0) {
+        const otherOrders = orders.filter(o => o.tableNumber !== tableNumber || o.status === OrderStatus.DELIVERED);
+        const archivedOrders = tableOrders.map(o => ({
+            ...o,
+            status: OrderStatus.DELIVERED,
+            tableNumber: `${o.tableNumber}_HISTORY`,
+            timestamp: Date.now()
+        }));
 
-    const newOrders = [...otherOrders, ...archivedOrders];
-    saveLocallyAndNotify(newOrders);
+        const newOrders = [...otherOrders, ...archivedOrders];
+        saveLocallyAndNotify(newOrders);
 
-    if (supabase && currentUserId) {
-        for (const o of archivedOrders) {
-            await syncOrderToCloud(o);
+        if (supabase && currentUserId) {
+            for (const o of archivedOrders) {
+                await syncOrderToCloud(o);
+            }
         }
+    }
+
+    // 2. Complete Reservation (if any)
+    const reservation = getTableReservation(tableNumber);
+    if (reservation && (reservation.status === ReservationStatus.SEATED || reservation.status === ReservationStatus.PENDING)) {
+        await updateReservationStatus(reservation.id, ReservationStatus.COMPLETED, {
+            completedAt: Date.now()
+        });
     }
 };
 

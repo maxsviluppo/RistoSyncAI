@@ -579,19 +579,36 @@ const WaiterPad: React.FC<WaiterPadProps> = ({ onExit }) => {
             <div className="flex-1 overflow-hidden flex flex-col relative">
                 {view === 'tables' && (
                     <div className="flex-1 overflow-y-auto p-4 relative">
-                        {/* NEW: Upcoming Reservations Banner */}
-                        {reservations.filter(r => r.status === ReservationStatus.PENDING).length > 0 && (
-                            <div className="mb-4 bg-gradient-to-r from-purple-900/40 to-purple-800/40 border border-purple-500/50 rounded-2xl p-4 shadow-lg">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <Calendar size={20} className="text-purple-300" />
-                                    <h3 className="text-lg font-black text-white">Prenotazioni in Arrivo</h3>
-                                </div>
-                                <div className="space-y-2">
-                                    {reservations
-                                        .filter(r => r.status === ReservationStatus.PENDING)
-                                        .sort((a, b) => a.reservationTime.localeCompare(b.reservationTime))
-                                        .slice(0, 3)
-                                        .map(reservation => (
+                        {/* NEW: Upcoming Reservations Banner - Only show reservations within 1 hour */}
+                        {(() => {
+                            const now = new Date();
+                            // Filter reservations to only show those within 1 hour window
+                            const upcomingReservations = reservations
+                                .filter(r => r.status === ReservationStatus.PENDING)
+                                .filter(r => {
+                                    const [hours, minutes] = r.reservationTime.split(':').map(Number);
+                                    const resTime = new Date();
+                                    resTime.setHours(hours, minutes, 0, 0);
+
+                                    // Show if current time >= (reservation time - 1 hour)
+                                    const oneHourBefore = new Date(resTime);
+                                    oneHourBefore.setHours(resTime.getHours() - 1);
+
+                                    return now >= oneHourBefore;
+                                })
+                                .sort((a, b) => a.reservationTime.localeCompare(b.reservationTime))
+                                .slice(0, 3);
+
+                            if (upcomingReservations.length === 0) return null;
+
+                            return (
+                                <div className="mb-4 bg-gradient-to-r from-purple-900/40 to-purple-800/40 border border-purple-500/50 rounded-2xl p-4 shadow-lg">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Calendar size={20} className="text-purple-300" />
+                                        <h3 className="text-lg font-black text-white">Prenotazioni in Arrivo</h3>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {upcomingReservations.map(reservation => (
                                             <div key={reservation.id} className="bg-slate-900/60 backdrop-blur-sm rounded-xl p-3 border border-purple-500/30 flex items-center justify-between">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-1">
@@ -624,9 +641,10 @@ const WaiterPad: React.FC<WaiterPadProps> = ({ onExit }) => {
                                                 </button>
                                             </div>
                                         ))}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            );
+                        })()}
 
                         {selectedTable && (
                             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">

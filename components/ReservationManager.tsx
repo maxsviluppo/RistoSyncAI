@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, Clock, Users, Phone, Mail, MapPin, Euro, CreditCard, X, Check, Edit2, Trash2, AlertCircle, User, History, Plus, Search, Filter, ChevronDown, Baby, Gift, Briefcase, Heart, XCircle, ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
-import { Reservation, Customer, ReservationStatus, PaymentMethod, Deposit } from '../types';
-import { getReservationsFromCloud, getCustomersFromCloud, saveReservationToCloud, saveCustomerToCloud, generateUUID } from '../services/storageService';
+import { Calendar, Clock, Users, Phone, Mail, MapPin, Euro, CreditCard, X, Check, Edit2, Trash2, AlertCircle, User, History, Plus, Search, Filter, ChevronDown, Baby, Gift, Briefcase, Heart, XCircle, ChevronLeft, ChevronRight, LayoutGrid, Utensils } from 'lucide-react';
+import { Reservation, Customer, ReservationStatus, PaymentMethod, Deposit, Order, OrderStatus } from '../types';
+import { getReservationsFromCloud, getCustomersFromCloud, saveReservationToCloud, saveCustomerToCloud, generateUUID, getOrders } from '../services/storageService';
 
 interface ReservationManagerProps {
     onClose: () => void;
@@ -17,9 +17,10 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
     const [selectedTable, setSelectedTable] = useState<string | null>(null);
     const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterStatus, setFilterStatus] = useState<ReservationStatus | 'all'>('all');
+    const [filterStatus, setFilterStatus] = useState<ReservationStatus | 'all' | 'occupied'>('all');
     const [tableCount, setTableCount] = useState(12);
     const [occupancy, setOccupancy] = useState<Record<string, number>>({}); // Mappa: Data -> Num. Prenotazioni
+    const [activeOrders, setActiveOrders] = useState<Order[]>([]); // Ordini attivi per mostrare tavoli occupati
 
     useEffect(() => {
         loadSettings();
@@ -99,22 +100,73 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
         loadReservations();
         loadCustomers();
         updateOccupancy();
+        loadActiveOrders();
 
         const handleSettingsUpdate = () => loadSettings();
         // Re-definisco i listener qui per catturare la 'selectedDate' aggiornata nella closure di loadReservations
         const handleResUpdate = () => { loadReservations(); updateOccupancy(); };
         const handleCustUpdate = () => loadCustomers();
+        const handleOrdersUpdate = () => loadActiveOrders();
 
         window.addEventListener('local-settings-update', handleSettingsUpdate);
         window.addEventListener('local-reservations-update', handleResUpdate);
         window.addEventListener('local-customers-update', handleCustUpdate);
+        window.addEventListener('local-storage-update', handleOrdersUpdate);
 
         return () => {
             window.removeEventListener('local-settings-update', handleSettingsUpdate);
             window.removeEventListener('local-reservations-update', handleResUpdate);
             window.removeEventListener('local-customers-update', handleCustUpdate);
+            window.removeEventListener('local-storage-update', handleOrdersUpdate);
         };
     }, [selectedDate]);
+    // Load active orders (tables occupied by walk-ins)
+    const loadActiveOrders = () => {
+        const orders = getOrders() || [];
+        const today = new Date().toISOString().split('T')[0];
+
+        // Filter only REAL active orders:
+        // 1. Not delivered/completed (check both enum value and string to be safe)
+        // 2. Only from today (by checking timestamp)
+        // 3. Only real table numbers (exclude _HISTORY, DEL_, ASP_ prefixes)
+        const active = orders.filter(o => {
+            // Check status - must NOT be delivered
+            const statusStr = String(o.status);
+            const isDelivered = statusStr === OrderStatus.DELIVERED ||
+                statusStr === 'Servito' ||
+                statusStr === 'DELIVERED';
+            if (isDelivered) return false;
+
+            // Check if it's a real table (not delivery, takeaway, or history)
+            const tableNum = o.tableNumber?.toString() || '';
+            const isSpecialTable = tableNum.includes('_HISTORY') ||
+                tableNum.startsWith('DEL_') ||
+                tableNum.startsWith('ASP_') ||
+                tableNum.includes('HISTORY');
+            if (isSpecialTable) return false;
+
+            // Check if from today (optional but recommended)
+            const orderDate = new Date(o.createdAt || o.timestamp);
+            const orderDateStr = orderDate.toISOString().split('T')[0];
+            if (orderDateStr !== today) return false;
+
+            return true;
+        });
+
+        setActiveOrders(active);
+    };
+
+    // Get tables with active orders but NO reservation (walk-ins)
+    const getOccupiedTablesWithoutReservation = (): string[] => {
+        const reservedTables = reservations
+            .filter(r => r.status !== ReservationStatus.CANCELLED && r.status !== ReservationStatus.COMPLETED)
+            .map(r => r.tableNumber);
+
+        const occupiedByOrders = [...new Set(activeOrders.map(o => o.tableNumber))];
+
+        // Return tables that have orders but NO reservation
+        return occupiedByOrders.filter(t => !reservedTables.includes(t));
+    };
 
     // Sync form date with selected calendar date when opening new reservation
     useEffect(() => {
@@ -254,16 +306,61 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
     };
 
     const getTableStatus = (tableNum: string) => {
-        const tableRes = reservations.find(r => r.tableNumber === tableNum && r.status !== ReservationStatus.CANCELLED && r.status !== ReservationStatus.COMPLETED);
-        if (tableRes) {
-            if (tableRes.status === ReservationStatus.SEATED) return 'seated';
-            return 'reserved';
+        // FIRST: Check if table has active orders (walk-in or any order in progress)
+        const hasActiveOrder = activeOrders.some(o => o.tableNumber === tableNum);
+        if (hasActiveOrder) {
+            return 'occupied'; // Table is in use right now!
         }
+
+        // THEN: Check reservations - but only those that overlap with the time you want to book
+        // A table can have multiple reservations at different times (e.g., lunch 12:00 and dinner 20:00)
+        // We use a 2-hour window: if you're booking for 12:00, we check if there's a reservation
+        // between 10:00 and 14:00 that would conflict
+        const now = new Date();
+        const activeRes = reservations.filter(r =>
+            r.tableNumber === tableNum &&
+            r.status !== ReservationStatus.CANCELLED &&
+            r.status !== ReservationStatus.COMPLETED
+        );
+
+        // First priority: Check for SEATED customers (they are at the table now)
+        const seatedRes = activeRes.find(r => r.status === ReservationStatus.SEATED);
+        if (seatedRes) return 'seated';
+
+        // Second: Check for PENDING reservations within a reasonable time window
+        // Show as "reserved" only if there's a reservation within 2 hours from now
+        const pendingRes = activeRes.find(r => {
+            if (r.status !== ReservationStatus.PENDING) return false;
+
+            const [hours, minutes] = r.reservationTime.split(':').map(Number);
+            const resTime = new Date();
+            resTime.setHours(hours, minutes, 0, 0);
+
+            // Window: 2 hours before to 2 hours after reservation time
+            // This prevents blocking the table all day for a single reservation
+            const twoHoursBefore = new Date(resTime);
+            twoHoursBefore.setHours(resTime.getHours() - 2);
+
+            const twoHoursAfter = new Date(resTime);
+            twoHoursAfter.setHours(resTime.getHours() + 2);
+
+            return now >= twoHoursBefore && now <= twoHoursAfter;
+        });
+
+        if (pendingRes) return 'reserved';
+
         return 'free';
     };
 
     const handleTableClick = (tableNum: string) => {
         const status = getTableStatus(tableNum);
+
+        // BLOCK: If table is occupied by active order, show warning
+        if (status === 'occupied') {
+            showToast(`⚠️ Tavolo ${tableNum} è OCCUPATO con ordine in corso! Non puoi prenotarlo adesso.`, 'error');
+            return;
+        }
+
         if (status === 'free') {
             setSelectedTable(tableNum);
             // Reset completo del form con data corretta dal calendario
@@ -625,21 +722,39 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setFilterStatus('all')}
-                                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${filterStatus === 'all' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+                                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 ${filterStatus === 'all' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
                                     >
                                         Tutti
+                                        <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">
+                                            {reservations.filter(r => r.status !== ReservationStatus.CANCELLED && r.status !== ReservationStatus.COMPLETED).length}
+                                        </span>
                                     </button>
                                     <button
                                         onClick={() => setFilterStatus(ReservationStatus.PENDING)}
-                                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${filterStatus === ReservationStatus.PENDING ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+                                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 ${filterStatus === ReservationStatus.PENDING ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
                                     >
-                                        In Attesa
+                                        ⏳ In Attesa
+                                        <span className={`px-2 py-0.5 rounded-full text-xs ${filterStatus === ReservationStatus.PENDING ? 'bg-white/20' : 'bg-blue-500/30 text-blue-400'}`}>
+                                            {reservations.filter(r => r.status === ReservationStatus.PENDING).length}
+                                        </span>
                                     </button>
                                     <button
                                         onClick={() => setFilterStatus(ReservationStatus.SEATED)}
-                                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${filterStatus === ReservationStatus.SEATED ? 'bg-yellow-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+                                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 ${filterStatus === ReservationStatus.SEATED ? 'bg-yellow-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
                                     >
-                                        A Tavola
+                                        🪑 A Tavola
+                                        <span className={`px-2 py-0.5 rounded-full text-xs ${filterStatus === ReservationStatus.SEATED ? 'bg-white/20' : 'bg-yellow-500/30 text-yellow-400'}`}>
+                                            {reservations.filter(r => r.status === ReservationStatus.SEATED).length}
+                                        </span>
+                                    </button>
+                                    <button
+                                        onClick={() => setFilterStatus('occupied')}
+                                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 ${filterStatus === 'occupied' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+                                    >
+                                        🍽️ Occupato
+                                        <span className={`px-2 py-0.5 rounded-full text-xs ${filterStatus === 'occupied' ? 'bg-white/20' : 'bg-orange-500/30 text-orange-400'}`}>
+                                            {getOccupiedTablesWithoutReservation().length}
+                                        </span>
                                     </button>
                                 </div>
 
@@ -670,11 +785,19 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                                             r.status !== ReservationStatus.COMPLETED
                                         );
 
+                                        // Status now includes 'occupied' for tables with active orders
+                                        const isOccupied = status === 'occupied';
+
                                         let bgClass = "bg-slate-800 border-slate-700 hover:border-slate-500 text-slate-400";
                                         let icon = <Check size={16} />;
                                         let label = "Libero";
 
-                                        if (status === 'reserved') {
+                                        if (isOccupied) {
+                                            // Table with active order (walk-in or seated customer ordering)
+                                            bgClass = "bg-orange-900/40 border-orange-500 text-orange-300 shadow-[0_0_15px_rgba(249,115,22,0.3)] cursor-not-allowed";
+                                            icon = <Utensils size={16} />;
+                                            label = "Occupato";
+                                        } else if (status === 'reserved') {
                                             bgClass = "bg-purple-900/30 border-purple-500 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.2)]";
                                             icon = <Calendar size={16} />;
                                             label = "Prenotato";
@@ -690,7 +813,7 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                                                 onClick={() => handleTableClick(tableNum)}
                                                 className={`aspect-square rounded-2xl border-2 flex flex-col items-center justify-center p-2 transition-all hover:scale-105 active:scale-95 relative group overflow-hidden ${bgClass}`}
                                             >
-                                                <span className={`font-black mb-1 transition-all ${res ? 'text-xl' : 'text-2xl'}`}>{num}</span>
+                                                <span className={`font-black mb-1 transition-all ${res || isOccupied ? 'text-xl' : 'text-2xl'}`}>{num}</span>
 
                                                 {res ? (
                                                     <div className="flex flex-col items-center w-full animate-in fade-in slide-in-from-bottom-2">
@@ -754,11 +877,20 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                                                 className="bg-slate-800 border border-slate-700 rounded-xl p-4 flex items-center justify-between hover:border-purple-500 transition-colors cursor-pointer"
                                             >
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center">
+                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${res.status === ReservationStatus.SEATED ? 'bg-yellow-600' : 'bg-purple-600'}`}>
                                                         <span className="text-white font-black text-lg">{res.tableNumber}</span>
                                                     </div>
                                                     <div>
-                                                        <div className="font-bold text-white">{res.customerName}</div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-bold text-white">{res.customerName}</span>
+                                                            {/* Status Badge */}
+                                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${res.status === ReservationStatus.SEATED
+                                                                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
+                                                                : 'bg-blue-500/20 text-blue-400 border border-blue-500/50'
+                                                                }`}>
+                                                                {res.status === ReservationStatus.SEATED ? '🪑 A Tavola' : '⏳ In Attesa'}
+                                                            </span>
+                                                        </div>
                                                         <div className="text-sm text-slate-400 flex items-center gap-3">
                                                             <span className="flex items-center gap-1"><Clock size={14} />{res.reservationTime}</span>
                                                             <span className="flex items-center gap-1"><Users size={14} />{res.numberOfGuests} persone</span>
@@ -768,9 +900,47 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                                                 </div>
 
                                                 <div className="flex items-center gap-2">
+                                                    {/* Status Change Button */}
+                                                    {res.status === ReservationStatus.PENDING && (
+                                                        <button
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                const updatedRes = {
+                                                                    ...res,
+                                                                    status: ReservationStatus.SEATED,
+                                                                    arrivedAt: Date.now(),
+                                                                    seatedAt: Date.now()
+                                                                };
+                                                                await saveReservation(updatedRes);
+                                                                showToast(`✅ ${res.customerName} è arrivato! Tavolo ${res.tableNumber} occupato.`, 'success');
+                                                            }}
+                                                            className="bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors shadow-lg"
+                                                        >
+                                                            <Check size={14} />
+                                                            È Arrivato
+                                                        </button>
+                                                    )}
+                                                    {res.status === ReservationStatus.SEATED && (
+                                                        <button
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                const updatedRes = {
+                                                                    ...res,
+                                                                    status: ReservationStatus.COMPLETED,
+                                                                    completedAt: Date.now()
+                                                                };
+                                                                await saveReservation(updatedRes);
+                                                                showToast(`✅ Tavolo ${res.tableNumber} liberato.`, 'success');
+                                                            }}
+                                                            className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors shadow-lg"
+                                                        >
+                                                            <Check size={14} />
+                                                            Completa
+                                                        </button>
+                                                    )}
                                                     {res.depositAmount && res.depositAmount > 0 && (
                                                         <div className="bg-green-900/30 border border-green-500 rounded-lg px-3 py-1 text-xs font-bold text-green-400">
-                                                            Acconto: €{res.depositAmount}
+                                                            €{res.depositAmount}
                                                         </div>
                                                     )}
                                                     <button
@@ -779,6 +949,7 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                                                             handleCancelReservation(res);
                                                         }}
                                                         className="w-8 h-8 bg-red-900/30 hover:bg-red-900/50 border border-red-500 rounded-lg flex items-center justify-center transition-colors"
+                                                        title="Cancella prenotazione"
                                                     >
                                                         <Trash2 size={16} className="text-red-400" />
                                                     </button>

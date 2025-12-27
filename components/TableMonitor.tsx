@@ -237,10 +237,10 @@ const TableMonitor: React.FC<TableMonitorProps> = ({ onExit }) => {
                             <div
                                 key={num}
                                 onClick={() => setSelectedTable(tableNum)}
-                                className={`aspect-square rounded-2xl border-2 flex flex-col p-2 shadow-xl transition-all relative cursor-pointer hover:scale-105 active:scale-95 overflow-hidden ${bgClass} ${isShared ? 'ring-4 ring-purple-500/50' : ''}`}
+                                className={`min-h-[140px] rounded-2xl border-2 flex flex-col p-3 shadow-xl transition-all relative cursor-pointer hover:scale-105 active:scale-95 overflow-hidden ${bgClass} ${isShared ? 'ring-4 ring-purple-500/50' : ''}`}
                             >
                                 {/* Top Bar: Shared & Elapsed Time */}
-                                <div className="flex justify-between items-start w-full h-6">
+                                <div className="flex justify-between items-start w-full mb-1">
                                     {isShared ? (
                                         <div className="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center border-2 border-purple-400 shadow-lg">
                                             <Users size={12} className="text-white" />
@@ -256,38 +256,40 @@ const TableMonitor: React.FC<TableMonitorProps> = ({ onExit }) => {
                                 </div>
 
                                 {/* Center: Table Number & Status */}
-                                <div className="flex-1 flex flex-col items-center justify-center gap-1">
-                                    <span className={`text-4xl font-black ${textColor} leading-none`}>{num}</span>
+                                <div className="flex-1 flex flex-col items-center justify-center gap-1 min-h-[50px]">
+                                    <span className={`text-3xl font-black ${textColor} leading-none`}>{num}</span>
                                     <div className="flex flex-col items-center">
                                         {statusIcon}
-                                        <span className={`text-[10px] font-bold ${textColor} uppercase tracking-wider text-center leading-tight`}>
+                                        <span className={`text-[9px] font-bold ${textColor} uppercase tracking-wider text-center leading-tight`}>
                                             {statusText}
                                         </span>
                                     </div>
-
-                                    {reservation && reservation.status !== ReservationStatus.SEATED && (
-                                        <div className="absolute bottom-1 left-0 w-full px-2">
-                                            <div className="bg-purple-600/90 backdrop-blur-sm rounded-lg py-1 px-0.5 text-center shadow-lg border border-purple-400/30">
-                                                <p className="text-white text-[9px] font-bold truncate px-1">{reservation.customerName}</p>
-                                                <div className="flex items-center justify-center gap-1.5 mt-0.5 text-[8px] text-purple-100">
-                                                    <span className="flex items-center gap-0.5"><Users size={7} />{reservation.numberOfGuests}</span>
-                                                    <span className="flex items-center gap-0.5"><Clock size={7} />{reservation.reservationTime.substring(0, 5)}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
 
+                                {/* Reservation Info - Moved to dedicated section */}
+                                {reservation && reservation.status !== ReservationStatus.SEATED && (
+                                    <div className="mt-1 mb-1">
+                                        <div className="bg-purple-600/90 backdrop-blur-sm rounded-lg py-1.5 px-2 text-center shadow-lg border border-purple-400/30">
+                                            <p className="text-white text-[10px] font-bold truncate">{reservation.customerName}</p>
+                                            <div className="flex items-center justify-center gap-2 mt-0.5 text-[9px] text-purple-100">
+                                                <span className="flex items-center gap-0.5"><Users size={8} />{reservation.numberOfGuests}</span>
+                                                {reservation.numberOfChildren ? <span className="flex items-center gap-0.5"><Baby size={8} />{reservation.numberOfChildren}</span> : null}
+                                                <span className="flex items-center gap-0.5"><Clock size={8} />{reservation.reservationTime.substring(0, 5)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Bottom: Waiter Name */}
-                                <div className="h-6 w-full flex items-end justify-center">
-                                    {waiter && (
-                                        <div className="bg-black/40 backdrop-blur-sm rounded-lg px-2 py-0.5 text-center w-full max-w-full">
+                                {waiter && (
+                                    <div className="mt-auto pt-1">
+                                        <div className="bg-black/40 backdrop-blur-sm rounded-lg px-2 py-1 text-center w-full">
                                             <p className="text-white text-[10px] font-bold truncate">
                                                 {isShared ? `👥 ${sharedWaiters.join(', ')}` : `👤 ${waiter}`}
                                             </p>
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                             </div>
                         );
                     })}

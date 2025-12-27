@@ -67,7 +67,7 @@ export async function sendWhatsAppMessage(
             if (data.error?.code === 131026 || data.error?.code === 131030) {
                 return {
                     success: false,
-                    error: 'Numero non abilitato (Modalità Test). Aggiungi questo numero alla "Phone Number List" nella Meta Dashboard o passa in Produzione.',
+                    error: '⚠️ LIMITE META TEST NUMBER: Stai usando il numero di test di Meta che può inviare SOLO ai numeri verificati. Per inviare a tutti i 6000 clienti, vai su Meta Dashboard > WhatsApp > API Setup, clicca "Add Phone Number", verifica il tuo numero reale e aggiorna il "Phone Number ID" nelle impostazioni con quello del tuo numero reale.',
                     details: data
                 };
             }

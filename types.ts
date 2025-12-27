@@ -78,6 +78,14 @@ export interface RestaurantProfile {
     instagramAccessToken?: string; // Often same as FB, but good to separate
   };
 
+  // WhatsApp Cloud API Configuration
+  whatsappApiConfig?: {
+    phoneNumberId?: string; // ID del numero di telefono Meta
+    businessAccountId?: string; // ID Business Account
+    accessToken?: string; // Token permanente o temporaneo
+    apiVersion?: string; // es. v18.0
+  };
+
   // Subscription Fields
   subscriptionEndDate?: string; // ISO Date String
   planType?: 'Trial' | 'Pro' | 'Enterprise' | 'Free' | 'Demo' | 'Promo';
@@ -275,6 +283,7 @@ export interface Reservation {
   customerId: string; // Reference to Customer
   customerName: string; // Denormalized for quick access
   customerPhone: string; // Denormalized for quick access
+  customerEmail?: string; // Denormalized for quick access
   numberOfGuests: number;
   numberOfChildren?: number; // Number of children (included in total or additional)
   reservationDate: string; // ISO date (YYYY-MM-DD)

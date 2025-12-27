@@ -661,6 +661,46 @@ const WhatsAppManager: React.FC<WhatsAppManagerProps> = ({ onClose, showToast, s
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <button
+                            onClick={async () => {
+                                try {
+                                    const settings = getAppSettings();
+                                    const whatsappConfig = settings.restaurantProfile?.whatsappApiConfig;
+
+                                    if (!whatsappConfig?.phoneNumberId || !whatsappConfig?.accessToken) {
+                                        showToast('⚠️ Configurazione mancante!', 'error');
+                                        return;
+                                    }
+
+                                    showToast('📤 Invio test in corso...', 'info');
+
+                                    const config: WhatsAppConfig = {
+                                        phoneNumberId: whatsappConfig.phoneNumberId,
+                                        accessToken: whatsappConfig.accessToken,
+                                        businessAccountId: whatsappConfig.businessAccountId,
+                                        apiVersion: whatsappConfig.apiVersion || 'v22.0'
+                                    };
+
+                                    // USE TEMPLATE FOR TEST to guarantee delivery without 24h window restriction
+                                    // 'hello_world' is the default test template always available
+                                    const result = await sendTemplateMessage(config, '3478127440', 'hello_world', 'en_US');
+
+                                    if (result.success) {
+                                        showToast('✅ Test inviato con successo! Controlla WhatsApp su 3478...440', 'success');
+                                    } else {
+                                        showToast(`❌ Errore API: ${result.error}`, 'error');
+                                        console.error('WhatsApp Error Details:', result.details);
+                                    }
+                                } catch (e: any) {
+                                    showToast(`❌ Errore: ${e.message}`, 'error');
+                                    console.error(e);
+                                }
+                            }}
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-colors border border-indigo-400/30 shadow-lg shadow-indigo-500/20"
+                        >
+                            <Zap size={16} />
+                            TEST MSG (Template)
+                        </button>
                         {/* Queue Status Badge */}
                         {messageQueue.filter(m => m.status === 'queued').length > 0 && (
                             <div className={`px-4 py-2 rounded-xl flex items-center gap-2 ${isQueueRunning ? 'bg-green-900/30 border border-green-500' : 'bg-yellow-900/30 border border-yellow-500'}`}>

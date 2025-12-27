@@ -508,7 +508,36 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onExit, department = 'C
     // LOGICA DI VISUALIZZAZIONE "ATTIVA"
     // Le comande READY restano visibili (verdi) finché non diventano DELIVERED (dal cameriere o dal tasto "Servi")
     // Le comande DELIVERED restano visibili per 5 secondi se sono in "lingerOrders"
-    const displayedOrders = orders.filter(o => (viewMode === 'active' && o.status !== OrderStatus.DELIVERED) || lingerOrders.includes(o.id));
+    // NUOVO: Nascondi ordini dove TUTTI gli item del reparto sono completati
+    const displayedOrders = orders.filter(o => {
+        // Always show lingering orders (being archived)
+        if (lingerOrders.includes(o.id)) return true;
+
+        // Only show active orders in active view
+        if (viewMode !== 'active' || o.status === OrderStatus.DELIVERED) return false;
+
+        // Check if ALL items relevant to this department are completed
+        const relevantItems = o.items.filter(item => isItemRelevantForDept(item));
+
+        // If no relevant items, don't show this order
+        if (relevantItems.length === 0) return false;
+
+        // Check if all relevant items are completed
+        const allCompleted = relevantItems.every(item => {
+            if (item.menuItem.category === Category.MENU_COMPLETO && item.menuItem.comboItems) {
+                const relevantSubItems = getSubItemsForCombo(item).filter(sub => {
+                    const dest = sub.specificDepartment || appSettings.categoryDestinations[sub.category];
+                    return dest === department;
+                });
+                if (relevantSubItems.length === 0) return true;
+                return relevantSubItems.every(sub => item.comboCompletedParts?.includes(sub.id));
+            }
+            return item.completed;
+        });
+
+        // Hide if all items are completed (department work is done)
+        return !allCompleted;
+    });
 
     const isAutoPrintActive = appSettings.printEnabled && appSettings.printEnabled[department];
 
