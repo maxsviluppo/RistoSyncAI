@@ -151,6 +151,17 @@ export const simpleCheckout = async (
             };
         }
 
+        // IMPORTANTE: Salva il piano in localStorage PRIMA del redirect
+        // Così possiamo recuperarlo quando Stripe ci rimanda indietro
+        const pendingPayment = {
+            plan: plan,
+            billingCycle: billingCycle,
+            timestamp: new Date().toISOString(),
+            userEmail: userEmail || ''
+        };
+        localStorage.setItem('ristosync_pending_payment', JSON.stringify(pendingPayment));
+        console.log('Pending payment saved:', pendingPayment);
+
         // Add email as query parameter if provided
         const linkWithEmail = userEmail
             ? `${paymentLink}?prefilled_email=${encodeURIComponent(userEmail)}`

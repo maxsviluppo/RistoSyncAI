@@ -403,137 +403,158 @@ export function App() {
     }, [publicMenuId]);
 
     // Handle Stripe Success Return
+    // IMPORTANTE: I Payment Links di Stripe NON passano parametri nell'URL
+    // Quindi leggiamo il piano salvato in localStorage PRIMA del redirect
     useEffect(() => {
         const handleStripeReturn = async () => {
-            const params = new URLSearchParams(window.location.search);
-            const subscriptionParam = params.get('subscription');
-            const planParam = params.get('plan');
-            const sessionIdParam = params.get('session_id');
+            // Controlla se c'è un pagamento pendente in localStorage
+            const pendingPaymentStr = localStorage.getItem('ristosync_pending_payment');
 
-            if (subscriptionParam === 'success' && planParam && session) {
-                try {
-                    // Determina il piano e la durata
-                    let planType: string;
-                    let months: number;
-                    let price: string;
+            if (!pendingPaymentStr) {
+                // Nessun pagamento pendente, niente da fare
+                return;
+            }
 
-                    if (planParam === 'basic_monthly') {
-                        planType = 'Basic';
-                        months = 1;
-                        price = '€1.00'; // Prezzo test
-                    } else if (planParam === 'basic_yearly') {
-                        planType = 'Basic_Annuale';
-                        months = 12;
-                        price = '€499.00';
-                    } else if (planParam === 'pro_monthly') {
-                        planType = 'Pro';
-                        months = 1;
-                        price = '€99.90';
-                    } else if (planParam === 'pro_yearly') {
-                        planType = 'Pro_Annuale';
-                        months = 12;
-                        price = '€999.00';
-                    } else {
-                        showToast('❌ Piano non riconosciuto', 'error');
-                        return;
-                    }
+            const pendingPayment = JSON.parse(pendingPaymentStr);
+            console.log('Found pending payment:', pendingPayment);
 
-                    // Calcola data di scadenza
-                    const endDate = new Date();
-                    endDate.setMonth(endDate.getMonth() + months);
-                    const endDateISO = endDate.toISOString();
+            // Verifica che il pagamento non sia troppo vecchio (max 30 minuti)
+            const paymentTime = new Date(pendingPayment.timestamp).getTime();
+            const now = Date.now();
+            const thirtyMinutes = 30 * 60 * 1000;
 
-                    // Aggiorna il profilo utente su Supabase
-                    if (supabase) {
-                        const { data: currentProfile } = await supabase
-                            .from('profiles')
-                            .select('settings')
-                            .eq('id', session.user.id)
-                            .single();
+            if (now - paymentTime > thirtyMinutes) {
+                console.log('Pending payment expired, removing');
+                localStorage.removeItem('ristosync_pending_payment');
+                return;
+            }
 
-                        const updatedSettings = {
-                            ...currentProfile?.settings,
-                            restaurantProfile: {
-                                ...currentProfile?.settings?.restaurantProfile,
-                                planType: planType,
-                                subscriptionEndDate: endDateISO,
-                                subscriptionCost: price,
-                                lastPaymentDate: new Date().toISOString(),
-                                paymentMethod: 'stripe',
-                                stripeSessionId: sessionIdParam || undefined,
-                            }
-                        };
+            // Abbiamo un pagamento pendente recente - significa che l'utente è tornato da Stripe
+            // Assumiamo che il pagamento sia andato a buon fine
 
-                        await supabase
-                            .from('profiles')
-                            .update({
-                                settings: updatedSettings,
-                                subscription_status: 'active'
-                            })
-                            .eq('id', session.user.id);
+            try {
+                const plan = pendingPayment.plan; // 'basic' o 'pro'
+                const billingCycle = pendingPayment.billingCycle; // 'monthly' o 'yearly'
 
-                        // Aggiorna anche localStorage
-                        const localSettings = getAppSettings();
-                        localSettings.restaurantProfile = {
-                            ...localSettings.restaurantProfile,
+                // Determina il piano e la durata
+                let planType: string;
+                let months: number;
+                let price: string;
+
+                if (plan === 'basic' && billingCycle === 'monthly') {
+                    planType = 'Basic';
+                    months = 1;
+                    price = '€1.00'; // Prezzo test
+                } else if (plan === 'basic' && billingCycle === 'yearly') {
+                    planType = 'Basic_Annuale';
+                    months = 12;
+                    price = '€499.00';
+                } else if (plan === 'pro' && billingCycle === 'monthly') {
+                    planType = 'Pro';
+                    months = 1;
+                    price = '€99.90';
+                } else if (plan === 'pro' && billingCycle === 'yearly') {
+                    planType = 'Pro_Annuale';
+                    months = 12;
+                    price = '€999.00';
+                } else {
+                    showToast('❌ Piano non riconosciuto', 'error');
+                    localStorage.removeItem('ristosync_pending_payment');
+                    return;
+                }
+
+                // Calcola data di scadenza
+                const endDate = new Date();
+                endDate.setMonth(endDate.getMonth() + months);
+                const endDateISO = endDate.toISOString();
+
+                // Aggiorna il profilo utente su Supabase
+                if (supabase && session) {
+                    const { data: currentProfile } = await supabase
+                        .from('profiles')
+                        .select('settings')
+                        .eq('id', session.user.id)
+                        .single();
+
+                    const updatedSettings = {
+                        ...currentProfile?.settings,
+                        restaurantProfile: {
+                            ...currentProfile?.settings?.restaurantProfile,
                             planType: planType,
                             subscriptionEndDate: endDateISO,
                             subscriptionCost: price,
-                        };
-                        saveAppSettings(localSettings);
+                            lastPaymentDate: new Date().toISOString(),
+                            paymentMethod: 'stripe',
+                        }
+                    };
 
-                        // Invia notifica all'admin (via messages table)
-                        await supabase.from('messages').insert({
-                            sender_id: 'system',
-                            recipient_id: null,
-                            subject: '💰 Nuovo Pagamento Stripe Ricevuto',
-                            content: `🎉 NUOVO PAGAMENTO RICEVUTO\n\nCliente: ${session.user.email}\nPiano: ${planType}\nImporto: ${price}\nStripe Session: ${sessionIdParam || 'N/A'}\nData: ${new Date().toLocaleString('it-IT')}`,
-                            is_read: false,
-                            created_at: new Date().toISOString(),
-                        });
+                    await supabase
+                        .from('profiles')
+                        .update({
+                            settings: updatedSettings,
+                            subscription_status: 'active'
+                        })
+                        .eq('id', session.user.id);
 
-                        // Invia email di conferma al cliente
-                        const customerName = currentProfile?.settings?.restaurantProfile?.name ||
-                            currentProfile?.settings?.restaurantProfile?.responsiblePerson ||
-                            'Cliente';
+                    // Aggiorna anche localStorage
+                    const localSettings = getAppSettings();
+                    localSettings.restaurantProfile = {
+                        ...localSettings.restaurantProfile,
+                        planType: planType,
+                        subscriptionEndDate: endDateISO,
+                        subscriptionCost: price,
+                    };
+                    saveAppSettings(localSettings);
 
-                        await sendPaymentConfirmationEmail(
-                            session.user.email,
-                            customerName,
-                            planType,
-                            price,
-                            endDateISO,
-                            sessionIdParam || undefined
-                        );
+                    // Invia notifica all'admin (via messages table)
+                    await supabase.from('messages').insert({
+                        sender_id: 'system',
+                        recipient_id: null,
+                        subject: '💰 Nuovo Pagamento Stripe Ricevuto',
+                        content: `🎉 NUOVO PAGAMENTO RICEVUTO\n\nCliente: ${session.user.email}\nPiano: ${planType}\nImporto: ${price}\nData: ${new Date().toLocaleString('it-IT')}`,
+                        is_read: false,
+                        created_at: new Date().toISOString(),
+                    });
 
-                        // Invia email di notifica all'admin
-                        await sendAdminPaymentNotification(
-                            session.user.email,
-                            customerName,
-                            planType,
-                            price,
-                            sessionIdParam || undefined
-                        );
-                    }
+                    // Invia email di conferma al cliente
+                    const customerName = currentProfile?.settings?.restaurantProfile?.name ||
+                        currentProfile?.settings?.restaurantProfile?.responsiblePerson ||
+                        'Cliente';
 
-                    // Messaggio di successo
-                    showToast(`🎉 Pagamento completato! Piano ${planType} attivato fino al ${new Date(endDateISO).toLocaleDateString('it-IT')}`, 'success');
+                    await sendPaymentConfirmationEmail(
+                        session.user.email,
+                        customerName,
+                        planType,
+                        price,
+                        endDateISO,
+                        undefined
+                    );
 
-                    // Rimuovi i parametri dall'URL
-                    window.history.replaceState({}, '', window.location.pathname);
-
-                    // Ricarica la pagina per aggiornare lo stato
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
-
-                } catch (error) {
-                    console.error('Error handling Stripe success:', error);
-                    showToast('❌ Errore durante l\'attivazione del piano. Contatta l\'assistenza.', 'error');
+                    // Invia email di notifica all'admin
+                    await sendAdminPaymentNotification(
+                        session.user.email,
+                        customerName,
+                        planType,
+                        price,
+                        undefined
+                    );
                 }
-            } else if (subscriptionParam === 'cancelled') {
-                showToast('⚠️ Pagamento annullato. Riprova quando vuoi!', 'info');
-                window.history.replaceState({}, '', window.location.pathname);
+
+                // Rimuovi il pagamento pendente da localStorage
+                localStorage.removeItem('ristosync_pending_payment');
+
+                // Messaggio di successo
+                showToast(`🎉 Pagamento completato! Piano ${planType} attivato fino al ${new Date(endDateISO).toLocaleDateString('it-IT')}`, 'success');
+
+                // Ricarica la pagina per aggiornare lo stato
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2500);
+
+            } catch (error) {
+                console.error('Error handling Stripe success:', error);
+                showToast('❌ Errore durante l\'attivazione del piano. Contatta l\'assistenza.', 'error');
+                localStorage.removeItem('ristosync_pending_payment');
             }
         };
 
