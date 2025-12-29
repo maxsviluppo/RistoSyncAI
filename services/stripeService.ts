@@ -38,11 +38,6 @@ export const redirectToCheckout = async (
         const success = successUrl || `${baseUrl}?subscription=success`;
         const cancel = cancelUrl || `${baseUrl}?subscription=cancelled`;
 
-        // DEPRECATED: This method requires a backend (Supabase Edge Function)
-        // We now use Payment Links instead (see simpleCheckout method)
-        // Keeping this code for reference if backend is added later
-
-        /*
         // Create checkout session via Supabase Edge Function
         const response = await fetch('/api/create-checkout-session', {
             method: 'POST',
@@ -73,11 +68,6 @@ export const redirectToCheckout = async (
         }
 
         return { success: true };
-        */
-
-        // For now, always use Payment Link fallback (no backend required)
-        console.log('Using Payment Link method (no backend required)');
-        return redirectToPaymentLink(priceId);
     } catch (err) {
         console.error('Stripe checkout error:', err);
         return { success: false, error: 'Errore durante il checkout' };
@@ -90,16 +80,18 @@ export const redirectToPaymentLink = async (
     priceId: string
 ): Promise<{ success: boolean; error?: string }> => {
     try {
-        // Payment Links are pre-created in Stripe Dashboard (LIVE MODE)
-        // Same links as in simpleCheckout method
-        const paymentLinks: Record<string, string> = {
-            // Basic Plan - TEMPORANEAMENTE SOSTITUITO CON LINK TEST €1
-            [STRIPE_CONFIG.prices.basic.monthly]: 'https://buy.stripe.com/14A5kD3yH0ko9sgeRm7IY05', // TEST €1.00 (invece di €49.90)
-            [STRIPE_CONFIG.prices.basic.yearly]: 'https://buy.stripe.com/6oU14ngltffi7k810w7IY02',
+        // Payment Links are pre-created in Stripe Dashboard
+        // We'll construct the billing portal URL or use direct checkout
 
-            // Pro Plan
-            [STRIPE_CONFIG.prices.pro.monthly]: 'https://buy.stripe.com/28E28r2uD7MQ33S10w7IY03',
-            [STRIPE_CONFIG.prices.pro.yearly]: 'https://buy.stripe.com/8x200j0mv4AEcEs24A7IY04',
+        // For Stripe Checkout without backend, we use the billing portal
+        // or pre-created payment links
+
+        // Map price IDs to payment link URLs (you create these in Stripe Dashboard)
+        const paymentLinks: Record<string, string> = {
+            [STRIPE_CONFIG.prices.basic.monthly]: '', // Add payment link URL here
+            [STRIPE_CONFIG.prices.basic.yearly]: '',
+            [STRIPE_CONFIG.prices.pro.monthly]: '',
+            [STRIPE_CONFIG.prices.pro.yearly]: '',
         };
 
         const paymentLinkUrl = paymentLinks[priceId];
@@ -112,77 +104,48 @@ export const redirectToPaymentLink = async (
         // If no payment link, show instructions
         return {
             success: false,
-            error: 'Payment Link non configurato. Usa bonifico o PayPal.'
+            error: 'Payment Link non configurato. Contatta l\'assistenza o usa il bonifico bancario.'
         };
     } catch (err) {
         return { success: false, error: 'Errore reindirizzamento pagamento' };
     }
 };
 
-
-// UPDATED: Using Stripe Payment Links (no backend required)
-// Payment Links are pre-created in Stripe Dashboard and work with all Stripe.js versions
+// Simple checkout redirect using Stripe's hosted checkout
+// This creates a checkout session client-side (limited features)
 export const simpleCheckout = async (
     plan: 'basic' | 'pro',
     billingCycle: 'monthly' | 'yearly',
     userEmail?: string
 ): Promise<{ success: boolean; error?: string }> => {
     try {
-        // Payment Links created in Stripe Dashboard (LIVE MODE)
-        // These links work without backend and are compatible with all Stripe.js versions
-        const paymentLinks: Record<string, string> = {
-            // Basic Plan - TEMPORANEAMENTE SOSTITUITO CON LINK TEST €1
-            'price_1SjTTTEWTa8WMtIUeivRK7o7': 'https://buy.stripe.com/14A5kD3yH0ko9sgeRm7IY05', // TEST €1.00 (invece di €49.90)
-            'price_1SjTUMEWTa8WMtIUREYn9Pjr': 'https://buy.stripe.com/6oU14ngltffi7k810w7IY02',  // Basic Yearly €499.00
-
-            // Pro Plan
-            'price_1SjTVBEWTa8WMtIUITurS6h1': 'https://buy.stripe.com/28E28r2uD7MQ33S10w7IY03',   // Pro Monthly €99.90
-            'price_1SjTVrEWTa8WMtIUSduyKOa4': 'https://buy.stripe.com/8x200j0mv4AEcEs24A7IY04',    // Pro Yearly €999.00
-        };
+        const stripe = await getStripe();
+        if (!stripe) {
+            return { success: false, error: 'Stripe non disponibile' };
+        }
 
         const priceId = getPriceId(plan, billingCycle);
-        const paymentLink = paymentLinks[priceId];
 
-        if (!paymentLink) {
-            console.error('Payment link not configured for:', priceId);
-            return {
-                success: false,
-                error: 'Payment Link non configurato. Usa bonifico o PayPal.'
-            };
+        // Note: This approach requires backend for full functionality
+        // For now, we'll use a simpler redirect approach
+
+        const { error } = await stripe.redirectToCheckout({
+            lineItems: [{ price: priceId, quantity: 1 }],
+            mode: 'subscription',
+            successUrl: `${window.location.origin}?subscription=success&session_id={CHECKOUT_SESSION_ID}`,
+            cancelUrl: `${window.location.origin}?subscription=cancelled`,
+            customerEmail: userEmail,
+        });
+
+        if (error) {
+            console.error('Checkout error:', error);
+            return { success: false, error: error.message };
         }
-
-        // IMPORTANTE: Salva il piano in localStorage PRIMA del redirect
-        // Così possiamo recuperarlo quando Stripe ci rimanda indietro
-        const pendingPayment = {
-            plan: plan,
-            billingCycle: billingCycle,
-            timestamp: new Date().toISOString(),
-            userEmail: userEmail || '',
-            completed: false // Flag per tracking
-        };
-        localStorage.setItem('ristosync_pending_payment', JSON.stringify(pendingPayment));
-        console.log('Pending payment saved:', pendingPayment);
-
-        // Costruisci URL con parametri
-        // NOTA: I Payment Links standard di Stripe NON supportano redirect_url come parametro query
-        // Il redirect deve essere configurato nel Dashboard Stripe sotto "After payment" del Payment Link
-        // Qui aggiungiamo solo l'email precompilata
-        const params = new URLSearchParams();
-        if (userEmail) {
-            params.set('prefilled_email', userEmail);
-        }
-
-        const finalUrl = params.toString()
-            ? `${paymentLink}?${params.toString()}`
-            : paymentLink;
-
-        // Direct redirect to Stripe Payment Link
-        window.location.href = finalUrl;
 
         return { success: true };
     } catch (err: any) {
-        console.error('Payment link error:', err);
-        return { success: false, error: err.message || 'Errore reindirizzamento pagamento' };
+        console.error('Simple checkout error:', err);
+        return { success: false, error: err.message || 'Errore checkout' };
     }
 };
 

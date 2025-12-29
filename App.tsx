@@ -18,8 +18,8 @@ import PlatformEditModal from './components/PlatformEditModal';
 import TableMonitor from './components/TableMonitor';
 import ReservationManager from './components/ReservationManager';
 import CustomerManager from './components/CustomerManager';
+import SubscriptionManager from './components/SubscriptionManager';
 import { LandingPage } from './components/LandingPage';
-import SubscriptionSuccessPage from './components/SubscriptionSuccessPage';
 import { ChefHat, Smartphone, User, Settings, Bell, Utensils, X, Save, Plus, Trash2, Edit2, Wheat, Milk, Egg, Nut, Fish, Bean, Flame, Leaf, Info, LogOut, Bot, Key, Database, ShieldCheck, Lock, AlertTriangle, Mail, RefreshCw, Send, Printer, Mic, MicOff, TrendingUp, BarChart3, Calendar, ChevronLeft, ChevronRight, DollarSign, History, Receipt, UtensilsCrossed, Eye, ArrowRight, QrCode, Share2, Copy, MapPin, Store, Phone, Globe, Star, Pizza, CakeSlice, Wine, Sandwich, MessageCircle, FileText, PhoneCall, Sparkles, Loader, Facebook, Instagram, Youtube, Linkedin, Music, Compass, FileSpreadsheet, Image as ImageIcon, Upload, FileImage, ExternalLink, CreditCard, Banknote, Briefcase, Clock, Check, ListPlus, ArrowRightLeft, Code2, Cookie, Shield, Wrench, Download, CloudUpload, BookOpen, EyeOff, LayoutGrid, ArrowLeft, PlayCircle, ChevronDown, FileJson, Wallet, Crown, Zap, ShieldCheck as ShieldIcon, Trophy, Timer, LifeBuoy, Minus, Hash, Euro, TrendingDown, Package, Factory, Users, Lightbulb, Headphones, Cloud, BarChart, Camera, CheckCircle, Scan, Megaphone, Bike } from 'lucide-react';
 import { getWaiterName, saveWaiterName, getMenuItems, addMenuItem, updateMenuItem, deleteMenuItem, getNotificationSettings, saveNotificationSettings, initSupabaseSync, getGoogleApiKey, saveGoogleApiKey, removeGoogleApiKey, getAppSettings, saveAppSettings, getOrders, deleteHistoryByDate, performFactoryReset, deleteAllMenuItems, importDemoMenu } from './services/storageService';
 import { supabase, signOut, isSupabaseConfigured, SUPER_ADMIN_EMAIL } from './services/supabase';
@@ -106,33 +106,9 @@ export function App() {
     // Landing Page State
     const showMonitorParam = queryParams.get('monitor');
 
-    // Congrats/Success Page (for testing or Stripe return)
-    const congratsParam = queryParams.get('congrats');
-    const subscriptionCheckoutParam = queryParams.get('subscription_checkout');
-
-    // Check localStorage for pending success flow (robustness for redirects/reloads)
-    const hasPendingSuccess = localStorage.getItem('payment_success_pending') === 'true';
-
-    // Initial state calculation - SINGLE declaration with all conditions
-    const shouldShowCongrats = congratsParam === 'true' || subscriptionCheckoutParam === 'success' || hasPendingSuccess;
-
-    // Default to Landing Page (true) unless accessing a public menu, monitor mode, congrats page, or explicitly disabled
-    const [showLandingPage, setShowLandingPage] = useState(!publicMenuId && !showMonitorParam && !shouldShowCongrats && showLandingParam !== 'false');
-    const [showSuccessPage, setShowSuccessPage] = useState(shouldShowCongrats);
-
-    // Persist pending success state immediately if detected in URL
-    useEffect(() => {
-        if (congratsParam === 'true' || subscriptionCheckoutParam === 'success') {
-            localStorage.setItem('payment_success_pending', 'true');
-            // Force states immediately to prevent flash of landing page
-            setShowSuccessPage(true);
-            setShowLandingPage(false);
-        }
-        // If success page is shown and then closed/navigated away, clear the pending flag
-        if (!showSuccessPage && hasPendingSuccess) {
-            localStorage.removeItem('payment_success_pending');
-        }
-    }, [congratsParam, subscriptionCheckoutParam, showSuccessPage, hasPendingSuccess]);
+    // Landing Page State
+    // Default to Landing Page (true) unless accessing a public menu, monitor mode, or explicitly disabled
+    const [showLandingPage, setShowLandingPage] = useState(!publicMenuId && !showMonitorParam && showLandingParam !== 'false');
 
     const [session, setSession] = useState<any>(null);
     const [loadingSession, setLoadingSession] = useState(true);
@@ -157,6 +133,7 @@ export function App() {
     const [showAdmin, setShowAdmin] = useState(false);
     const [adminTab, setAdminTab] = useState<'profile' | 'subscription' | 'menu' | 'notif' | 'info' | 'ai' | 'analytics' | 'share' | 'receipts' | 'messages' | 'marketing' | 'delivery' | 'customers' | 'whatsapp'>('menu');
     const [showWhatsAppManager, setShowWhatsAppManager] = useState(false);
+    const [showSubscriptionManager, setShowSubscriptionManager] = useState(false);
     const [adminViewMode, setAdminViewMode] = useState<'dashboard' | 'app'>('dashboard');
 
     const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
@@ -246,9 +223,6 @@ export function App() {
     // Payment Instruction Modal State
     const [showPaymentModal, setShowPaymentModal] = useState<{ isOpen: boolean; plan: string; price: string } | null>(null);
 
-    // Department Selection State (for Basic Plan)
-    const [showDepartmentSelector, setShowDepartmentSelector] = useState(false);
-
     const openPaymentInstructions = (plan: string, price: string) => {
         setShowPaymentModal({ isOpen: true, plan, price });
         document.getElementById('bank-details')?.scrollIntoView({ behavior: 'smooth' });
@@ -301,44 +275,6 @@ export function App() {
             };
         }
     }, [session]);
-
-    // Check for Stripe Success Return
-    const subscriptionCheckout = queryParams.get('subscription_checkout');
-    useEffect(() => {
-        if (subscriptionCheckout === 'success') {
-            // Force a refresh of user status
-            if (session?.user) {
-                checkUserStatus(session.user);
-            }
-        }
-    }, [subscriptionCheckout, session]);
-
-    // REAL-TIME SYNC FOR PROFILE CHANGES (e.g. from Super Admin)
-    useEffect(() => {
-        if (!supabase || !session?.user?.id) return;
-
-        const profileSubscription = supabase
-            .channel(`profile-sync-${session.user.id}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'profiles',
-                    filter: `id=eq.${session.user.id}`
-                },
-                (payload) => {
-                    console.log('Profile sync update received:', payload);
-                    // Refresh user status when profile changes
-                    checkUserStatus(session.user);
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(profileSubscription);
-        };
-    }, [session?.user?.id]);
 
     useEffect(() => {
         if (publicMenuId) { setLoadingSession(false); return; }
@@ -508,40 +444,7 @@ export function App() {
     // --- ACTIONS ---
 
 
-    const checkRoleAccess = (selectedRole: string) => {
-        const settings = getAppSettings();
-        const profile = settings.restaurantProfile;
-
-        // --- BASIC PLAN RESTRICTIONS ---
-        if (profile?.planType === 'Basic') {
-            const allowed = profile.allowedDepartment;
-
-            // If user is Basic but hasn't selected a department yet
-            if (!allowed) {
-                setShowDepartmentSelector(true);
-                return;
-            }
-
-            // Enforce Restriction
-            // Kitchen/Pizzeria/Pub/Delivery are restricted. Waiter/Sala is always allowed for Basic?
-            // Usually 'Basic' is "One Department + Waiter app". 
-            // If selectedRole is one of the production depts, it must match allowed.
-            if (['kitchen', 'pizzeria', 'pub', 'delivery'].includes(selectedRole)) {
-                // Map role properly (delivery might be separate, but let's assume standard mapping)
-                const roleMap: Record<string, string> = {
-                    'kitchen': 'Cucina',
-                    'pizzeria': 'Pizzeria',
-                    'pub': 'Pub',
-                    'delivery': 'Delivery'
-                };
-
-                if (roleMap[selectedRole] !== allowed) {
-                    showToast(`⛔ Il tuo piano Basic include solo il reparto ${allowed}.`, 'error');
-                    return;
-                }
-            }
-        }
-
+    const checkRoleAccess = async (selectedRole: string) => {
         // Enforce strict state separation: Clear Monitor state when entering a role
         setShowMonitor(false);
         // Clear URL param if present to prevent auto-reopen on reload
@@ -549,6 +452,42 @@ export function App() {
         if (url.searchParams.has('monitor')) {
             window.history.pushState({}, '', window.location.pathname);
         }
+
+        // --- BASIC PLAN RESTRICTION ---
+        const plan = (appSettings.restaurantProfile?.planType || '').toLowerCase();
+        const isBasic = plan.includes('basic');
+        const restrictedRoles = ['kitchen', 'pizzeria', 'pub', 'delivery'];
+
+        if (isBasic && restrictedRoles.includes(selectedRole)) {
+            const allowed = appSettings.restaurantProfile?.allowedDepartment;
+
+            if (allowed) {
+                // If already set, check if it matches
+                if (allowed !== selectedRole) {
+                    showToast(`⛔ Il piano Basic include solo il reparto: ${allowed.toUpperCase()}. Passa a PRO per sbloccare tutto.`, 'error');
+                    return;
+                }
+            } else {
+                // Not set yet, ask for confirmation to lock it
+                const confirmLock = await showConfirm(
+                    '🔒 Attenzione: Piano Basic',
+                    `Il piano Basic permette l'uso di UN SOLO reparto. \n\nVuoi attivare "${selectedRole.toUpperCase()}" come reparto unico? \nQuesta scelta è permanente.`
+                );
+
+                if (!confirmLock) return;
+
+                // Save choice
+                const updatedProfile = { ...appSettings.restaurantProfile, allowedDepartment: selectedRole as any };
+                const newSettings = { ...appSettings, restaurantProfile: updatedProfile };
+
+                setAppSettingsState(newSettings);
+                setProfileForm(updatedProfile); // Helper state
+                await saveAppSettings(newSettings);
+
+                showToast(`✅ Reparto ${selectedRole.toUpperCase()} attivato con successo!`, 'success');
+            }
+        }
+        // -----------------------------
 
         if (selectedRole === 'kitchen') setRole('kitchen');
         else if (selectedRole === 'pizzeria') setRole('pizzeria');
@@ -1168,156 +1107,31 @@ export function App() {
     // RENDER LOGIC
     if (publicMenuId) return <DigitalMenu restaurantId={publicMenuId} />;
 
-    if (showSuccessPage) {
-        return (
-            <SubscriptionSuccessPage
-                planType={appSettings.restaurantProfile?.planType || 'Pro'}
-                restaurantName={restaurantName}
-                showDepartmentSelector={appSettings.restaurantProfile?.planType === 'Basic' && !appSettings.restaurantProfile.allowedDepartment}
-                onSaveDepartment={(dept) => {
-                    const newSettings = {
-                        ...appSettings,
-                        restaurantProfile: {
-                            ...appSettings.restaurantProfile,
-                            allowedDepartment: dept
-                        }
-                    };
-                    saveAppSettings(newSettings);
-                    setAppSettingsState(newSettings);
-                    setShowSuccessPage(false);
-                    showToast(`✅ Reparto ${dept} configurato con successo!`, 'success');
-                }}
-                onStart={() => {
-                    setShowSuccessPage(false);
-                    // Ensure we are in the app view
-                    setAdminViewMode('app');
-                }}
-            />
-        );
-    }
-
     // Landing Page Route
     if (showLandingPage) {
-        return (
-            <>
-                <LandingPage onNavigateToApp={() => {
-                    setShowLandingPage(false);
-                    // Update URL without reload
-                    window.history.pushState({}, '', '?landing=false');
-                }} />
-                {/* Global Overlays must be rendered here too */}
-                <Toast
-                    isOpen={toastState.isOpen}
-                    message={toastState.message}
-                    type={toastState.type}
-                    onClose={closeToast}
-                />
-                <CustomDialog
-                    isOpen={dialogState.isOpen}
-                    title={dialogState.title}
-                    message={dialogState.message}
-                    type={dialogState.type}
-                    onConfirm={dialogState.onConfirm}
-                    onCancel={closeDialog}
-                />
-                {showDepartmentSelector && (
-                    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl">
-                            <div className="text-center mb-6">
-                                <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/30">
-                                    <Lock className="text-blue-500 w-8 h-8" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-white mb-2">Configura Piano Basic</h2>
-                                <p className="text-slate-400 text-sm">Seleziona il tuo reparto principale (questa scelta è definitiva).</p>
-                            </div>
-                            <div className="grid grid-cols-1 gap-3">
-                                {['Cucina', 'Pizzeria', 'Pub'].map((dept) => (
-                                    <button
-                                        key={dept}
-                                        onClick={() => {
-                                            const currentData = getAppSettings();
-                                            const newSettings = {
-                                                ...currentData,
-                                                restaurantProfile: {
-                                                    ...currentData.restaurantProfile,
-                                                    allowedDepartment: dept as any
-                                                }
-                                            };
-                                            saveAppSettings(newSettings);
-                                            setAppSettingsState(newSettings);
-                                            setShowDepartmentSelector(false);
-                                            showToast(`✅ Reparto ${dept} configurato!`, 'success');
-                                        }}
-                                        className="p-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl transition-all text-white font-bold"
-                                    >
-                                        {dept}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </>
-        );
+        return <LandingPage onNavigateToApp={() => {
+            setShowLandingPage(false);
+            window.history.pushState({}, '', '?landing=false');
+        }}
+            onSelectPlan={(planId) => {
+                setShowLandingPage(false);
+                window.history.pushState({}, '', '?landing=false');
+                if (planId !== 'trial') {
+                    // If not trial, open subscription manager to pay
+                    setShowSubscriptionManager(true);
+                    // Pre-select plan
+                    localStorage.setItem('preselected_plan', planId);
+                } else {
+                    // Trial logic: Go to Auth Screen in Register Mode
+                    localStorage.setItem('auth_mode', 'register');
+                    setShowSubscriptionManager(false);
+                }
+            }}
+        />;
     }
 
     if (loadingSession) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white"><Loader className="animate-spin text-orange-500" size={48} /></div>;
-    if (!session) return <AuthScreen />;
-
-    // SUBSCRIPTION SUCCESS PAGE (Stripe Return)
-    if (showSuccessPage) {
-        const currentPlan = appSettings.restaurantProfile?.planType || 'Pro';
-        const isBasicPlan = currentPlan === 'Basic';
-
-        return (
-            <SubscriptionSuccessPage
-                planType={currentPlan}
-                restaurantName={restaurantName}
-                showDepartmentSelector={isBasicPlan && !appSettings.restaurantProfile?.allowedDepartment}
-                onStart={() => {
-                    // Clean URL
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete('congrats');
-                    url.searchParams.delete('subscription_checkout');
-                    url.searchParams.delete('session_id');
-                    window.history.replaceState({}, '', url.pathname);
-                    localStorage.removeItem('payment_success_pending');
-
-                    setShowSuccessPage(false);
-                    showToast('🎉 Benvenuto in RistoSync AI!', 'success');
-                }}
-                onSaveDepartment={async (dept) => {
-                    const newSettings = {
-                        ...appSettings,
-                        restaurantProfile: {
-                            ...appSettings.restaurantProfile,
-                            allowedDepartment: dept
-                        }
-                    };
-                    saveAppSettings(newSettings);
-                    setAppSettingsState(newSettings);
-
-                    // Sync to Supabase
-                    if (supabase && session?.user?.id) {
-                        await supabase.from('profiles').update({
-                            settings: newSettings
-                        }).eq('id', session.user.id);
-                    }
-
-                    // Clean URL
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete('congrats');
-                    url.searchParams.delete('subscription_checkout');
-                    url.searchParams.delete('session_id');
-                    window.history.replaceState({}, '', url.pathname);
-                    localStorage.removeItem('payment_success_pending');
-
-                    setShowSuccessPage(false);
-                    showToast(`✅ Reparto ${dept} configurato! Benvenuto in RistoSync AI!`, 'success');
-                }}
-            />
-        );
-    }
+    if (!session) return <AuthScreen initialMode={localStorage.getItem('auth_mode') === 'register' ? 'register' : 'login'} />;
     if (isSuperAdmin && adminViewMode === 'dashboard') return <SuperAdminDashboard onEnterApp={() => setAdminViewMode('app')} />;
     if (isBanned) return <div className="min-h-screen bg-red-950 flex flex-col items-center justify-center text-white p-8 text-center"><Shield size={64} className="mb-6 text-red-500" /><h1 className="text-4xl font-black mb-4">ACCOUNT BLOCCATO</h1><p className="text-xl mb-8">Il tuo account è stato disabilitato permanentemente per violazione dei termini.</p><button onClick={signOut} className="bg-red-700 hover:bg-red-600 px-8 py-3 rounded-xl font-bold">Esci</button></div>;
     if (accountDeleted) return <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-8 text-center"><AlertTriangle size={64} className="mb-6 text-slate-500" /><h1 className="text-4xl font-black mb-4">ACCOUNT DISATTIVATO</h1><p className="text-xl mb-8 max-w-md">Il tuo account è stato disattivato. Contatta l'amministrazione per richiedere la riattivazione.</p><div className="bg-slate-900 p-6 rounded-2xl border border-slate-700 max-w-md w-full mb-8 text-left"><p className="font-bold text-slate-300 mb-2">Contatta l'amministrazione:</p><div className="flex items-center gap-2 text-white mb-1"><Mail size={16} /> {adminContactEmail}</div><div className="flex items-center gap-2 text-white"><PhoneCall size={16} /> {adminPhone}</div></div><button onClick={signOut} className="bg-slate-700 hover:bg-slate-600 px-8 py-3 rounded-xl font-bold">Esci</button></div>;
@@ -1327,60 +1141,60 @@ export function App() {
             <div className="text-center mb-8 pt-8">
                 <Clock size={64} className="mx-auto mb-4 text-orange-500" />
                 <h1 className="text-4xl font-black mb-2">SERVIZIO IN ATTESA</h1>
-                <p className="text-lg text-slate-300 max-w-md mx-auto">Il tuo abbonamento è in attesa di attivazione. Scegli un piano per iniziare!</p>
+                <p className="text-lg text-slate-300 max-w-md mx-auto">Il tuo abbonamento è in attesa di rinnovo. Scegli un piano per riattivare immediatamente il servizio.</p>
             </div>
 
             {/* PIANI ABBONAMENTO */}
             <div className="w-full max-w-4xl mb-8">
                 <h2 className="text-xl font-black text-center mb-6 text-orange-400">📦 Piani Disponibili</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* PIANO MENSILE */}
-                    <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-700 rounded-2xl p-6 text-center hover:border-blue-500/50 transition-all hover:scale-105">
-                        <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-                            <Calendar size={28} className="text-white" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* PIANO BASIC */}
+                    <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-700 rounded-2xl p-6 text-center hover:border-blue-500/50 transition-all hover:scale-105 flex flex-col">
+                        <div className="w-14 h-14 bg-slate-700 rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <Store size={28} className="text-white" />
                         </div>
-                        <h3 className="text-xl font-black text-white mb-2">MENSILE</h3>
-                        <div className="text-4xl font-black text-blue-400 mb-1">€49<span className="text-lg text-slate-400">/mese</span></div>
-                        <p className="text-sm text-slate-400 mb-4">Fatturazione mensile • Disdici quando vuoi</p>
-                        <ul className="text-xs text-slate-300 text-left space-y-2 mb-4">
-                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> Gestione ordini illimitata</li>
-                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> Menu digitale QR</li>
-                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> AI Assistant</li>
-                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> Supporto email</li>
+                        <h3 className="text-xl font-black text-white mb-2">BASIC</h3>
+                        <div className="text-4xl font-black text-white mb-1">€49,90<span className="text-lg text-slate-400">/mese</span></div>
+                        <p className="text-sm text-slate-400 mb-6 font-bold">L'essenziale per il tuo locale</p>
+
+                        <ul className="text-xs text-slate-300 text-left space-y-3 mb-8 flex-1">
+                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> Menu Digitale Illimitato</li>
+                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> Gestione Ordini & Tavoli</li>
+                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> Statistiche Base</li>
+                            <li className="flex items-center gap-2 opacity-50"><X size={14} className="text-slate-500 shrink-0" /> No WhatsApp Marketing</li>
+                            <li className="flex items-center gap-2 opacity-50"><X size={14} className="text-slate-500 shrink-0" /> No AI Assistant</li>
                         </ul>
+                        <button
+                            onClick={() => openPaymentInstructions('Basic', '49.90')}
+                            className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all"
+                        >
+                            Attiva Basic
+                        </button>
                     </div>
 
-                    {/* PIANO ANNUALE - EVIDENZIATO */}
-                    <div className="bg-gradient-to-b from-orange-600/20 to-slate-800/80 backdrop-blur-sm border-2 border-orange-500 rounded-2xl p-6 text-center relative hover:scale-105 transition-all shadow-lg shadow-orange-500/20">
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-orange-500 text-white text-xs font-black px-4 py-1 rounded-full">⭐ PIÙ POPOLARE</div>
-                        <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center mx-auto mb-4 mt-2">
-                            <Calendar size={28} className="text-white" />
-                        </div>
-                        <h3 className="text-xl font-black text-white mb-2">ANNUALE</h3>
-                        <div className="text-4xl font-black text-orange-400 mb-1">€399<span className="text-lg text-slate-400">/anno</span></div>
-                        <p className="text-sm text-green-400 font-bold mb-4">Risparmi €189! (€33/mese)</p>
-                        <ul className="text-xs text-slate-300 text-left space-y-2 mb-4">
-                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> Tutto il piano Mensile</li>
-                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> 2 mesi GRATIS</li>
-                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> Supporto prioritario</li>
-                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> Statistiche avanzate</li>
-                        </ul>
-                    </div>
-
-                    {/* PIANO VIP */}
-                    <div className="bg-gradient-to-b from-purple-900/30 to-slate-800/80 backdrop-blur-sm border border-purple-500/50 rounded-2xl p-6 text-center hover:border-purple-400 transition-all hover:scale-105">
-                        <div className="w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    {/* PIANO PRO - EVIDENZIATO */}
+                    <div className="bg-gradient-to-b from-purple-900/40 to-slate-900/80 backdrop-blur-sm border-2 border-purple-500 rounded-2xl p-6 text-center relative hover:scale-105 transition-all shadow-lg shadow-purple-900/20 flex flex-col">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-black px-4 py-1 rounded-full uppercase tracking-wider shadow-lg">CONSIGLIATO</div>
+                        <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mx-auto mb-4 mt-2">
                             <Sparkles size={28} className="text-white" />
                         </div>
-                        <h3 className="text-xl font-black text-white mb-2">VIP / PREMIUM</h3>
-                        <div className="text-4xl font-black text-purple-400 mb-1">€799<span className="text-lg text-slate-400">/anno</span></div>
-                        <p className="text-sm text-slate-400 mb-4">Per catene e ristoranti premium</p>
-                        <ul className="text-xs text-slate-300 text-left space-y-2 mb-4">
-                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> Tutto il piano Annuale</li>
-                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> Multi-sede incluso</li>
-                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> Account manager dedicato</li>
-                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500 shrink-0" /> Personalizzazioni su misura</li>
+                        <h3 className="text-xl font-black text-white mb-2">PRO AI</h3>
+                        <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-1">€99,90<span className="text-lg text-slate-400 font-normal">/mese</span></div>
+                        <p className="text-sm text-purple-200 mb-6 font-bold">La suite completa con AI</p>
+
+                        <ul className="text-xs text-white text-left space-y-3 mb-8 flex-1">
+                            <li className="flex items-center gap-2 font-bold"><CheckCircle size={14} className="text-purple-400 shrink-0" /> Tutto incluso nel Basic</li>
+                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-purple-400 shrink-0" /> WhatsApp Marketing Auto</li>
+                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-purple-400 shrink-0" /> Menu Intelligence AI</li>
+                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-purple-400 shrink-0" /> Analisi Food Cost</li>
+                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-purple-400 shrink-0" /> Supporto Prioritario VIP</li>
                         </ul>
+                        <button
+                            onClick={() => openPaymentInstructions('Pro', '99.90')}
+                            className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all shadow-lg text-lg"
+                        >
+                            Attiva Pro AI
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1412,6 +1226,25 @@ export function App() {
                             level="M"
                         />
                         <p className="text-center text-[10px] font-bold text-slate-900 mt-2 uppercase flex items-center gap-1"><QrCode size={10} /> Paga con App</p>
+                    </div>
+                </div>
+
+                {/* PayPal Option */}
+                <div className="mt-6 border-t border-slate-800 pt-6">
+                    <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                        <div className="text-center md:text-left">
+                            <p className="font-bold text-white flex items-center justify-center md:justify-start gap-2 mb-1">
+                                <span className="bg-[#003087] text-white px-2 py-0.5 rounded italic font-black text-sm">Pay</span><span className="text-[#009cde] font-black text-sm italic -ml-2">Pal</span>
+                                <span className="text-slate-300 text-sm font-normal">Disponibile</span>
+                            </p>
+                            <p className="text-xs text-slate-400">Invia il pagamento a <span className="text-white font-mono">{adminContactEmail}</span></p>
+                        </div>
+                        <button
+                            onClick={() => window.open('https://paypal.me/ristosync', '_blank')}
+                            className="bg-[#003087] hover:bg-[#00256b] text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg text-sm"
+                        >
+                            Paga con PayPal <ExternalLink size={14} />
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1481,21 +1314,16 @@ export function App() {
                         </div>
                         <div className="flex gap-4">
                             {isSuperAdmin && (
-                                <>
-                                    <button onClick={() => setShowSuccessPage(true)} className="group bg-green-900/30 hover:bg-green-600 p-4 rounded-2xl transition-all duration-300 border border-green-500/30 hover:border-green-400 flex flex-col items-center gap-1 shadow-lg active:scale-95" title="Test Pagina Congratulazioni">
-                                        <Trophy className="text-green-400 group-hover:text-white" size={24} />
-                                        <span className="text-[10px] uppercase font-bold text-green-400 group-hover:text-white">Test Congrats</span>
-                                    </button>
-                                    <button onClick={() => setAdminViewMode('dashboard')} className="group bg-indigo-900/30 hover:bg-indigo-600 p-4 rounded-2xl transition-all duration-300 border border-indigo-500/30 hover:border-indigo-400 flex flex-col items-center gap-1 shadow-lg active:scale-95" title="Super Admin Dashboard">
-                                        <ShieldCheck className="text-indigo-400 group-hover:text-white" size={24} />
-                                        <span className="text-[10px] uppercase font-bold text-indigo-400 group-hover:text-white">Super Admin</span>
-                                    </button>
-                                </>
+                                <button onClick={() => setAdminViewMode('dashboard')} className="group bg-indigo-900/30 hover:bg-indigo-600 p-4 rounded-2xl transition-all duration-300 border border-indigo-500/30 hover:border-indigo-400 flex flex-col items-center gap-1 shadow-lg active:scale-95" title="Super Admin Dashboard">
+                                    <ShieldCheck className="text-indigo-400 group-hover:text-white" size={24} />
+                                    <span className="text-[10px] uppercase font-bold text-indigo-400 group-hover:text-white">Super Admin</span>
+                                </button>
                             )}
+
                             <button onClick={handleAdminAuth} className="group bg-slate-800 hover:bg-slate-700 p-4 rounded-2xl transition-all duration-300 border border-slate-700 hover:border-slate-500 flex flex-col items-center gap-1 shadow-lg active:scale-95" title="Impostazioni Admin"><Settings className="text-slate-400 group-hover:text-white group-hover:rotate-45 transition-transform" size={24} /><span className="text-[10px] uppercase font-bold text-slate-500 group-hover:text-slate-300">Admin</span></button><button onClick={signOut} className="group bg-slate-800 hover:bg-red-900/20 p-4 rounded-2xl transition-all duration-300 border border-slate-700 hover:border-red-500/50 flex flex-col items-center gap-1 shadow-lg active:scale-95" title="Esci"><LogOut className="text-slate-400 group-hover:text-red-400" size={24} /><span className="text-[10px] uppercase font-bold text-slate-500 group-hover:text-red-400">Esci</span></button></div>
                     </div>
-                    {subscriptionExpired && (<div className="relative z-10 mb-8 bg-red-600/10 border border-red-500/30 p-4 rounded-2xl flex items-center justify-between animate-pulse"><div className="flex items-center gap-3 text-red-400 font-bold"><AlertTriangle size={24} /><span>Abbonamento Scaduto! Rinnova per continuare a usare tutte le funzioni.</span></div><button onClick={() => { setShowAdmin(true); setAdminTab('subscription'); }} className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-500">Rinnova</button></div>)}
-                    {daysRemaining !== null && daysRemaining <= 5 && !subscriptionExpired && (<div className="relative z-10 mb-8 bg-orange-600/10 border border-orange-500/30 p-4 rounded-2xl flex items-center justify-between"><div className="flex items-center gap-3 text-orange-400 font-bold"><Clock size={24} /><span>Abbonamento in scadenza tra {daysRemaining} giorni.</span></div><button onClick={() => { setShowAdmin(true); setAdminTab('subscription'); }} className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-orange-500">Gestisci</button></div>)}
+                    {subscriptionExpired && (<div className="relative z-10 mb-8 bg-red-600/10 border border-red-500/30 p-4 rounded-2xl flex items-center justify-between animate-pulse"><div className="flex items-center gap-3 text-red-400 font-bold"><AlertTriangle size={24} /><span>Abbonamento Scaduto! Rinnova per continuare a usare tutte le funzioni.</span></div><button onClick={() => setShowSubscriptionManager(true)} className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-500">Rinnova</button></div>)}
+                    {daysRemaining !== null && daysRemaining <= 5 && !subscriptionExpired && (<div className="relative z-10 mb-8 bg-orange-600/10 border border-orange-500/30 p-4 rounded-2xl flex items-center justify-between"><div className="flex items-center gap-3 text-orange-400 font-bold"><Clock size={24} /><span>Abbonamento in scadenza tra {daysRemaining} giorni.</span></div><button onClick={() => setShowSubscriptionManager(true)} className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-orange-500">Gestisci</button></div>)}
                     <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-5 w-full max-w-7xl mx-auto px-4">
                         <div className="flex flex-col gap-5 md:row-span-2">
                             <button onClick={() => checkRoleAccess('waiter')} className="group relative flex-1 bg-slate-800 rounded-2xl border border-slate-700 p-4 flex flex-col items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-500/50 overflow-hidden min-h-[160px]">
@@ -1524,76 +1352,10 @@ export function App() {
                                 </div>
                             </button>
                         </div>
-                        {/* PULSANTI REPARTI - Con logica Piano Basic */}
-                        {(() => {
-                            const isBasicPlan = appSettings.restaurantProfile?.planType === 'Basic';
-                            const allowedDept = appSettings.restaurantProfile?.allowedDepartment;
-
-                            // Helper per determinare se un reparto è bloccato
-                            const isDeptLocked = (dept: string) => isBasicPlan && allowedDept && allowedDept !== dept;
-                            const isDeptActive = (dept: string) => isBasicPlan && allowedDept === dept;
-
-                            // Mappa reparti
-                            const departments = [
-                                { role: 'kitchen', dept: 'Cucina', name: 'CUCINA', desc: 'Ordini food', Icon: ChefHat, color: 'orange' },
-                                { role: 'pizzeria', dept: 'Pizzeria', name: 'PIZZERIA', desc: 'Forno', Icon: Pizza, color: 'red' },
-                                { role: 'pub', dept: 'Pub', name: 'PUB/BAR', desc: 'Bevande', Icon: Sandwich, color: 'amber' },
-                                { role: 'delivery', dept: 'Delivery', name: 'DELIVERY', desc: 'Asporto', Icon: Bike, color: 'green' },
-                            ];
-
-                            return departments.map(({ role, dept, name, desc, Icon, color }) => {
-                                const locked = isDeptLocked(dept);
-                                const active = isDeptActive(dept);
-
-                                return (
-                                    <button
-                                        key={role}
-                                        onClick={() => checkRoleAccess(role)}
-                                        disabled={locked}
-                                        className={`group relative h-48 rounded-2xl border p-4 flex flex-col items-center justify-center gap-3 transition-all duration-300 overflow-hidden ${locked
-                                            ? 'bg-slate-800/50 border-slate-800 cursor-not-allowed opacity-50'
-                                            : `bg-slate-800 border-slate-700 hover:-translate-y-1 hover:shadow-xl hover:shadow-${color}-500/10 hover:border-${color}-500/50`
-                                            }`}
-                                    >
-                                        {/* Gradient overlay */}
-                                        <div className={`absolute inset-0 bg-gradient-to-b from-${color}-600/5 to-transparent opacity-0 ${!locked ? 'group-hover:opacity-100' : ''} transition-opacity`}></div>
-
-                                        {/* Badge Piano Basic */}
-                                        {locked && (
-                                            <div className="absolute top-2 right-2 bg-slate-700/90 text-slate-400 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border border-slate-600 flex items-center gap-1">
-                                                <Lock size={8} /> Solo PRO
-                                            </div>
-                                        )}
-                                        {active && (
-                                            <div className="absolute top-2 right-2 bg-green-600/90 text-white text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border border-green-500 flex items-center gap-1">
-                                                <Check size={8} /> Attivo
-                                            </div>
-                                        )}
-
-                                        {/* Icon circle */}
-                                        <div className={`w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center border-2 transition-all shadow-inner ${locked
-                                            ? 'border-slate-800'
-                                            : `border-slate-700 group-hover:border-${color}-500 group-hover:scale-105`
-                                            }`}>
-                                            {locked ? (
-                                                <Lock size={28} className="text-slate-600" />
-                                            ) : (
-                                                <Icon size={28} className={`text-slate-400 group-hover:text-${color}-500 transition-colors`} />
-                                            )}
-                                        </div>
-
-                                        {/* Text */}
-                                        <div className="text-center relative z-10">
-                                            <h2 className={`text-lg font-black mb-0.5 transition-colors ${locked
-                                                ? 'text-slate-600'
-                                                : `text-white group-hover:text-${color}-400`
-                                                }`}>{name}</h2>
-                                            <p className={`text-xs font-medium ${locked ? 'text-slate-700' : 'text-slate-500'}`}>{desc}</p>
-                                        </div>
-                                    </button>
-                                );
-                            });
-                        })()}
+                        <button onClick={() => checkRoleAccess('kitchen')} className="group relative h-48 bg-slate-800 rounded-2xl border border-slate-700 p-4 flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-500/50 overflow-hidden"><div className="absolute inset-0 bg-gradient-to-b from-orange-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div><div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center border-2 border-slate-700 group-hover:border-orange-500 group-hover:scale-105 transition-all shadow-inner"><ChefHat size={28} className="text-slate-400 group-hover:text-orange-500 transition-colors" /></div><div className="text-center relative z-10"><h2 className="text-lg font-black text-white mb-0.5 group-hover:text-orange-400 transition-colors">CUCINA</h2><p className="text-slate-500 text-xs font-medium">Ordini food</p></div></button>
+                        <button onClick={() => checkRoleAccess('pizzeria')} className="group relative h-48 bg-slate-800 rounded-2xl border border-slate-700 p-4 flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-red-500/10 hover:border-red-500/50 overflow-hidden"><div className="absolute inset-0 bg-gradient-to-b from-red-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div><div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center border-2 border-slate-700 group-hover:border-red-500 group-hover:scale-105 transition-all shadow-inner"><Pizza size={28} className="text-slate-400 group-hover:text-red-500 transition-colors" /></div><div className="text-center relative z-10"><h2 className="text-lg font-black text-white mb-0.5 group-hover:text-red-400 transition-colors">PIZZERIA</h2><p className="text-slate-500 text-xs font-medium">Forno</p></div></button>
+                        <button onClick={() => checkRoleAccess('pub')} className="group relative h-48 bg-slate-800 rounded-2xl border border-slate-700 p-4 flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/10 hover:border-amber-500/50 overflow-hidden"><div className="absolute inset-0 bg-gradient-to-b from-amber-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div><div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center border-2 border-slate-700 group-hover:border-amber-500 group-hover:scale-105 transition-all shadow-inner"><Sandwich size={28} className="text-slate-400 group-hover:text-amber-500 transition-colors" /></div><div className="text-center relative z-10"><h2 className="text-lg font-black text-white mb-0.5 group-hover:text-amber-400 transition-colors">PUB/BAR</h2><p className="text-slate-500 text-xs font-medium">Bevande</p></div></button>
+                        <button onClick={() => checkRoleAccess('delivery')} className="group relative h-48 bg-slate-800 rounded-2xl border border-slate-700 p-4 flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-green-500/10 hover:border-green-500/50 overflow-hidden"><div className="absolute inset-0 bg-gradient-to-b from-green-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div><div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center border-2 border-slate-700 group-hover:border-green-500 group-hover:scale-105 transition-all shadow-inner"><Bike size={28} className="text-slate-400 group-hover:text-green-500 transition-colors" /></div><div className="text-center relative z-10"><h2 className="text-lg font-black text-white mb-0.5 group-hover:text-green-400 transition-colors">DELIVERY</h2><p className="text-slate-500 text-xs font-medium">Asporto</p></div></button>
                     </div>
 
                     {/* PULSANTE PRENOTAZIONI - Rettangolare Allungato */}
@@ -1612,52 +1374,6 @@ export function App() {
 
                     {showLogin && (<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"><div className="bg-slate-900 border border-slate-700 p-8 rounded-[2rem] shadow-2xl w-full max-w-sm relative animate-slide-up"><button onClick={() => setShowLogin(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"><X size={24} /></button><div className="text-center mb-6"><div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4"><User size={32} className="text-blue-500" /></div><h2 className="text-2xl font-bold text-white">Chi sei?</h2><p className="text-slate-400 text-sm mt-1">Inserisci il tuo nome per iniziare</p></div><input type="text" value={waiterNameInput} onChange={(e) => setWaiterNameInput(e.target.value)} placeholder="Es. Marco" className="w-full bg-slate-950 border border-slate-700 text-white px-4 py-4 rounded-xl mb-4 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all font-bold text-center text-lg" autoFocus /><button onClick={handleLoginWaiter} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20">Inizia Turno <ArrowRight size={20} /></button></div></div>)}
                 </div>
-                {showDepartmentSelector && (
-                    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in duration-300">
-                            <div className="text-center mb-6">
-                                <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/30">
-                                    <Lock className="text-blue-500 w-8 h-8" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-white mb-2">Configura Piano Basic</h2>
-                                <p className="text-slate-400 text-sm">Il piano Basic include l'accesso a un singolo reparto di produzione (+ Sala/Cassa). Seleziona il tuo reparto principale (questa scelta è definitiva).</p>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-3 mb-6">
-                                {['Cucina', 'Pizzeria', 'Pub'].map((dept) => (
-                                    <button
-                                        key={dept}
-                                        onClick={() => {
-                                            const confirm = window.confirm(`Confermi di voler bloccare l'account sul reparto ${dept}? Non potrai cambiarlo successivamente.`);
-                                            if (confirm) {
-                                                const currentData = getAppSettings();
-                                                const newSettings = {
-                                                    ...currentData,
-                                                    restaurantProfile: {
-                                                        ...currentData.restaurantProfile,
-                                                        allowedDepartment: dept as any
-                                                    }
-                                                };
-                                                saveAppSettings(newSettings);
-                                                setAppSettingsState(newSettings);
-                                                setShowDepartmentSelector(false);
-                                                showToast(`✅ Reparto ${dept} configurato con successo!`, 'success');
-                                            }
-                                        }}
-                                        className="p-4 bg-slate-800 hover:bg-slate-700 hover:border-blue-500 border border-slate-600 rounded-xl transition-all flex items-center justify-between group"
-                                    >
-                                        <span className="font-bold text-lg text-white group-hover:text-blue-400">{dept}</span>
-                                        <ArrowRight className="text-slate-500 group-hover:text-blue-400" />
-                                    </button>
-                                ))}
-                            </div>
-
-                            <div className="text-xs text-slate-500 text-center border-t border-slate-800 pt-4">
-                                * L'accesso 'Sala' e 'Cassa' è sempre incluso nel piano Basic.
-                            </div>
-                        </div>
-                    </div>
-                )}
             </>
         );
     }
@@ -1700,12 +1416,53 @@ export function App() {
                                 {unreadMessagesCount > 0 && <span className="absolute right-4 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{unreadMessagesCount}</span>}
                             </button>
                             <button onClick={() => setAdminTab('notif')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'notif' ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Bell size={18} /> Notifiche & Reparti</button>
-                            <button onClick={() => setAdminTab('subscription')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'subscription' ? 'bg-green-600 text-white shadow-lg shadow-green-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><CreditCard size={18} /> Abbonamento</button>
+                            <button onClick={() => setShowSubscriptionManager(true)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-slate-400 hover:bg-slate-800 hover:text-white bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-500/30`}><CreditCard size={18} className="text-purple-400" /> Abbonamento</button>
                             <button onClick={() => setAdminTab('analytics')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'analytics' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><BarChart3 size={18} /> Statistiche</button>
                             <button onClick={() => setAdminTab('receipts')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'receipts' ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Receipt size={18} /> Scontrini Cassa</button>
-                            <button onClick={() => setAdminTab('ai')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'ai' ? 'bg-pink-600 text-white shadow-lg shadow-pink-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Bot size={18} /> AI Intelligence</button>
-                            <button onClick={() => setAdminTab('marketing')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'marketing' ? 'bg-pink-500 text-white shadow-lg shadow-pink-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Megaphone size={18} /> Marketing <span className="ml-auto bg-blue-600 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Beta</span></button>
-                            <button onClick={() => setAdminTab('whatsapp')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'whatsapp' ? 'bg-green-600 text-white shadow-lg shadow-green-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><MessageCircle size={18} /> WhatsApp Marketing</button>
+                            <button
+                                onClick={() => {
+                                    const plan = (profileForm?.planType || '').toLowerCase();
+                                    if (plan.includes('basic')) {
+                                        showToast('Questa funzione richiede il piano PRO', 'error');
+                                        return;
+                                    }
+                                    setAdminTab('ai');
+                                }}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'ai' ? 'bg-pink-600 text-white shadow-lg shadow-pink-900/20' : (profileForm?.planType || '').toLowerCase().includes('basic') ? 'text-slate-600 cursor-not-allowed opacity-50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                            >
+                                <Bot size={18} /> AI Intelligence
+                                {(profileForm?.planType || '').toLowerCase().includes('basic') && <Lock size={14} className="ml-auto" />}
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    const plan = (profileForm?.planType || '').toLowerCase();
+                                    if (plan.includes('basic')) {
+                                        showToast('Questa funzione richiede il piano PRO', 'error');
+                                        return;
+                                    }
+                                    setAdminTab('marketing');
+                                }}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'marketing' ? 'bg-pink-500 text-white shadow-lg shadow-pink-900/20' : (profileForm?.planType || '').toLowerCase().includes('basic') ? 'text-slate-600 cursor-not-allowed opacity-50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                            >
+                                <Megaphone size={18} /> Marketing
+                                {(profileForm?.planType || '').toLowerCase().includes('basic') ? <Lock size={14} className="ml-auto" /> : <span className="ml-auto bg-blue-600 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Beta</span>}
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    const plan = (profileForm?.planType || '').toLowerCase();
+                                    if (plan.includes('basic')) {
+                                        showToast('Questa funzione richiede il piano PRO', 'error');
+                                        return;
+                                    }
+                                    setAdminTab('whatsapp');
+                                }}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'whatsapp' ? 'bg-green-600 text-white shadow-lg shadow-green-900/20' : (profileForm?.planType || '').toLowerCase().includes('basic') ? 'text-slate-600 cursor-not-allowed opacity-50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                            >
+                                <MessageCircle size={18} /> WhatsApp Marketing
+                                {(profileForm?.planType || '').toLowerCase().includes('basic') && <Lock size={14} className="ml-auto" />}
+                            </button>
                             <button onClick={() => setAdminTab('delivery')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'delivery' ? 'bg-green-600 text-white shadow-lg shadow-green-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Bike size={18} /> Piattaforme Delivery</button>
                             <button onClick={() => setAdminTab('info')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'info' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Info size={18} /> Info & Supporto</button>
                         </nav>
@@ -1935,11 +1692,7 @@ export function App() {
                                                     <div className="flex-1 space-y-3">
                                                         <div>
                                                             <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Nome Piatto</label>
-                                                            <input type="text" placeholder="Es. Spaghetti alla Carbonara" value={editingItem.name || ''} onChange={e => {
-                                                                const val = e.target.value;
-                                                                const capitalized = val.charAt(0).toUpperCase() + val.slice(1);
-                                                                setEditingItem({ ...editingItem, name: capitalized });
-                                                            }} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-bold text-sm focus:border-blue-500 outline-none transition-colors" />
+                                                            <input type="text" placeholder="Es. Spaghetti alla Carbonara" value={editingItem.name || ''} onChange={e => setEditingItem({ ...editingItem, name: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-bold text-sm focus:border-blue-500 outline-none transition-colors" />
                                                         </div>
                                                         <div className="flex gap-3">
                                                             <div className="w-24">
@@ -1995,17 +1748,9 @@ export function App() {
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <div className="flex justify-between items-center mb-2">
+                                                    <div className="flex justify-between items-center mb-1">
                                                         <label className="text-xs font-bold text-slate-500 uppercase">Ingredienti</label>
-                                                    </div>
-                                                    <div className="mb-2">
-                                                        <button onClick={generateIngr} disabled={!editingItem.name} className="w-full bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 hover:text-white border border-purple-500/30 px-4 py-3 rounded-xl font-bold flex gap-2 items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed group">
-                                                            <Sparkles size={18} className="text-purple-400 group-hover:text-white" />
-                                                            Genera Ingredienti con AI
-                                                        </button>
-                                                        <p className="text-[10px] text-slate-500 mt-1.5 text-center px-2">
-                                                            L'intelligenza artificiale scriverà per te la lista degli ingredienti basandosi sul nome del piatto.
-                                                        </p>
+                                                        <button onClick={generateIngr} disabled={!editingItem.name} className="text-xs bg-purple-600/10 text-purple-400 hover:bg-purple-600/20 px-2 py-0.5 rounded-lg font-bold flex gap-1 items-center transition-colors disabled:opacity-50"><Sparkles size={12} /> AI</button>
                                                     </div>
                                                     <textarea placeholder="Elenco ingredienti separati da virgola..." value={editingItem.ingredients || ''} onChange={e => setEditingItem({ ...editingItem, ingredients: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-purple-500 transition-colors resize-none h-24" />
                                                 </div>
@@ -2013,17 +1758,9 @@ export function App() {
 
                                             <div className="space-y-5">
                                                 <div>
-                                                    <div className="flex justify-between items-center mb-2">
+                                                    <div className="flex justify-between items-center mb-1">
                                                         <label className="text-xs font-bold text-slate-500 uppercase">Descrizione Menu</label>
-                                                    </div>
-                                                    <div className="mb-2">
-                                                        <button onClick={generateDesc} disabled={!editingItem.name} className="w-full bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 hover:text-white border border-blue-500/30 px-4 py-3 rounded-xl font-bold flex gap-2 items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed group">
-                                                            <Sparkles size={18} className="text-blue-400 group-hover:text-white" />
-                                                            Genera Descrizione con AI
-                                                        </button>
-                                                        <p className="text-[10px] text-slate-500 mt-1.5 text-center px-2">
-                                                            Crea istantaneamente una descrizione accattivante e professionale per il tuo menu digitale.
-                                                        </p>
+                                                        <button onClick={generateDesc} disabled={!editingItem.name} className="text-xs bg-purple-600/10 text-purple-400 hover:bg-purple-600/20 px-2 py-0.5 rounded-lg font-bold flex gap-1 items-center transition-colors disabled:opacity-50"><Sparkles size={12} /> AI</button>
                                                     </div>
                                                     <textarea placeholder="Descrizione accattivante per il menu digitale..." value={editingItem.description || ''} onChange={e => setEditingItem({ ...editingItem, description: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-purple-500 transition-colors resize-none h-24" />
                                                 </div>
@@ -3638,6 +3375,7 @@ export function App() {
                     />
                 )}
 
+
                 {showWhatsAppManager && (
                     <WhatsAppManager
                         onClose={() => setShowWhatsAppManager(false)}
@@ -3646,51 +3384,11 @@ export function App() {
                     />
                 )}
 
-                {showDepartmentSelector && (
-                    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in duration-300">
-                            <div className="text-center mb-6">
-                                <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/30">
-                                    <Lock className="text-blue-500 w-8 h-8" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-white mb-2">Configura Piano Basic</h2>
-                                <p className="text-slate-400 text-sm">Il piano Basic include l'accesso a un singolo reparto di produzione (+ Sala/Cassa). Seleziona il tuo reparto principale (questa scelta è definitiva).</p>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-3 mb-6">
-                                {['Cucina', 'Pizzeria', 'Pub'].map((dept) => (
-                                    <button
-                                        key={dept}
-                                        onClick={() => {
-                                            const confirm = window.confirm(`Confermi di voler bloccare l'account sul reparto ${dept}? Non potrai cambiarlo successivamente.`);
-                                            if (confirm) {
-                                                const currentData = getAppSettings();
-                                                const newSettings = {
-                                                    ...currentData,
-                                                    restaurantProfile: {
-                                                        ...currentData.restaurantProfile,
-                                                        allowedDepartment: dept as any
-                                                    }
-                                                };
-                                                saveAppSettings(newSettings);
-                                                setAppSettingsState(newSettings);
-                                                setShowDepartmentSelector(false);
-                                                showToast(`✅ Reparto ${dept} configurato con successo!`, 'success');
-                                            }
-                                        }}
-                                        className="p-4 bg-slate-800 hover:bg-slate-700 hover:border-blue-500 border border-slate-600 rounded-xl transition-all flex items-center justify-between group"
-                                    >
-                                        <span className="font-bold text-lg text-white group-hover:text-blue-400">{dept}</span>
-                                        <ArrowRight className="text-slate-500 group-hover:text-blue-400" />
-                                    </button>
-                                ))}
-                            </div>
-
-                            <div className="text-xs text-slate-500 text-center border-t border-slate-800 pt-4">
-                                * L'accesso 'Sala' e 'Cassa' è sempre incluso nel piano Basic.
-                            </div>
-                        </div>
-                    </div>
+                {showSubscriptionManager && (
+                    <SubscriptionManager
+                        onClose={() => setShowSubscriptionManager(false)}
+                        showToast={showToast}
+                    />
                 )}
             </>
         );
@@ -3741,52 +3439,11 @@ export function App() {
                     showConfirm={showConfirm}
                 />
             )}
-
-            {showDepartmentSelector && (
-                <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in duration-300">
-                        <div className="text-center mb-6">
-                            <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/30">
-                                <Lock className="text-blue-500 w-8 h-8" />
-                            </div>
-                            <h2 className="text-2xl font-bold text-white mb-2">Configura Piano Basic</h2>
-                            <p className="text-slate-400 text-sm">Il piano Basic include l'accesso a un singolo reparto di produzione (+ Sala/Cassa). Seleziona il tuo reparto principale (questa scelta è definitiva).</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-3 mb-6">
-                            {['Cucina', 'Pizzeria', 'Pub'].map((dept) => (
-                                <button
-                                    key={dept}
-                                    onClick={() => {
-                                        const confirm = window.confirm(`Confermi di voler bloccare l'account sul reparto ${dept}? Non potrai cambiarlo successivamente.`);
-                                        if (confirm) {
-                                            const currentData = getAppSettings();
-                                            const newSettings = {
-                                                ...currentData,
-                                                restaurantProfile: {
-                                                    ...currentData.restaurantProfile,
-                                                    allowedDepartment: dept as any
-                                                }
-                                            };
-                                            saveAppSettings(newSettings);
-                                            setAppSettingsState(newSettings);
-                                            setShowDepartmentSelector(false);
-                                            showToast(`✅ Reparto ${dept} configurato con successo!`, 'success');
-                                        }
-                                    }}
-                                    className="p-4 bg-slate-800 hover:bg-slate-700 hover:border-blue-500 border border-slate-600 rounded-xl transition-all flex items-center justify-between group"
-                                >
-                                    <span className="font-bold text-lg text-white group-hover:text-blue-400">{dept}</span>
-                                    <ArrowRight className="text-slate-500 group-hover:text-blue-400" />
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="text-xs text-slate-500 text-center border-t border-slate-800 pt-4">
-                            * L'accesso 'Sala' e 'Cassa' è sempre incluso nel piano Basic.
-                        </div>
-                    </div>
-                </div>
+            {showSubscriptionManager && (
+                <SubscriptionManager
+                    onClose={() => setShowSubscriptionManager(false)}
+                    showToast={showToast}
+                />
             )}
         </>
     );

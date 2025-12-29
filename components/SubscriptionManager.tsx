@@ -68,8 +68,8 @@ const PLANS: Plan[] = [
         priceYearly: 499.00,
         description: '1 reparto a scelta',
         icon: <ChefHat size={32} />,
-        color: 'orange', // CAMBIATO DA BLUE AD ARANCIONE PER TEST DEPLOY
-        gradient: 'from-orange-500 to-orange-600', // CAMBIATO DA BLUE AD ARANCIONE
+        color: 'blue',
+        gradient: 'from-blue-600 to-blue-700',
         features: [
             '1 reparto a scelta (Cucina, Pizzeria, Pub o Delivery)',
             'Gestione Ordini Completa',
@@ -160,158 +160,9 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ onClose, show
         setCurrentSubscription(sub);
     };
 
-    // Gerarchia piani: Trial=0, Basic=1, Pro=2
-    const getPlanLevel = (planId: PlanType): number => {
-        switch (planId) {
-            case 'trial': return 0;
-            case 'basic': return 1;
-            case 'pro': return 2;
-            default: return 0;
-        }
-    };
-
-    // Ottieni il piano corrente (da subscription o da restaurantProfile)
-    const getCurrentPlan = (): { planId: PlanType | null; isExpired: boolean } => {
-        const settings = getAppSettings();
-        const profilePlan = settings.restaurantProfile?.planType?.toLowerCase() || '';
-        const profileEndDate = settings.restaurantProfile?.subscriptionEndDate;
-
-        // Prima controlla subscription locale
-        if (currentSubscription) {
-            return {
-                planId: currentSubscription.planId,
-                isExpired: currentSubscription.endDate < Date.now()
-            };
-        }
-
-        // Altrimenti usa restaurantProfile
-        if (profilePlan) {
-            let planId: PlanType | null = null;
-
-            // IMPORTANTE: Controlla Trial/Prova PRIMA di Pro per evitare confusione
-            // "Prova" contiene "pro" quindi deve essere controllato per primo
-            if (profilePlan.includes('trial') || profilePlan.includes('prova')) {
-                planId = 'trial';
-            } else if (profilePlan.includes('basic')) {
-                planId = 'basic';
-            } else if (profilePlan.includes('pro')) {
-                planId = 'pro';
-            }
-
-            const isExpired = profileEndDate ? new Date(profileEndDate) < new Date() : false;
-
-            return { planId, isExpired };
-        }
-
-        return { planId: null, isExpired: true };
-    };
-
-    // Controlla se il piano corrente è scaduto
-    const isCurrentPlanExpired = (): boolean => {
-        const { isExpired } = getCurrentPlan();
-        return isExpired;
-    };
-
-    // Controlla se l'utente ha mai usato il trial
-    const hasUsedTrial = (): boolean => {
-        const settings = getAppSettings();
-        return settings.trialUsed === true ||
-            Boolean(settings.restaurantProfile?.planType && settings.restaurantProfile.planType !== 'Trial');
-    };
-
-    // Determina se un piano è selezionabile
-    const isPlanAvailable = (planId: PlanType): {
-        available: boolean;
-        reason: string;
-        isCurrent: boolean;
-        isUpgrade: boolean;
-        isDowngrade: boolean;
-    } => {
-        const planLevel = getPlanLevel(planId);
-        const { planId: currentPlanId, isExpired: expired } = getCurrentPlan();
-
-        // TRIAL: Disponibile SOLO se mai usato prima
-        if (planId === 'trial') {
-            const trialUsed = hasUsedTrial();
-            return {
-                available: !trialUsed,
-                reason: trialUsed ? 'Trial già utilizzato' : 'Disponibile',
-                isCurrent: currentPlanId === 'trial' && !expired,
-                isUpgrade: false,
-                isDowngrade: false
-            };
-        }
-
-        // Se non c'è abbonamento attivo o è scaduto
-        if (!currentPlanId || expired) {
-            // Basic e Pro sempre disponibili se non c'è piano attivo
-            return {
-                available: true,
-                reason: 'Disponibile',
-                isCurrent: false,
-                isUpgrade: false,
-                isDowngrade: false
-            };
-        }
-
-        // Piano attivo e non scaduto
-        const currentLevel = getPlanLevel(currentPlanId);
-
-        // Piano corrente - mostra come attuale ma non selezionabile
-        if (planId === currentPlanId) {
-            return {
-                available: false,
-                reason: 'Piano attuale',
-                isCurrent: true,
-                isUpgrade: false,
-                isDowngrade: false
-            };
-        }
-
-        // UPGRADE: Sempre disponibile (da Trial a Basic/Pro, o da Basic a Pro)
-        if (planLevel > currentLevel) {
-            return {
-                available: true,
-                reason: 'Upgrade disponibile',
-                isCurrent: false,
-                isUpgrade: true,
-                isDowngrade: false
-            };
-        }
-
-        // DOWNGRADE: NON disponibile (da Pro a Basic, o da Basic/Pro a Trial)
-        // L'utente deve aspettare la scadenza del piano corrente
-        return {
-            available: false,
-            reason: 'Attendi scadenza piano',
-            isCurrent: false,
-            isUpgrade: false,
-            isDowngrade: true
-        };
-    };
-
     const handleSelectPlan = (planId: PlanType) => {
-        const availability = isPlanAvailable(planId);
-
-        if (!availability.available) {
-            if (availability.isCurrent) {
-                showToast('ℹ️ Questo è già il tuo piano attuale', 'info');
-            } else if (availability.isDowngrade) {
-                showToast('⚠️ Il downgrade non è disponibile. Potrai scegliere un piano inferiore alla scadenza del tuo abbonamento attuale.', 'error');
-            } else if (planId === 'trial') {
-                showToast('⚠️ La prova gratuita è disponibile solo una volta per ogni utente.', 'error');
-            } else {
-                showToast(`⚠️ ${availability.reason}`, 'error');
-            }
-            return;
-        }
-
         if (planId === 'trial') {
             activateTrialPlan();
-            // Salva che il trial è stato usato
-            const settings = getAppSettings();
-            settings.trialUsed = true;
-            saveAppSettings(settings);
             return;
         }
         setSelectedPlan(planId);
@@ -536,124 +387,82 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ onClose, show
 
                             {/* Plans Grid */}
                             <div className="grid md:grid-cols-3 gap-6">
-                                {PLANS.map((plan) => {
-                                    const availability = isPlanAvailable(plan.id);
-                                    const isDisabled = !availability.available;
-
-                                    return (
-                                        <div
-                                            key={plan.id}
-                                            className={`relative bg-slate-950 rounded-3xl border-2 overflow-hidden transition-all duration-300 flex flex-col ${availability.isCurrent
-                                                ? 'border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.2)]'
-                                                : isDisabled
-                                                    ? 'border-slate-700 opacity-50 grayscale'
-                                                    : availability.isUpgrade
-                                                        ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)] hover:scale-[1.02]'
-                                                        : plan.popular
-                                                            ? 'border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)] hover:scale-[1.02]'
-                                                            : plan.id === 'trial'
-                                                                ? 'border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.2)] hover:scale-[1.02]'
-                                                                : 'border-slate-800 hover:border-slate-600 hover:scale-[1.02]'
-                                                }`}
-                                        >
-                                            {/* Badge superiore */}
-                                            {availability.isCurrent && (
-                                                <div className="absolute top-0 right-0 bg-gradient-to-l from-green-600 to-emerald-600 text-white text-[10px] font-black px-4 py-1.5 rounded-bl-xl uppercase tracking-wider z-20">
-                                                    Piano Attuale
-                                                </div>
-                                            )}
-                                            {availability.isUpgrade && !availability.isCurrent && (
-                                                <div className="absolute top-0 right-0 bg-gradient-to-l from-yellow-600 to-orange-600 text-white text-[10px] font-black px-4 py-1.5 rounded-bl-xl uppercase tracking-wider z-20">
-                                                    ⬆️ Upgrade
-                                                </div>
-                                            )}
-                                            {plan.popular && !availability.isCurrent && !availability.isUpgrade && !isDisabled && (
-                                                <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-600 to-pink-600 text-white text-[10px] font-black px-4 py-1.5 rounded-bl-xl uppercase tracking-wider z-20">
-                                                    Consigliato
-                                                </div>
-                                            )}
-                                            {isDisabled && !availability.isCurrent && (
-                                                <div className="absolute top-0 right-0 bg-gradient-to-l from-slate-600 to-slate-700 text-white text-[10px] font-black px-4 py-1.5 rounded-bl-xl uppercase tracking-wider z-20">
-                                                    {availability.reason}
-                                                </div>
-                                            )}
-
-                                            <div className={`p-8 bg-gradient-to-b ${plan.gradient} bg-opacity-10 relative`}>
-                                                <div className="absolute inset-0 bg-black/20"></div>
-                                                <div className="relative z-10 flex flex-col items-center text-center">
-                                                    <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm border border-white/20 shadow-lg">
-                                                        {plan.icon}
-                                                    </div>
-                                                    <h3 className="text-3xl font-black text-white tracking-tight mb-2">{plan.name}</h3>
-                                                    <p className="text-white/80 text-sm font-medium">{plan.description}</p>
-                                                </div>
+                                {PLANS.map((plan) => (
+                                    <div
+                                        key={plan.id}
+                                        className={`relative bg-slate-950 rounded-3xl border-2 overflow-hidden transition-all duration-300 hover:scale-[1.02] flex flex-col ${plan.popular
+                                            ? 'border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)]'
+                                            : plan.id === 'trial'
+                                                ? 'border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.2)]'
+                                                : 'border-slate-800 hover:border-slate-600'
+                                            }`}
+                                    >
+                                        {plan.popular && (
+                                            <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-600 to-pink-600 text-white text-[10px] font-black px-4 py-1.5 rounded-bl-xl uppercase tracking-wider z-20">
+                                                Consigliato
                                             </div>
+                                        )}
 
-                                            <div className="p-8 flex-1 flex flex-col">
-                                                <div className="mb-8 text-center">
-                                                    <p className="flex items-baseline justify-center gap-1">
-                                                        <span className="text-5xl font-black text-white tracking-tighter shadow-black drop-shadow-lg">
-                                                            {formatPrice(billingCycle === 'yearly' ? plan.priceYearly / 12 : plan.price)}
-                                                        </span>
-                                                        <span className="text-lg text-slate-500 font-bold">/mese</span>
-                                                    </p>
-                                                    {billingCycle === 'yearly' && plan.price > 0 && (
-                                                        <p className="text-xs font-bold text-green-400 mt-2 bg-green-500/10 py-1 px-3 rounded-full inline-block">
-                                                            Risparmi {formatPrice((plan.price * 12) - plan.priceYearly)} l'anno
-                                                        </p>
-                                                    )}
+                                        <div className={`p-8 bg-gradient-to-b ${plan.gradient} bg-opacity-10 relative`}>
+                                            <div className="absolute inset-0 bg-black/20"></div>
+                                            <div className="relative z-10 flex flex-col items-center text-center">
+                                                <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm border border-white/20 shadow-lg">
+                                                    {plan.icon}
                                                 </div>
-
-                                                <div className="space-y-4 mb-8 flex-1">
-                                                    {plan.features.map((feature, idx) => (
-                                                        <div key={idx} className="flex items-start gap-3 text-sm group">
-                                                            <div className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${plan.id === 'trial' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-green-500/20 text-green-400'}`}>
-                                                                <CheckCircle size={12} strokeWidth={3} />
-                                                            </div>
-                                                            <span className="text-slate-300 font-medium group-hover:text-white transition-colors">{feature}</span>
-                                                        </div>
-                                                    ))}
-                                                    {plan.excludedFeatures?.map((feature, idx) => (
-                                                        <div key={idx} className="flex items-start gap-3 text-sm opacity-50">
-                                                            <div className="mt-0.5 w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
-                                                                <X size={12} className="text-slate-500" />
-                                                            </div>
-                                                            <span className="text-slate-500 line-through">{feature}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-
-                                                <button
-                                                    onClick={() => handleSelectPlan(plan.id)}
-                                                    disabled={isDisabled}
-                                                    className={`w-full py-4 rounded-xl font-bold transition-all transform shadow-xl flex items-center justify-center gap-2 ${availability.isCurrent
-                                                        ? 'bg-green-600 text-white cursor-default'
-                                                        : isDisabled
-                                                            ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                                                            : availability.isUpgrade
-                                                                ? 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white shadow-yellow-900/20 active:scale-95'
-                                                                : plan.id === 'trial'
-                                                                    ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-900/20 active:scale-95'
-                                                                    : plan.popular
-                                                                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-purple-900/20 active:scale-95'
-                                                                        : 'bg-slate-800 hover:bg-slate-700 text-white border-2 border-slate-700 hover:border-slate-600 active:scale-95'
-                                                        }`}
-                                                >
-                                                    {availability.isCurrent
-                                                        ? '✓ Piano Attuale'
-                                                        : isDisabled
-                                                            ? availability.reason
-                                                            : availability.isUpgrade
-                                                                ? `⬆️ Passa a ${plan.name}`
-                                                                : plan.id === 'trial'
-                                                                    ? 'Inizia Prova Gratuita'
-                                                                    : `Attiva Piano ${plan.name}`
-                                                    }
-                                                </button>
+                                                <h3 className="text-3xl font-black text-white tracking-tight mb-2">{plan.name}</h3>
+                                                <p className="text-white/80 text-sm font-medium">{plan.description}</p>
                                             </div>
                                         </div>
-                                    );
-                                })}
+
+                                        <div className="p-8 flex-1 flex flex-col">
+                                            <div className="mb-8 text-center">
+                                                <p className="flex items-baseline justify-center gap-1">
+                                                    <span className="text-5xl font-black text-white tracking-tighter shadow-black drop-shadow-lg">
+                                                        {formatPrice(billingCycle === 'yearly' ? plan.priceYearly / 12 : plan.price)}
+                                                    </span>
+                                                    <span className="text-lg text-slate-500 font-bold">/mese</span>
+                                                </p>
+                                                {billingCycle === 'yearly' && plan.price > 0 && (
+                                                    <p className="text-xs font-bold text-green-400 mt-2 bg-green-500/10 py-1 px-3 rounded-full inline-block">
+                                                        Risparmi {formatPrice((plan.price * 12) - plan.priceYearly)} l'anno
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div className="space-y-4 mb-8 flex-1">
+                                                {plan.features.map((feature, idx) => (
+                                                    <div key={idx} className="flex items-start gap-3 text-sm group">
+                                                        <div className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${plan.id === 'trial' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-green-500/20 text-green-400'}`}>
+                                                            <CheckCircle size={12} strokeWidth={3} />
+                                                        </div>
+                                                        <span className="text-slate-300 font-medium group-hover:text-white transition-colors">{feature}</span>
+                                                    </div>
+                                                ))}
+                                                {plan.excludedFeatures?.map((feature, idx) => (
+                                                    <div key={idx} className="flex items-start gap-3 text-sm opacity-50">
+                                                        <div className="mt-0.5 w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                                                            <X size={12} className="text-slate-500" />
+                                                        </div>
+                                                        <span className="text-slate-500 line-through">{feature}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            <button
+                                                onClick={() => handleSelectPlan(plan.id)}
+                                                className={`w-full py-4 rounded-xl font-bold transition-all transform active:scale-95 shadow-xl flex items-center justify-center gap-2 ${plan.id === 'trial'
+                                                    ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-900/20'
+                                                    : plan.popular
+                                                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-purple-900/20'
+                                                        : 'bg-slate-800 hover:bg-slate-700 text-white border-2 border-slate-700 hover:border-slate-600'
+                                                    }`}
+                                            >
+                                                {plan.id === 'trial' ? 'Inizia Prova Gratuita' : `Attiva Piano ${plan.name}`}
+                                                <ArrowRight size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
 
                         </>

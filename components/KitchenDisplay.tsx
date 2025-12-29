@@ -241,12 +241,14 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onExit, department = 'C
                 );
 
                 if (targetOrder) {
-                    showNotification(`✅ VOCALE: Tavolo ${tableNum} PRONTO!`, 'success');
-                    playNotificationSound('ready');
+                    // IMPROVED LOGIC: Complete only ONE dish at a time
+                    // Find the first uncompleted item relevant to this department
+                    let completedOne = false;
 
-                    // AUTO-TICK: Spunta visivamente tutti i prodotti di questo reparto scansionando con i REFS
-                    targetOrder.items.forEach((item, idx) => {
-                        // Logic adapted from isItemRelevantForDept but using STATE REFS to ensure freshness
+                    for (let idx = 0; idx < targetOrder.items.length && !completedOne; idx++) {
+                        const item = targetOrder.items[idx];
+
+                        // Check if item is relevant for this department
                         const currentSettings = appSettingsRef.current;
                         const currentDept = departmentRef.current;
                         const currentMenu = allMenuItemsRef.current;
@@ -263,14 +265,21 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onExit, department = 'C
                             });
                         }
 
-                        if (relevant) {
-                            if (!item.completed && item.menuItem.category !== Category.MENU_COMPLETO) {
-                                handlersRef.current.toggleOrderItemCompletion(targetOrder.id, idx);
-                            }
+                        // If relevant and not completed, complete it and stop
+                        if (relevant && !item.completed && item.menuItem.category !== Category.MENU_COMPLETO) {
+                            handlersRef.current.toggleOrderItemCompletion(targetOrder.id, idx);
+                            showNotification(`✅ VOCALE: ${item.menuItem.name} - Tavolo ${tableNum} PRONTO!`, 'success');
+                            playNotificationSound('ready');
+                            completedOne = true;
                         }
-                    });
+                    }
 
-                    handlersRef.current.updateOrderStatus(targetOrder.id, OrderStatus.READY);
+                    if (!completedOne) {
+                        // All items already completed - mark order as READY
+                        handlersRef.current.updateOrderStatus(targetOrder.id, OrderStatus.READY);
+                        showNotification(`✅ VOCALE: Tavolo ${tableNum} COMPLETAMENTE PRONTO!`, 'success');
+                        playNotificationSound('ready');
+                    }
                 } else {
                     showNotification(`❌ VOCALE: Tavolo ${tableNum} non trovato`, 'alert');
                 }
@@ -499,11 +508,36 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onExit, department = 'C
     // LOGICA DI VISUALIZZAZIONE "ATTIVA"
     // Le comande READY restano visibili (verdi) finché non diventano DELIVERED (dal cameriere o dal tasto "Servi")
     // Le comande DELIVERED restano visibili per 5 secondi se sono in "lingerOrders"
-    // SAFETY FIX: Exclude any order with _HISTORY tag from active view, regardless of status
-    const displayedOrders = orders.filter(o =>
-        (viewMode === 'active' && o.status !== OrderStatus.DELIVERED && !o.tableNumber.includes('_HISTORY')) ||
-        lingerOrders.includes(o.id)
-    );
+    // NUOVO: Nascondi ordini dove TUTTI gli item del reparto sono completati
+    const displayedOrders = orders.filter(o => {
+        // Always show lingering orders (being archived)
+        if (lingerOrders.includes(o.id)) return true;
+
+        // Only show active orders in active view
+        if (viewMode !== 'active' || o.status === OrderStatus.DELIVERED) return false;
+
+        // Check if ALL items relevant to this department are completed
+        const relevantItems = o.items.filter(item => isItemRelevantForDept(item));
+
+        // If no relevant items, don't show this order
+        if (relevantItems.length === 0) return false;
+
+        // Check if all relevant items are completed
+        const allCompleted = relevantItems.every(item => {
+            if (item.menuItem.category === Category.MENU_COMPLETO && item.menuItem.comboItems) {
+                const relevantSubItems = getSubItemsForCombo(item).filter(sub => {
+                    const dest = sub.specificDepartment || appSettings.categoryDestinations[sub.category];
+                    return dest === department;
+                });
+                if (relevantSubItems.length === 0) return true;
+                return relevantSubItems.every(sub => item.comboCompletedParts?.includes(sub.id));
+            }
+            return item.completed;
+        });
+
+        // Hide if all items are completed (department work is done)
+        return !allCompleted;
+    });
 
     const isAutoPrintActive = appSettings.printEnabled && appSettings.printEnabled[department];
 

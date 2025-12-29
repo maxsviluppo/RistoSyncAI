@@ -78,11 +78,20 @@ export interface RestaurantProfile {
     instagramAccessToken?: string; // Often same as FB, but good to separate
   };
 
+  // WhatsApp Cloud API Configuration
+  whatsappApiConfig?: {
+    phoneNumberId?: string; // ID del numero di telefono Meta
+    businessAccountId?: string; // ID Business Account
+    accessToken?: string; // Token permanente o temporaneo
+    apiVersion?: string; // es. v18.0
+  };
+
   // Subscription Fields
   subscriptionEndDate?: string; // ISO Date String
-  planType?: 'Trial' | 'Pro' | 'Enterprise' | 'Free' | 'Demo' | 'Promo' | 'Basic' | 'Mensile' | 'Annuale' | 'VIP';
+  planType?: 'Trial' | 'Basic' | 'Pro' | 'Basic_Annuale' | 'Pro_Annuale' | 'Free' | 'Demo' | 'Promo';
   subscriptionCost?: string; // Custom cost set by Admin (string to allow formatting like "29.90")
-  allowedDepartment?: Department; // For Basic plan, locks the user to a single department
+  allowedDepartment?: 'kitchen' | 'pizzeria' | 'pub' | 'delivery'; // For Basic Plan restriction
+
 
   // Agent Data
   agent?: AgentInfo;
@@ -127,6 +136,15 @@ export interface AppSettings {
   tableReservations?: string[];
   sharedTables?: Record<string, string[]>; // tableNum -> [waiterName1, waiterName2]
   activeCollaborations?: any[]; // For syncing request/accept flows
+  // Subscription data
+  subscription?: {
+    planId: 'trial' | 'basic' | 'pro';
+    status: 'active' | 'pending' | 'expired' | 'cancelled';
+    startDate: number;
+    endDate: number;
+    paymentMethod?: 'stripe' | 'paypal' | 'bonifico';
+    paymentReference?: string;
+  };
 }
 
 export interface MenuItem {
@@ -276,6 +294,7 @@ export interface Reservation {
   customerId: string; // Reference to Customer
   customerName: string; // Denormalized for quick access
   customerPhone: string; // Denormalized for quick access
+  customerEmail?: string; // Denormalized for quick access
   numberOfGuests: number;
   numberOfChildren?: number; // Number of children (included in total or additional)
   reservationDate: string; // ISO date (YYYY-MM-DD)
