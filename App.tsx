@@ -468,10 +468,10 @@ export function App() {
                 return;
             }
 
-            // CHECK EXPIRATION (allow 2 hours to be safe)
+            // CHECK EXPIRATION (Rilassiamo il controllo: 24 ore invece di 2 ore per facilitare i test)
             const paymentTime = new Date(pendingPayment.timestamp).getTime();
-            if (Date.now() - paymentTime > (2 * 60 * 60 * 1000)) {
-                console.log('Pending payment expired.');
+            if (Date.now() - paymentTime > (24 * 60 * 60 * 1000)) {
+                console.log('Pending payment expired (>24h).');
                 localStorage.removeItem('ristosync_pending_payment');
                 return;
             }
@@ -479,7 +479,7 @@ export function App() {
             // Proceed with activation
             console.log('Processing payment activation...');
 
-            // Mark as completed in local storage to prevent loops
+            // Mark as completed in local storage
             pendingPayment.completed = true;
             localStorage.setItem('ristosync_pending_payment', JSON.stringify(pendingPayment));
 
@@ -503,9 +503,10 @@ export function App() {
                 const endDateISO = endDate.toISOString();
 
                 // 1. UPDATE SUPABASE
-                // Aggiorniamo sia 'subscription_status' (colonna diretta) che 'settings' (JSON)
-                // Usiamo appSettings correnti come base
                 const currentSettings = { ...appSettings };
+                // Resetta allowedDepartment se piano è Basic, così al primo accesso in dashboard lo chiede
+                const shouldResetDepartment = planType === 'Basic';
+
                 const updatedSettings = {
                     ...currentSettings,
                     restaurantProfile: {
@@ -513,8 +514,7 @@ export function App() {
                         planType: planType,
                         subscriptionStatus: 'active',
                         subscriptionEndDate: endDateMs,
-                        // Se Basic, resetta reparto per forzare la scelta se necessario
-                        allowedDepartment: planType === 'Basic' ? undefined : (currentSettings.restaurantProfile?.allowedDepartment)
+                        allowedDepartment: shouldResetDepartment ? undefined : (currentSettings.restaurantProfile?.allowedDepartment)
                     }
                 };
 
@@ -526,66 +526,49 @@ export function App() {
                     })
                     .eq('id', session.user.id);
 
-                if (dbError) {
-                    console.error("Errore update DB:", dbError);
-                    // Non blocchiamo tutto, l'utente ha pagato!
-                    // Proseguiamo con l'aggiornamento locale
-                }
+                if (dbError) console.error("Errore update DB:", dbError);
 
-                // 2. UPDATE LOCAL STATE
+                // 2. UPDATE LOCAL STATE & UI NAVIGATION
                 setAppSettingsState(updatedSettings);
-                saveAppSettings(updatedSettings); // Helper che salva anche in localStorage 'appSettings'
+                saveAppSettings(updatedSettings);
 
-                // 3. SEND EMAILS (Non-blocking)
-                const price = billingCycle === 'yearly'
-                    ? (planType === 'Basic' ? '499.00' : '999.00')
-                    : (planType === 'Basic' ? '49.90' : '99.90');
-
-                const customerName = updatedSettings.restaurantProfile?.name || session.user.email || 'Cliente';
-
-                // Send emails in background
-                Promise.all([
-                    sendPaymentConfirmationEmail(
-                        session.user.email || '',
-                        customerName,
-                        planType,
-                        `€${price}`,
-                        endDate.toLocaleDateString('it-IT')
-                    ),
-                    sendAdminPaymentNotification(
-                        session.user.email || '',
-                        customerName,
-                        planType,
-                        `€${price}`
-                    )
-                ]).catch(err => console.error("Errore invio email:", err));
+                // *** CRUCIALE: PORTA L'UTENTE AL PROFILO ***
+                setAdminTab('profile'); // Vai al profilo
+                setShowAdmin(true);     // Assicurati di vedere l'admin panel
+                setShowSubscriptionManager(false); // Chiudi manager abbonamenti
 
 
-                // 4. SHOW SUCCESS MODAL & CLEANUP
+                // 3. SHOW SUCCESS MODAL (Congratulazioni!)
                 setPaymentSuccessData({
                     planType: planType,
                     endDate: endDateISO,
-                    price: price
+                    price: billingCycle === 'yearly'
+                        ? (planType === 'Basic' ? '499.00' : '999.00')
+                        : (planType === 'Basic' ? '49.90' : '99.90')
                 });
-
-                // Chiudi altri modali
-                setShowSubscriptionManager(false);
-
-                // Mostra successo
                 setShowPaymentSuccessModal(true);
 
-                // Rimuovi pending payment
+                // 4. CLEANUP
                 localStorage.removeItem('ristosync_pending_payment');
-
-                // Pulisci URL solo alla fine
                 if (isSuccessURL) {
                     window.history.replaceState({}, '', window.location.pathname);
                 }
 
+                // 5. SEND EMAILS (Background)
+                const priceStr = billingCycle === 'yearly'
+                    ? (planType === 'Basic' ? '€499.00' : '€999.00')
+                    : (planType === 'Basic' ? '€49.90' : '€99.90');
+
+                const customerName = updatedSettings.restaurantProfile?.name || session.user.email || 'Cliente';
+
+                Promise.all([
+                    sendPaymentConfirmationEmail(session.user.email || '', customerName, planType, priceStr, endDate.toLocaleDateString('it-IT')),
+                    sendAdminPaymentNotification(session.user.email || '', customerName, planType, priceStr)
+                ]).catch(err => console.error("Email error:", err));
+
             } catch (error) {
-                console.error('CRITICAL Error handling Stripe success:', error);
-                showToast('Errore attivazione abbonamento. Contatta supporto.', 'error');
-                // Non rimuoviamo pending_payment così al refresh riprova nel limite temporale
+                console.error('CRITICAL Error activation:', error);
+                showToast('Errore attivazione. Contatta supporto.', 'error');
             }
         };
 
