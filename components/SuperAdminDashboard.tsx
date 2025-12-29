@@ -279,7 +279,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onEnterApp })
 
         setSubPlan(plan);
         // Costo basato sul piano
-        const defaultCost = plan === 'Trial' || plan === 'Free' || plan === 'Demo' ? '0' : (profileData.subscriptionCost || '49.00');
+        const defaultCost = plan === 'Trial' || plan === 'Free' || plan === 'Demo' ? '0' : (profileData.subscriptionCost || '49.90');
         setSubCost(defaultCost);
 
         // Load Agent Data
@@ -324,11 +324,6 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onEnterApp })
         if (!supabase || !viewingProfile) return;
 
         const currentSettings = viewingProfile.settings || {};
-        const currentPlan = currentSettings.restaurantProfile?.planType || 'Trial';
-
-        // Se il piano è cambiato, resetta allowedDepartment per permettere nuova scelta
-        const planChanged = currentPlan !== subPlan;
-        const shouldResetDepartment = planChanged || subPlan === 'Trial' || subPlan === 'Demo' || subPlan === 'Free';
 
         const updatedSettings = {
             ...currentSettings,
@@ -339,8 +334,6 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onEnterApp })
                 subscriptionCost: subCost,
                 planType: subPlan,
                 name: viewingProfile.restaurant_name,
-                // Reset allowedDepartment se il piano è cambiato o è Trial/Demo
-                allowedDepartment: shouldResetDepartment ? undefined : currentSettings.restaurantProfile?.allowedDepartment,
                 agent: {
                     name: agentName,
                     iban: agentIban,
@@ -365,13 +358,11 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onEnterApp })
             .eq('id', viewingProfile.id);
 
         if (error) {
-            alert("ERRORE SALVATAGGIO: " + error.message);
+            showToastMsg("ERRORE SALVATAGGIO: " + error.message, 'error');
             fetchProfiles();
         } else {
             setIsEditingRegistry(false);
-            if (planChanged) {
-                showToastMsg(`✅ Piano cambiato a ${subPlan}. Il reparto verrà richiesto al prossimo accesso.`, 'success');
-            }
+            showToastMsg("✅ Dati aggiornati con successo!", 'success');
         }
     };
 
@@ -411,47 +402,14 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onEnterApp })
 
         showConfirm(
             'ELIMINAZIONE DEFINITIVA',
-            `⚠️ SEI SICURO DI VOLER ELIMINARE "${name}"?\n\nL'azione è irreversibile. Verranno cancellati:\n- Profilo Ristorante\n- Tutti i dati associati (ordini, menu, prenotazioni, clienti, ecc.)\n\nL'utente Auth rimarrà ma senza profilo.`,
+            `⚠️ SEI SICURO DI VOLER ELIMINARE "${name}"?\n\nL'azione è irreversibile. Verranno cancellati:\n- Profilo Ristorante\n- Tutti i dati associati (se collegati)\n\nL'utente Auth rimarrà ma senza profilo.`,
             async () => {
-                try {
-                    // Elimina tutti i dati correlati all'utente in ordine
-                    // 1. Messaggi (sia come sender che come recipient)
-                    await supabase!.from('messages').delete().eq('sender_id', id);
-                    await supabase!.from('messages').delete().eq('recipient_id', id);
-
-                    // 2. Ordini
-                    await supabase!.from('orders').delete().eq('user_id', id);
-
-                    // 3. Menu items
-                    await supabase!.from('menu_items').delete().eq('user_id', id);
-
-                    // 4. Marketing promotions
-                    await supabase!.from('marketing_promotions').delete().eq('user_id', id);
-
-                    // 5. Marketing automations
-                    await supabase!.from('marketing_automations').delete().eq('user_id', id);
-
-                    // 6. Social posts
-                    await supabase!.from('social_posts').delete().eq('user_id', id);
-
-                    // 7. Prenotazioni
-                    await supabase!.from('reservations').delete().eq('user_id', id);
-
-                    // 8. Clienti
-                    await supabase!.from('customers').delete().eq('user_id', id);
-
-                    // 9. Infine, elimina il profilo
-                    const { error } = await supabase!.from('profiles').delete().eq('id', id);
-
-                    if (!error) {
-                        fetchProfiles();
-                        showToastMsg(`Account "${name}" e tutti i suoi dati ELIMINATI con successo.`, 'success');
-                    } else {
-                        showToastMsg("Errore durante l'eliminazione del profilo: " + error.message, 'error');
-                    }
-                } catch (err: any) {
-                    showToastMsg("Errore durante l'eliminazione: " + (err.message || 'Errore sconosciuto'), 'error');
-                    console.error('Delete error:', err);
+                const { error } = await supabase!.from('profiles').delete().eq('id', id);
+                if (!error) {
+                    fetchProfiles();
+                    showToastMsg(`Account "${name}" ELIMINATO con successo.`, 'success');
+                } else {
+                    showToastMsg("Errore durante l'eliminazione: " + error.message, 'error');
                 }
             }
         );
@@ -546,17 +504,19 @@ do $$ begin alter publication supabase_realtime add table public.messages; excep
 NOTIFY pgrst, 'reload schema';`;
     const isEmailCorrect = currentEmail.toLowerCase() === SUPER_ADMIN_EMAIL;
 
-    // Derived Status for Modal
-    // Derived Status for Modal
+    // Derived Status for Modal - with robust fallbacks
     const isSuspended = viewingProfile?.subscription_status === 'suspended';
     const isBanned = viewingProfile?.subscription_status === 'banned';
 
-    const isTrial = subPlan === 'Trial';
-    const isFree = subPlan === 'Free' || subPlan === 'Demo';
+    // Use subPlan from state, fallback to viewingProfile data if empty
+    const effectivePlan = subPlan || viewingProfile?.settings?.restaurantProfile?.planType || 'Trial';
+    const isTrial = effectivePlan === 'Trial';
+    const isBasic = effectivePlan === 'Basic';
+    const isFree = effectivePlan === 'Free' || effectivePlan === 'Demo';
     const isExpired = subDate && new Date(subDate) < new Date() && !isFree && !isSuspended && !isBanned;
 
-    const statusLabel = isBanned ? 'BANNATO' : isSuspended ? 'SOSPESO' : isFree ? 'GRATIS / DEMO' : isExpired ? 'SCADUTO' : isTrial ? 'IN PROVA' : 'ATTIVO';
-    const statusColorClass = isBanned ? 'bg-red-600' : isSuspended ? 'bg-orange-500' : isFree ? 'bg-indigo-600' : isExpired ? 'bg-red-600' : isTrial ? 'bg-blue-500' : 'bg-green-600';
+    const statusLabel = isBanned ? 'BANNATO' : isSuspended ? 'SOSPESO' : isFree ? 'GRATIS / DEMO' : isExpired ? 'SCADUTO' : isTrial ? 'IN PROVA' : isBasic ? 'BASIC' : 'ATTIVO';
+    const statusColorClass = isBanned ? 'bg-red-600' : isSuspended ? 'bg-orange-500' : isFree ? 'bg-indigo-600' : isExpired ? 'bg-red-600' : isTrial ? 'bg-blue-500' : isBasic ? 'bg-blue-600' : 'bg-green-600';
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30">
@@ -796,14 +756,16 @@ NOTIFY pgrst, 'reload schema';`;
                                             const statusColor = getStatusColor(p);
                                             const planType = p.settings?.restaurantProfile?.planType || 'Trial';
                                             const expiry = p.settings?.restaurantProfile?.subscriptionEndDate;
-                                            const isExpired = expiry && new Date(expiry) < new Date();
+                                            const isExpired = expiry && (new Date(expiry).getTime() < new Date().getTime());
                                             const getPlanColor = () => {
-                                                if (isExpired) return 'bg-red-500/10 text-red-500 border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.1)]';
+                                                if (isExpired && planType !== 'Free' && planType !== 'Demo') return 'bg-red-500/10 text-red-500 border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.1)]';
                                                 if (planType === 'Trial') return 'bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.1)]';
-                                                if (planType === 'Free') return 'bg-slate-500/10 text-slate-400 border-slate-500/20 shadow-[0_0_10px_rgba(148,163,184,0.1)]';
-                                                if (planType === 'Basic') return 'bg-blue-600/10 text-blue-500 border-blue-600/20 shadow-[0_0_10px_rgba(37,99,235,0.1)]';
-                                                if (planType === 'Pro') return 'bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.1)]';
+                                                if (planType === 'Basic') return 'bg-blue-600/10 text-blue-500 border-blue-500/20 shadow-[0_0_10px_rgba(37,99,235,0.1)]';
+                                                if (planType === 'Mensile' || planType === 'Pro') return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]';
+                                                if (planType === 'Annuale' || planType === 'Enterprise') return 'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]';
+                                                if (planType === 'VIP' || planType === 'Premium') return 'bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.1)]';
                                                 if (planType === 'Promo') return 'bg-pink-500/10 text-pink-400 border-pink-500/20 shadow-[0_0_10px_rgba(236,72,153,0.1)]';
+                                                if (planType === 'Free' || planType === 'Demo') return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shadow-[0_0_10px_rgba(99,102,241,0.1)]';
                                                 return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
                                             };
 
@@ -1059,7 +1021,7 @@ NOTIFY pgrst, 'reload schema';`;
                                                 <div className="text-center">
                                                     <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Data Scadenza</label>
                                                     {isEditingRegistry ? (
-                                                        <input type="date" value={subDate ? subDate.split('T')[0] : ''} onChange={(e) => setSubDate(e.target.value)} className="bg-slate-900 border border-slate-600 text-white p-3 rounded-xl w-full font-bold focus:border-white outline-none text-center" />
+                                                        <input type="date" value={(typeof subDate === 'string' && subDate.includes('T')) ? subDate.split('T')[0] : (subDate || '')} onChange={(e) => setSubDate(e.target.value)} className="bg-slate-900 border border-slate-600 text-white p-3 rounded-xl w-full font-bold focus:border-white outline-none text-center" />
                                                     ) : (
                                                         <p className={`text-3xl font-black font-mono tracking-tight ${isExpired ? 'text-red-500 animate-pulse' : 'text-white'}`}>{subDate ? new Date(subDate).toLocaleDateString() : 'ILLIMITATO'}</p>
                                                     )}
@@ -1069,21 +1031,23 @@ NOTIFY pgrst, 'reload schema';`;
                                                     <div>
                                                         <label className="text-[10px] text-slate-500 uppercase font-bold block mb-2">Piano Selezionato</label>
                                                         {isEditingRegistry ? (
-                                                            <div className="space-y-2 max-h-[280px] overflow-y-auto custom-scroll pr-1">
+                                                            <div className="space-y-2 max-h-[200px] overflow-y-auto custom-scroll pr-1">
                                                                 {[
-                                                                    { value: 'trial', label: 'Trial (15gg)', color: 'blue', cost: '0' },
-                                                                    { value: 'basic', label: 'Basic €49,90/mese', color: 'emerald', cost: '49.90' },
-                                                                    { value: 'pro', label: 'Pro AI €99,90/mese', color: 'purple', cost: '99.90' },
-                                                                    { value: 'basic_yearly', label: 'Basic Annuale €499', color: 'teal', cost: '499.00' },
-                                                                    { value: 'pro_yearly', label: 'Pro Annuale €999', color: 'violet', cost: '999.00' },
-                                                                    { value: 'promo', label: `${promoName || 'Promo Special'}`, color: 'pink', cost: promoCost || '29.90' },
-                                                                    { value: 'demo', label: 'Demo / Illimitato', color: 'indigo', cost: '0' },
+                                                                    { value: 'Trial', label: 'Trial (15gg)', color: 'blue' },
+                                                                    { value: 'Basic', label: 'Basic (1 Reparto)', color: 'blue' },
+                                                                    { value: 'Mensile', label: 'Mensile Standard', color: 'emerald' },
+                                                                    { value: 'Annuale', label: 'Annuale Pro', color: 'amber' },
+                                                                    { value: 'Promo', label: `${promoName || 'Promo Special'}`, color: 'pink' },
+                                                                    { value: 'VIP', label: 'VIP Support', color: 'purple' },
+                                                                    { value: 'Free', label: 'Free / Demo', color: 'indigo' },
                                                                 ].map(plan => (
                                                                     <button
                                                                         key={plan.value}
                                                                         onClick={() => {
                                                                             setSubPlan(plan.value);
-                                                                            setSubCost(plan.cost);
+                                                                            if (plan.value === 'Promo') setSubCost(promoCost || '29.90');
+                                                                            else if (plan.value === 'Trial' || plan.value === 'Free') setSubCost('0');
+                                                                            else if (plan.value === 'Mensile') setSubCost(globalDefaultCost || '49.90');
                                                                         }}
                                                                         className={`w-full px-4 py-3 rounded-xl text-left flex justify-between items-center transition-all border ${subPlan === plan.value ? `bg-${plan.color}-500/20 border-${plan.color}-500 text-${plan.color}-400` : 'bg-slate-900 border-slate-700 text-slate-400 hover:bg-slate-800'}`}
                                                                     >
@@ -1163,8 +1127,8 @@ NOTIFY pgrst, 'reload schema';`;
                                                 {isEditingRegistry ? <input type="text" value={registryForm.phoneNumber} onChange={e => handleRegistryChange('phoneNumber', e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none" /> : <p className="text-white bg-slate-900 p-3 rounded-xl border border-slate-800">{viewingProfile.settings?.restaurantProfile?.phoneNumber || '-'}</p>}
                                             </div>
                                             <div>
-                                                <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Email Pubblica</label>
-                                                {isEditingRegistry ? <input type="text" value={registryForm.publicEmail} onChange={e => handleRegistryChange('publicEmail', e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none" /> : <p className="text-white bg-slate-900 p-3 rounded-xl border border-slate-800">{viewingProfile.settings?.restaurantProfile?.publicEmail || '-'}</p>}
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Email Gestore</label>
+                                                {isEditingRegistry ? <input type="text" value={registryForm.email} onChange={e => handleRegistryChange('email', e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none" /> : <p className="text-white bg-slate-900 p-3 rounded-xl border border-slate-800">{viewingProfile.settings?.restaurantProfile?.email || '-'}</p>}
                                             </div>
                                             <div className="md:col-span-2">
                                                 <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Sito Web</label>
