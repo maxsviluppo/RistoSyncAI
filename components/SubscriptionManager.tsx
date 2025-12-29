@@ -170,10 +170,39 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ onClose, show
         }
     };
 
+    // Ottieni il piano corrente (da subscription o da restaurantProfile)
+    const getCurrentPlan = (): { planId: PlanType | null; isExpired: boolean } => {
+        const settings = getAppSettings();
+        const profilePlan = settings.restaurantProfile?.planType?.toLowerCase() || '';
+        const profileEndDate = settings.restaurantProfile?.subscriptionEndDate;
+
+        // Prima controlla subscription locale
+        if (currentSubscription) {
+            return {
+                planId: currentSubscription.planId,
+                isExpired: currentSubscription.endDate < Date.now()
+            };
+        }
+
+        // Altrimenti usa restaurantProfile
+        if (profilePlan) {
+            let planId: PlanType | null = null;
+            if (profilePlan.includes('pro')) planId = 'pro';
+            else if (profilePlan.includes('basic')) planId = 'basic';
+            else if (profilePlan.includes('trial')) planId = 'trial';
+
+            const isExpired = profileEndDate ? new Date(profileEndDate) < new Date() : false;
+
+            return { planId, isExpired };
+        }
+
+        return { planId: null, isExpired: true };
+    };
+
     // Controlla se il piano corrente è scaduto
     const isCurrentPlanExpired = (): boolean => {
-        if (!currentSubscription) return true;
-        return currentSubscription.endDate < Date.now();
+        const { isExpired } = getCurrentPlan();
+        return isExpired;
     };
 
     // Controlla se l'utente ha mai usato il trial
@@ -192,10 +221,10 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ onClose, show
         isDowngrade: boolean;
     } => {
         const planLevel = getPlanLevel(planId);
-        const expired = isCurrentPlanExpired();
+        const { planId: currentPlanId, isExpired: expired } = getCurrentPlan();
 
         // Se non c'è abbonamento o è scaduto
-        if (!currentSubscription || expired) {
+        if (!currentPlanId || expired) {
             // Trial disponibile solo se mai usato
             if (planId === 'trial') {
                 const trialUsed = hasUsedTrial();
@@ -218,10 +247,10 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ onClose, show
         }
 
         // Piano attivo e non scaduto
-        const currentLevel = getPlanLevel(currentSubscription.planId);
+        const currentLevel = getPlanLevel(currentPlanId);
 
         // Piano corrente - non selezionabile
-        if (planId === currentSubscription.planId) {
+        if (planId === currentPlanId) {
             return {
                 available: false,
                 reason: 'Piano attuale',
@@ -515,16 +544,16 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ onClose, show
                                         <div
                                             key={plan.id}
                                             className={`relative bg-slate-950 rounded-3xl border-2 overflow-hidden transition-all duration-300 flex flex-col ${availability.isCurrent
-                                                    ? 'border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.2)]'
-                                                    : isDisabled
-                                                        ? 'border-slate-700 opacity-50 grayscale'
-                                                        : availability.isUpgrade
-                                                            ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)] hover:scale-[1.02]'
-                                                            : plan.popular
-                                                                ? 'border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)] hover:scale-[1.02]'
-                                                                : plan.id === 'trial'
-                                                                    ? 'border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.2)] hover:scale-[1.02]'
-                                                                    : 'border-slate-800 hover:border-slate-600 hover:scale-[1.02]'
+                                                ? 'border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.2)]'
+                                                : isDisabled
+                                                    ? 'border-slate-700 opacity-50 grayscale'
+                                                    : availability.isUpgrade
+                                                        ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)] hover:scale-[1.02]'
+                                                        : plan.popular
+                                                            ? 'border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)] hover:scale-[1.02]'
+                                                            : plan.id === 'trial'
+                                                                ? 'border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.2)] hover:scale-[1.02]'
+                                                                : 'border-slate-800 hover:border-slate-600 hover:scale-[1.02]'
                                                 }`}
                                         >
                                             {/* Badge superiore */}
@@ -598,16 +627,16 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ onClose, show
                                                     onClick={() => handleSelectPlan(plan.id)}
                                                     disabled={isDisabled}
                                                     className={`w-full py-4 rounded-xl font-bold transition-all transform shadow-xl flex items-center justify-center gap-2 ${availability.isCurrent
-                                                            ? 'bg-green-600 text-white cursor-default'
-                                                            : isDisabled
-                                                                ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                                                                : availability.isUpgrade
-                                                                    ? 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white shadow-yellow-900/20 active:scale-95'
-                                                                    : plan.id === 'trial'
-                                                                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-900/20 active:scale-95'
-                                                                        : plan.popular
-                                                                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-purple-900/20 active:scale-95'
-                                                                            : 'bg-slate-800 hover:bg-slate-700 text-white border-2 border-slate-700 hover:border-slate-600 active:scale-95'
+                                                        ? 'bg-green-600 text-white cursor-default'
+                                                        : isDisabled
+                                                            ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                                            : availability.isUpgrade
+                                                                ? 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white shadow-yellow-900/20 active:scale-95'
+                                                                : plan.id === 'trial'
+                                                                    ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-900/20 active:scale-95'
+                                                                    : plan.popular
+                                                                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-purple-900/20 active:scale-95'
+                                                                        : 'bg-slate-800 hover:bg-slate-700 text-white border-2 border-slate-700 hover:border-slate-600 active:scale-95'
                                                         }`}
                                                 >
                                                     {availability.isCurrent

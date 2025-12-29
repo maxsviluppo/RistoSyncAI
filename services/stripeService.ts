@@ -157,18 +157,27 @@ export const simpleCheckout = async (
             plan: plan,
             billingCycle: billingCycle,
             timestamp: new Date().toISOString(),
-            userEmail: userEmail || ''
+            userEmail: userEmail || '',
+            completed: false // Flag per tracking
         };
         localStorage.setItem('ristosync_pending_payment', JSON.stringify(pendingPayment));
         console.log('Pending payment saved:', pendingPayment);
 
-        // Add email as query parameter if provided
-        const linkWithEmail = userEmail
-            ? `${paymentLink}?prefilled_email=${encodeURIComponent(userEmail)}`
+        // Costruisci URL con parametri
+        // NOTA: I Payment Links standard di Stripe NON supportano redirect_url come parametro query
+        // Il redirect deve essere configurato nel Dashboard Stripe sotto "After payment" del Payment Link
+        // Qui aggiungiamo solo l'email precompilata
+        const params = new URLSearchParams();
+        if (userEmail) {
+            params.set('prefilled_email', userEmail);
+        }
+
+        const finalUrl = params.toString()
+            ? `${paymentLink}?${params.toString()}`
             : paymentLink;
 
         // Direct redirect to Stripe Payment Link
-        window.location.href = linkWithEmail;
+        window.location.href = finalUrl;
 
         return { success: true };
     } catch (err: any) {

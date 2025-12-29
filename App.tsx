@@ -419,6 +419,7 @@ export function App() {
     // Handle Stripe Success Return
     // IMPORTANTE: I Payment Links di Stripe NON passano parametri nell'URL
     // Quindi leggiamo il piano salvato in localStorage PRIMA del redirect
+    // Il redirect URL deve essere configurato in Stripe Dashboard → Payment Links → Edit → After payment
     useEffect(() => {
         const handleStripeReturn = async () => {
             // Controlla se c'è un pagamento pendente in localStorage
@@ -430,21 +431,56 @@ export function App() {
             }
 
             const pendingPayment = JSON.parse(pendingPaymentStr);
+
+            // Evita doppia elaborazione - controlla se già completato
+            if (pendingPayment.completed === true) {
+                console.log('Payment already processed, skipping');
+                localStorage.removeItem('ristosync_pending_payment');
+                return;
+            }
+
             console.log('Found pending payment:', pendingPayment);
 
-            // Verifica che il pagamento non sia troppo vecchio (max 30 minuti)
+            // Verifica che il pagamento non sia troppo vecchio (max 60 minuti per dare tempo)
             const paymentTime = new Date(pendingPayment.timestamp).getTime();
             const now = Date.now();
-            const thirtyMinutes = 30 * 60 * 1000;
+            const sixtyMinutes = 60 * 60 * 1000;
 
-            if (now - paymentTime > thirtyMinutes) {
+            if (now - paymentTime > sixtyMinutes) {
                 console.log('Pending payment expired, removing');
                 localStorage.removeItem('ristosync_pending_payment');
                 return;
             }
 
-            // Abbiamo un pagamento pendente recente - significa che l'utente è tornato da Stripe
-            // Assumiamo che il pagamento sia andato a buon fine
+            // Verifica se stiamo tornando da Stripe
+            // 1. Referrer contiene stripe.com o buy.stripe.com
+            // 2. URL contiene ?subscription=success (configurato nel Stripe Dashboard)
+            // 3. URL contiene parametri di pagamento
+            const referrer = document.referrer || '';
+            const isFromStripe = referrer.includes('stripe.com') || referrer.includes('buy.stripe');
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasSubscriptionSuccess = urlParams.get('subscription') === 'success';
+            const hasSuccessParam = urlParams.has('success') || urlParams.has('payment_intent') || hasSubscriptionSuccess;
+
+            // Se il parametro subscription=success è presente, SEMPRE procedi (redirect configurato in Stripe)
+            if (hasSubscriptionSuccess) {
+                console.log('Redirect from Stripe detected via subscription=success parameter');
+                // Pulisci l'URL
+                window.history.replaceState({}, '', window.location.pathname);
+            }
+
+            // Se siamo tornati da Stripe OPPURE c'è un pending payment recente (< 5 min) procedi
+            const isVeryRecent = (now - paymentTime) < (5 * 60 * 1000); // 5 minuti
+
+            if (!isFromStripe && !hasSuccessParam && !isVeryRecent) {
+                console.log('Not returning from Stripe and payment not recent enough, skipping');
+                return;
+            }
+
+            // Abbiamo un pagamento pendente recente - procedi con l'attivazione
+            // Marca come in elaborazione
+            pendingPayment.completed = true;
+            localStorage.setItem('ristosync_pending_payment', JSON.stringify(pendingPayment));
 
             try {
                 const plan = pendingPayment.plan; // 'basic' o 'pro'
