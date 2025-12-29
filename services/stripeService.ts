@@ -93,8 +93,8 @@ export const redirectToPaymentLink = async (
         // Payment Links are pre-created in Stripe Dashboard (LIVE MODE)
         // Same links as in simpleCheckout method
         const paymentLinks: Record<string, string> = {
-            // Basic Plan
-            [STRIPE_CONFIG.prices.basic.monthly]: 'https://buy.stripe.com/14AeVdfhp8QU9sgeRm7IY01',
+            // Basic Plan - TEMPORANEAMENTE SOSTITUITO CON LINK TEST €1
+            [STRIPE_CONFIG.prices.basic.monthly]: 'https://buy.stripe.com/14A5kD3yH0ko9sgeRm7IY05', // TEST €1.00 (invece di €49.90)
             [STRIPE_CONFIG.prices.basic.yearly]: 'https://buy.stripe.com/6oU14ngltffi7k810w7IY02',
 
             // Pro Plan
@@ -131,8 +131,8 @@ export const simpleCheckout = async (
         // Payment Links created in Stripe Dashboard (LIVE MODE)
         // These links work without backend and are compatible with all Stripe.js versions
         const paymentLinks: Record<string, string> = {
-            // Basic Plan
-            'price_1SjTTTEWTa8WMtIUeivRK7o7': 'https://buy.stripe.com/14AeVdfhp8QU9sgeRm7IY01', // Basic Monthly €49.90
+            // Basic Plan - TEMPORANEAMENTE SOSTITUITO CON LINK TEST €1
+            'price_1SjTTTEWTa8WMtIUeivRK7o7': 'https://buy.stripe.com/14A5kD3yH0ko9sgeRm7IY05', // TEST €1.00 (invece di €49.90)
             'price_1SjTUMEWTa8WMtIUREYn9Pjr': 'https://buy.stripe.com/6oU14ngltffi7k810w7IY02',  // Basic Yearly €499.00
 
             // Pro Plan
