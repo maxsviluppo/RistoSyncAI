@@ -401,6 +401,123 @@ export function App() {
         };
     }, [publicMenuId]);
 
+    // Handle Stripe Success Return
+    useEffect(() => {
+        const handleStripeReturn = async () => {
+            const params = new URLSearchParams(window.location.search);
+            const subscriptionParam = params.get('subscription');
+            const planParam = params.get('plan');
+            const sessionIdParam = params.get('session_id');
+
+            if (subscriptionParam === 'success' && planParam && session) {
+                try {
+                    // Determina il piano e la durata
+                    let planType: string;
+                    let months: number;
+                    let price: string;
+
+                    if (planParam === 'basic_monthly') {
+                        planType = 'Basic';
+                        months = 1;
+                        price = '€1.00'; // Prezzo test
+                    } else if (planParam === 'basic_yearly') {
+                        planType = 'Basic_Annuale';
+                        months = 12;
+                        price = '€499.00';
+                    } else if (planParam === 'pro_monthly') {
+                        planType = 'Pro';
+                        months = 1;
+                        price = '€99.90';
+                    } else if (planParam === 'pro_yearly') {
+                        planType = 'Pro_Annuale';
+                        months = 12;
+                        price = '€999.00';
+                    } else {
+                        showToast('❌ Piano non riconosciuto', 'error');
+                        return;
+                    }
+
+                    // Calcola data di scadenza
+                    const endDate = new Date();
+                    endDate.setMonth(endDate.getMonth() + months);
+                    const endDateISO = endDate.toISOString();
+
+                    // Aggiorna il profilo utente su Supabase
+                    if (supabase) {
+                        const { data: currentProfile } = await supabase
+                            .from('profiles')
+                            .select('settings')
+                            .eq('id', session.user.id)
+                            .single();
+
+                        const updatedSettings = {
+                            ...currentProfile?.settings,
+                            restaurantProfile: {
+                                ...currentProfile?.settings?.restaurantProfile,
+                                planType: planType,
+                                subscriptionEndDate: endDateISO,
+                                subscriptionCost: price,
+                                lastPaymentDate: new Date().toISOString(),
+                                paymentMethod: 'stripe',
+                                stripeSessionId: sessionIdParam || undefined,
+                            }
+                        };
+
+                        await supabase
+                            .from('profiles')
+                            .update({
+                                settings: updatedSettings,
+                                subscription_status: 'active'
+                            })
+                            .eq('id', session.user.id);
+
+                        // Aggiorna anche localStorage
+                        const localSettings = getAppSettings();
+                        localSettings.restaurantProfile = {
+                            ...localSettings.restaurantProfile,
+                            planType: planType,
+                            subscriptionEndDate: endDateISO,
+                            subscriptionCost: price,
+                        };
+                        saveAppSettings(localSettings);
+
+                        // Invia notifica all'admin
+                        await supabase.from('messages').insert({
+                            sender_id: 'system',
+                            recipient_id: null,
+                            subject: '💰 Nuovo Pagamento Stripe Ricevuto',
+                            content: `🎉 NUOVO PAGAMENTO RICEVUTO\n\nCliente: ${session.user.email}\nPiano: ${planType}\nImporto: ${price}\nStripe Session: ${sessionIdParam || 'N/A'}\nData: ${new Date().toLocaleString('it-IT')}`,
+                            is_read: false,
+                            created_at: new Date().toISOString(),
+                        });
+                    }
+
+                    // Messaggio di successo
+                    showToast(`🎉 Pagamento completato! Piano ${planType} attivato fino al ${new Date(endDateISO).toLocaleDateString('it-IT')}`, 'success');
+
+                    // Rimuovi i parametri dall'URL
+                    window.history.replaceState({}, '', window.location.pathname);
+
+                    // Ricarica la pagina per aggiornare lo stato
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+
+                } catch (error) {
+                    console.error('Error handling Stripe success:', error);
+                    showToast('❌ Errore durante l\'attivazione del piano. Contatta l\'assistenza.', 'error');
+                }
+            } else if (subscriptionParam === 'cancelled') {
+                showToast('⚠️ Pagamento annullato. Riprova quando vuoi!', 'info');
+                window.history.replaceState({}, '', window.location.pathname);
+            }
+        };
+
+        if (session) {
+            handleStripeReturn();
+        }
+    }, [session]);
+
     useEffect(() => {
         const fetchGlobalSettings = async () => {
             if (!supabase) return;
