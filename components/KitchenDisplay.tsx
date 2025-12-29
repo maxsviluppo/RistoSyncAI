@@ -489,9 +489,13 @@ const KitchenDisplay: React.FC<KitchenDisplayProps> = ({ onExit, department = 'C
         return orders.filter(o => {
             if (o.status !== OrderStatus.DELIVERED) return false;
             const orderDate = new Date(o.createdAt || o.timestamp);
-            return orderDate.getDate() === selectedDate.getDate() && orderDate.getMonth() === selectedDate.getMonth() && orderDate.getFullYear() === selectedDate.getFullYear();
+            const matchesDate = orderDate.getDate() === selectedDate.getDate() && orderDate.getMonth() === selectedDate.getMonth() && orderDate.getFullYear() === selectedDate.getFullYear();
+            if (!matchesDate) return false;
+            // IMPORTANTE: Filtra anche per reparto - mostra solo ordini che hanno elementi per questo reparto
+            const hasRelevantItems = o.items.some(item => isItemRelevantForDept(item));
+            return hasRelevantItems;
         }).sort((a, b) => (b.createdAt || b.timestamp) - (a.createdAt || a.timestamp));
-    }, [orders, selectedDate]);
+    }, [orders, selectedDate, department, appSettings, allMenuItems]);
 
     const stats = useMemo(() => {
         let totalRevenue = 0; let totalItems = 0;

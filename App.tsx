@@ -1562,10 +1562,156 @@ export function App() {
                                 </div>
                             </button>
                         </div>
-                        <button onClick={() => checkRoleAccess('kitchen')} className="group relative h-48 bg-slate-800 rounded-2xl border border-slate-700 p-4 flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-500/50 overflow-hidden"><div className="absolute inset-0 bg-gradient-to-b from-orange-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div><div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center border-2 border-slate-700 group-hover:border-orange-500 group-hover:scale-105 transition-all shadow-inner"><ChefHat size={28} className="text-slate-400 group-hover:text-orange-500 transition-colors" /></div><div className="text-center relative z-10"><h2 className="text-lg font-black text-white mb-0.5 group-hover:text-orange-400 transition-colors">CUCINA</h2><p className="text-slate-500 text-xs font-medium">Ordini food</p></div></button>
-                        <button onClick={() => checkRoleAccess('pizzeria')} className="group relative h-48 bg-slate-800 rounded-2xl border border-slate-700 p-4 flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-red-500/10 hover:border-red-500/50 overflow-hidden"><div className="absolute inset-0 bg-gradient-to-b from-red-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div><div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center border-2 border-slate-700 group-hover:border-red-500 group-hover:scale-105 transition-all shadow-inner"><Pizza size={28} className="text-slate-400 group-hover:text-red-500 transition-colors" /></div><div className="text-center relative z-10"><h2 className="text-lg font-black text-white mb-0.5 group-hover:text-red-400 transition-colors">PIZZERIA</h2><p className="text-slate-500 text-xs font-medium">Forno</p></div></button>
-                        <button onClick={() => checkRoleAccess('pub')} className="group relative h-48 bg-slate-800 rounded-2xl border border-slate-700 p-4 flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/10 hover:border-amber-500/50 overflow-hidden"><div className="absolute inset-0 bg-gradient-to-b from-amber-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div><div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center border-2 border-slate-700 group-hover:border-amber-500 group-hover:scale-105 transition-all shadow-inner"><Sandwich size={28} className="text-slate-400 group-hover:text-amber-500 transition-colors" /></div><div className="text-center relative z-10"><h2 className="text-lg font-black text-white mb-0.5 group-hover:text-amber-400 transition-colors">PUB/BAR</h2><p className="text-slate-500 text-xs font-medium">Bevande</p></div></button>
-                        <button onClick={() => checkRoleAccess('delivery')} className="group relative h-48 bg-slate-800 rounded-2xl border border-slate-700 p-4 flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-green-500/10 hover:border-green-500/50 overflow-hidden"><div className="absolute inset-0 bg-gradient-to-b from-green-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div><div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center border-2 border-slate-700 group-hover:border-green-500 group-hover:scale-105 transition-all shadow-inner"><Bike size={28} className="text-slate-400 group-hover:text-green-500 transition-colors" /></div><div className="text-center relative z-10"><h2 className="text-lg font-black text-white mb-0.5 group-hover:text-green-400 transition-colors">DELIVERY</h2><p className="text-slate-500 text-xs font-medium">Asporto</p></div></button>
+                        {/* DEPARTMENT BUTTONS WITH BASIC PLAN RESTRICTIONS */}
+                        {(() => {
+                            const plan = (appSettings.restaurantProfile?.planType || '').toLowerCase();
+                            const isBasic = plan.includes('basic');
+                            const allowedDept = appSettings.restaurantProfile?.allowedDepartment;
+
+                            const isDeptLocked = (dept: string) => {
+                                if (!isBasic) return false;
+                                if (!allowedDept) return false; // Non ancora scelto, nessun blocco visivo ma aprirà modal
+                                return allowedDept !== dept;
+                            };
+
+                            const getDeptStatus = (dept: string) => {
+                                if (!isBasic) return 'active';
+                                if (!allowedDept) return 'choose'; // Deve ancora scegliere
+                                return allowedDept === dept ? 'allowed' : 'locked';
+                            };
+
+                            return (
+                                <>
+                                    {/* CUCINA */}
+                                    <button
+                                        onClick={() => checkRoleAccess('kitchen')}
+                                        className={`group relative h-48 bg-slate-800 rounded-2xl border p-4 flex flex-col items-center justify-center gap-3 transition-all duration-300 overflow-hidden ${isDeptLocked('kitchen')
+                                                ? 'border-slate-700/50 opacity-50 cursor-not-allowed'
+                                                : getDeptStatus('kitchen') === 'allowed'
+                                                    ? 'border-orange-500 shadow-lg shadow-orange-500/20'
+                                                    : 'border-slate-700 hover:-translate-y-1 hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-500/50'
+                                            }`}
+                                    >
+                                        {isDeptLocked('kitchen') && (
+                                            <div className="absolute top-2 right-2 bg-slate-900/80 p-1.5 rounded-lg z-20">
+                                                <Lock size={14} className="text-slate-400" />
+                                            </div>
+                                        )}
+                                        {getDeptStatus('kitchen') === 'allowed' && (
+                                            <div className="absolute top-2 right-2 bg-green-500 p-1.5 rounded-lg z-20">
+                                                <Check size={14} className="text-white" />
+                                            </div>
+                                        )}
+                                        <div className={`absolute inset-0 bg-gradient-to-b from-orange-600/5 to-transparent ${isDeptLocked('kitchen') ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}></div>
+                                        <div className={`w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center border-2 transition-all shadow-inner ${isDeptLocked('kitchen') ? 'border-slate-700' : 'border-slate-700 group-hover:border-orange-500 group-hover:scale-105'}`}>
+                                            <ChefHat size={28} className={`${isDeptLocked('kitchen') ? 'text-slate-600' : 'text-slate-400 group-hover:text-orange-500'} transition-colors`} />
+                                        </div>
+                                        <div className="text-center relative z-10">
+                                            <h2 className={`text-lg font-black mb-0.5 transition-colors ${isDeptLocked('kitchen') ? 'text-slate-600' : 'text-white group-hover:text-orange-400'}`}>CUCINA</h2>
+                                            <p className={`text-xs font-medium ${isDeptLocked('kitchen') ? 'text-slate-700' : 'text-slate-500'}`}>
+                                                {isDeptLocked('kitchen') ? 'Piano PRO richiesto' : 'Ordini food'}
+                                            </p>
+                                        </div>
+                                    </button>
+
+                                    {/* PIZZERIA */}
+                                    <button
+                                        onClick={() => checkRoleAccess('pizzeria')}
+                                        className={`group relative h-48 bg-slate-800 rounded-2xl border p-4 flex flex-col items-center justify-center gap-3 transition-all duration-300 overflow-hidden ${isDeptLocked('pizzeria')
+                                                ? 'border-slate-700/50 opacity-50 cursor-not-allowed'
+                                                : getDeptStatus('pizzeria') === 'allowed'
+                                                    ? 'border-red-500 shadow-lg shadow-red-500/20'
+                                                    : 'border-slate-700 hover:-translate-y-1 hover:shadow-xl hover:shadow-red-500/10 hover:border-red-500/50'
+                                            }`}
+                                    >
+                                        {isDeptLocked('pizzeria') && (
+                                            <div className="absolute top-2 right-2 bg-slate-900/80 p-1.5 rounded-lg z-20">
+                                                <Lock size={14} className="text-slate-400" />
+                                            </div>
+                                        )}
+                                        {getDeptStatus('pizzeria') === 'allowed' && (
+                                            <div className="absolute top-2 right-2 bg-green-500 p-1.5 rounded-lg z-20">
+                                                <Check size={14} className="text-white" />
+                                            </div>
+                                        )}
+                                        <div className={`absolute inset-0 bg-gradient-to-b from-red-600/5 to-transparent ${isDeptLocked('pizzeria') ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}></div>
+                                        <div className={`w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center border-2 transition-all shadow-inner ${isDeptLocked('pizzeria') ? 'border-slate-700' : 'border-slate-700 group-hover:border-red-500 group-hover:scale-105'}`}>
+                                            <Pizza size={28} className={`${isDeptLocked('pizzeria') ? 'text-slate-600' : 'text-slate-400 group-hover:text-red-500'} transition-colors`} />
+                                        </div>
+                                        <div className="text-center relative z-10">
+                                            <h2 className={`text-lg font-black mb-0.5 transition-colors ${isDeptLocked('pizzeria') ? 'text-slate-600' : 'text-white group-hover:text-red-400'}`}>PIZZERIA</h2>
+                                            <p className={`text-xs font-medium ${isDeptLocked('pizzeria') ? 'text-slate-700' : 'text-slate-500'}`}>
+                                                {isDeptLocked('pizzeria') ? 'Piano PRO richiesto' : 'Forno'}
+                                            </p>
+                                        </div>
+                                    </button>
+
+                                    {/* PUB/BAR */}
+                                    <button
+                                        onClick={() => checkRoleAccess('pub')}
+                                        className={`group relative h-48 bg-slate-800 rounded-2xl border p-4 flex flex-col items-center justify-center gap-3 transition-all duration-300 overflow-hidden ${isDeptLocked('pub')
+                                                ? 'border-slate-700/50 opacity-50 cursor-not-allowed'
+                                                : getDeptStatus('pub') === 'allowed'
+                                                    ? 'border-amber-500 shadow-lg shadow-amber-500/20'
+                                                    : 'border-slate-700 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/10 hover:border-amber-500/50'
+                                            }`}
+                                    >
+                                        {isDeptLocked('pub') && (
+                                            <div className="absolute top-2 right-2 bg-slate-900/80 p-1.5 rounded-lg z-20">
+                                                <Lock size={14} className="text-slate-400" />
+                                            </div>
+                                        )}
+                                        {getDeptStatus('pub') === 'allowed' && (
+                                            <div className="absolute top-2 right-2 bg-green-500 p-1.5 rounded-lg z-20">
+                                                <Check size={14} className="text-white" />
+                                            </div>
+                                        )}
+                                        <div className={`absolute inset-0 bg-gradient-to-b from-amber-600/5 to-transparent ${isDeptLocked('pub') ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}></div>
+                                        <div className={`w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center border-2 transition-all shadow-inner ${isDeptLocked('pub') ? 'border-slate-700' : 'border-slate-700 group-hover:border-amber-500 group-hover:scale-105'}`}>
+                                            <Sandwich size={28} className={`${isDeptLocked('pub') ? 'text-slate-600' : 'text-slate-400 group-hover:text-amber-500'} transition-colors`} />
+                                        </div>
+                                        <div className="text-center relative z-10">
+                                            <h2 className={`text-lg font-black mb-0.5 transition-colors ${isDeptLocked('pub') ? 'text-slate-600' : 'text-white group-hover:text-amber-400'}`}>PUB/BAR</h2>
+                                            <p className={`text-xs font-medium ${isDeptLocked('pub') ? 'text-slate-700' : 'text-slate-500'}`}>
+                                                {isDeptLocked('pub') ? 'Piano PRO richiesto' : 'Bevande'}
+                                            </p>
+                                        </div>
+                                    </button>
+
+                                    {/* DELIVERY */}
+                                    <button
+                                        onClick={() => checkRoleAccess('delivery')}
+                                        className={`group relative h-48 bg-slate-800 rounded-2xl border p-4 flex flex-col items-center justify-center gap-3 transition-all duration-300 overflow-hidden ${isDeptLocked('delivery')
+                                                ? 'border-slate-700/50 opacity-50 cursor-not-allowed'
+                                                : getDeptStatus('delivery') === 'allowed'
+                                                    ? 'border-green-500 shadow-lg shadow-green-500/20'
+                                                    : 'border-slate-700 hover:-translate-y-1 hover:shadow-xl hover:shadow-green-500/10 hover:border-green-500/50'
+                                            }`}
+                                    >
+                                        {isDeptLocked('delivery') && (
+                                            <div className="absolute top-2 right-2 bg-slate-900/80 p-1.5 rounded-lg z-20">
+                                                <Lock size={14} className="text-slate-400" />
+                                            </div>
+                                        )}
+                                        {getDeptStatus('delivery') === 'allowed' && (
+                                            <div className="absolute top-2 right-2 bg-green-500 p-1.5 rounded-lg z-20">
+                                                <Check size={14} className="text-white" />
+                                            </div>
+                                        )}
+                                        <div className={`absolute inset-0 bg-gradient-to-b from-green-600/5 to-transparent ${isDeptLocked('delivery') ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}></div>
+                                        <div className={`w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center border-2 transition-all shadow-inner ${isDeptLocked('delivery') ? 'border-slate-700' : 'border-slate-700 group-hover:border-green-500 group-hover:scale-105'}`}>
+                                            <Bike size={28} className={`${isDeptLocked('delivery') ? 'text-slate-600' : 'text-slate-400 group-hover:text-green-500'} transition-colors`} />
+                                        </div>
+                                        <div className="text-center relative z-10">
+                                            <h2 className={`text-lg font-black mb-0.5 transition-colors ${isDeptLocked('delivery') ? 'text-slate-600' : 'text-white group-hover:text-green-400'}`}>DELIVERY</h2>
+                                            <p className={`text-xs font-medium ${isDeptLocked('delivery') ? 'text-slate-700' : 'text-slate-500'}`}>
+                                                {isDeptLocked('delivery') ? 'Piano PRO richiesto' : 'Asporto'}
+                                            </p>
+                                        </div>
+                                    </button>
+                                </>
+                            );
+                        })()}
                     </div>
 
                     {/* PULSANTE PRENOTAZIONI - Rettangolare Allungato */}
