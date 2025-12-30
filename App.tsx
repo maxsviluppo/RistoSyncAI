@@ -595,16 +595,11 @@ export function App() {
                             : (planType === 'Basic' ? '49.90' : '99.90')
                     });
                     setShowPaymentSuccessModal(true);
-                }, 500); // Aspetta 500ms per dare tempo all'UI di caricare
+                }, 800); // Aumentato a 800ms per maggiore stabilità
 
-                // 4. Se piano Basic, mostra il selettore reparto dopo il modal di successo
-                if (planType === 'Basic' && !updatedSettings.restaurantProfile?.allowedDepartment) {
-                    // Il modal di successo ha un callback onClose che può triggerare il department selector
-                    // Lo impostiamo qui per mostrarlo dopo
-                    setTimeout(() => {
-                        setShowDepartmentSelector(true);
-                    }, 1000);
-                }
+                // 4. NON mostrare subito il department selector
+                // Lo mostreremo quando l'utente chiude il modal congratulazioni
+                // Questo crea un flusso più fluido e professionale
 
                 // 5. CLEANUP
                 localStorage.removeItem('ristosync_pending_payment');
@@ -685,23 +680,11 @@ export function App() {
                     return;
                 }
             } else {
-                // Not set yet, ask for confirmation to lock it
-                const confirmLock = await showConfirm(
-                    '🔒 Attenzione: Piano Basic',
-                    `Il piano Basic permette l'uso di UN SOLO reparto. \n\nVuoi attivare "${selectedRole.toUpperCase()}" come reparto unico? \nQuesta scelta è permanente.`
-                );
-
-                if (!confirmLock) return;
-
-                // Save choice
-                const updatedProfile = { ...appSettings.restaurantProfile, allowedDepartment: selectedRole as any };
-                const newSettings = { ...appSettings, restaurantProfile: updatedProfile };
-
-                setAppSettingsState(newSettings);
-                setProfileForm(updatedProfile); // Helper state
-                await saveAppSettings(newSettings);
-
-                showToast(`✅ Reparto ${selectedRole.toUpperCase()} attivato con successo!`, 'success');
+                // *** Se l'utente non ha ancora scelto, mostra messaggio e apri impostazioni ***
+                showToast('⚙️ Configura prima il tuo reparto nelle Impostazioni del Profilo', 'info');
+                setShowAdmin(true);
+                setAdminTab('profile');
+                return; // Non procedere con setRole, aspetta la configurazione
             }
         }
         // -----------------------------
@@ -3769,9 +3752,11 @@ export function App() {
                     isOpen={showPaymentSuccessModal}
                     onClose={() => {
                         setShowPaymentSuccessModal(false);
-                        // Se è Basic e non ha department, mostra il selettore
+                        // Se è Basic e non ha department, mostra il selettore con delay per transizione fluida
                         if (paymentSuccessData.planType === 'Basic' && !appSettings.restaurantProfile?.allowedDepartment) {
-                            setShowDepartmentSelector(true);
+                            setTimeout(() => {
+                                setShowDepartmentSelector(true);
+                            }, 300); // Delay per transizione fluida tra i modal
                         }
                     }}
                     planType={paymentSuccessData.planType}
@@ -3803,6 +3788,12 @@ export function App() {
 
                         setShowDepartmentSelector(false);
                         showToast(`✅ Reparto ${department.toUpperCase()} selezionato con successo!`, 'success');
+
+                        // *** ENTRA AUTOMATICAMENTE NEL REPARTO SELEZIONATO ***
+                        if (department === 'kitchen') setRole('kitchen');
+                        else if (department === 'pizzeria') setRole('pizzeria');
+                        else if (department === 'pub') setRole('pub');
+                        else if (department === 'delivery') setRole('delivery');
                     }}
                 />
             )}

@@ -76,11 +76,8 @@ const DepartmentSelectorModal: React.FC<DepartmentSelectorModalProps> = ({
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-                onClick={onClose}
-            />
+            {/* Backdrop - NON CHIUDIBILE */}
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" />
 
             {/* Modal */}
             <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-600/50">
@@ -90,23 +87,21 @@ const DepartmentSelectorModal: React.FC<DepartmentSelectorModalProps> = ({
 
                 {/* Header */}
                 <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-6 text-center">
-                    <button
-                        onClick={onClose}
-                        className="absolute top-4 right-4 p-2 text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-all"
-                    >
+                    {/* Pulsante X DISABILITATO - l'utente deve scegliere */}
+                    <div className="absolute top-4 right-4 p-2 text-white/30 cursor-not-allowed rounded-full" title="Scegli un reparto per continuare">
                         <X size={24} />
-                    </button>
+                    </div>
 
                     <div className="flex items-center justify-center gap-3 mb-2">
-                        <Lock className="text-yellow-300" size={28} />
+                        <span className="text-3xl">🎯</span>
                         <h1 className="text-3xl font-black text-white">
-                            Piano Basic
+                            Ultimo Step: Scegli il Tuo Reparto
                         </h1>
                         <Sparkles className="text-yellow-300" size={28} />
                     </div>
 
                     <p className="text-white/90 text-lg">
-                        Scegli il reparto che vuoi attivare
+                        Questa è l'ultima configurazione! Dopo potrai iniziare subito 🚀
                     </p>
                 </div>
 
@@ -116,14 +111,14 @@ const DepartmentSelectorModal: React.FC<DepartmentSelectorModalProps> = ({
                     {!isConfirming ? (
                         <>
                             {/* Info Box */}
-                            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-4 mb-6 flex items-start gap-3">
-                                <AlertTriangle className="text-yellow-400 flex-shrink-0 mt-0.5" size={24} />
+                            <div className="bg-blue-500/20 border border-blue-500/50 rounded-xl p-4 mb-6 flex items-start gap-3">
+                                <AlertTriangle className="text-blue-400 flex-shrink-0 mt-0.5" size={24} />
                                 <div>
-                                    <p className="text-yellow-200 font-semibold mb-1">Attenzione: Scelta Importante</p>
-                                    <p className="text-yellow-100/80 text-sm">
+                                    <p className="text-blue-200 font-semibold mb-1">📌 Informazioni Importanti</p>
+                                    <p className="text-blue-100/80 text-sm">
                                         Il piano <strong>Basic</strong> include <strong>UN SOLO reparto</strong>.
                                         La scelta sarà attiva per tutta la durata dell'abbonamento.
-                                        Al prossimo rinnovo potrai scegliere un reparto diverso.
+                                        Al prossimo rinnovo potrai scegliere un reparto diverso o passare a PRO per sbloccare tutto!
                                     </p>
                                 </div>
                             </div>

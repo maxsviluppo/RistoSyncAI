@@ -21,10 +21,10 @@ const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
     useEffect(() => {
         if (isOpen) {
             setShowConfetti(true);
-            // Auto-close after 15 seconds
+            // Auto-close after 30 seconds (aumentato per dare più tempo)
             const timer = setTimeout(() => {
                 onClose();
-            }, 15000);
+            }, 30000);
             return () => clearTimeout(timer);
         }
     }, [isOpen, onClose]);
@@ -129,6 +129,16 @@ const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                             Grazie all'<strong className="text-cyan-300">Intelligenza Artificiale</strong> potrai migliorare
                             la tua attività, aumentare i profitti e stupire i tuoi clienti!
                         </p>
+
+                        {/* Indicatore Prossimo Step per Basic */}
+                        {!isPro && (
+                            <div className="mt-4 p-3 bg-blue-500/20 border border-blue-500/50 rounded-xl">
+                                <p className="text-blue-200 text-sm font-semibold flex items-center gap-2">
+                                    <span>🎯</span>
+                                    <span>Prossimo: Scegli il tuo reparto →</span>
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Features Grid */}
