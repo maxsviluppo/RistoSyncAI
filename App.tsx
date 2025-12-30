@@ -1473,6 +1473,31 @@ export function App() {
                         {adminTab === 'profile' && (
                             <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-20">
                                 <h2 className="text-3xl font-black text-white mb-8">Profilo Ristorante</h2>
+
+                                {/* BANNER PIANO & SCADENZA */}
+                                <div className="bg-gradient-to-r from-orange-600 to-blue-600 p-6 rounded-2xl border-2 border-orange-500/50 flex justify-between items-center mb-6 shadow-xl shadow-orange-900/20">
+                                    <div>
+                                        <h4 className="text-orange-100 text-[10px] font-bold uppercase mb-2 flex items-center gap-2">
+                                            <CreditCard size={14} className="text-yellow-300" /> Piano Attuale
+                                        </h4>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-3xl font-black text-white tracking-tight uppercase">{(appSettings.restaurantProfile?.planType || 'Trial').toUpperCase()}</span>
+                                            <span className={`text-xs px-3 py-1 rounded-full font-black uppercase tracking-wider shadow-lg ${subscriptionExpired ? 'bg-red-600 text-white border-2 border-red-400' : 'bg-green-500 text-white border-2 border-green-300'}`}>
+                                                {subscriptionExpired ? '⚠ SCADUTO' : '✓ ATTIVO'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <h4 className="text-blue-100 text-[10px] font-bold uppercase mb-2 flex items-center justify-end gap-2">
+                                            <Calendar size={14} className="text-cyan-300" /> Scadenza
+                                        </h4>
+                                        <p className="text-xl font-mono font-black text-white">
+                                            {appSettings.restaurantProfile?.subscriptionEndDate
+                                                ? new Date(appSettings.restaurantProfile.subscriptionEndDate).toLocaleDateString('it-IT')
+                                                : '∞'}
+                                        </p>
+                                    </div>
+                                </div>
                                 <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
                                     <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Store className="text-blue-500" /> Dati Pubblici</h3>
                                     <p className="text-slate-400 text-sm mb-6">Questi dati appariranno nel Menu Digitale.</p>
@@ -1883,136 +1908,191 @@ export function App() {
                                         Scegli il tuo Piano
                                     </h2>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                         {/* TRIAL - Gratis */}
-                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-700 hover:border-blue-500 transition-all flex flex-col">
-                                            <h4 className="text-sm font-bold text-blue-400 uppercase tracking-wider mb-2">TRIAL</h4>
-                                            <div className="mb-4">
-                                                <p className="text-4xl font-black text-white">Gratis</p>
-                                                <p className="text-xs text-slate-500">15 Giorni</p>
-                                            </div>
-                                            <ul className="space-y-2 mb-6 flex-1 text-sm">
-                                                <li className="flex items-center gap-2 text-slate-300">
-                                                    <Check size={16} className="text-blue-500" /> Tutte le funzionalità
-                                                </li>
-                                                <li className="flex items-center gap-2 text-slate-300">
-                                                    <Check size={16} className="text-blue-500" /> Menu Digitale
-                                                </li>
-                                                <li className="flex items-center gap-2 text-slate-300">
-                                                    <Check size={16} className="text-blue-500" /> Nessun impegno
-                                                </li>
-                                            </ul>
-                                            <div className="w-full py-3 text-center text-slate-500 font-bold text-sm bg-slate-900/50 rounded-xl border border-dashed border-slate-700">
-                                                Piano Attuale
-                                            </div>
-                                        </div>
+                                        {(() => {
+                                            const currentPlan = (appSettings.restaurantProfile?.planType || 'Trial').toLowerCase();
+                                            const isCurrentPlan = currentPlan === 'trial';
+                                            const isDisabled = currentPlan === 'basic' || currentPlan === 'pro' || currentPlan.includes('standard');
 
-                                        {/* STANDARD MESE */}
-                                        <div className={`bg-slate-900 p-6 rounded-2xl border ${promoData ? 'border-purple-500 relative overflow-hidden' : 'border-slate-700'} hover:border-cyan-500 transition-all flex flex-col`}>
-                                            {promoData && (
-                                                <div className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] font-black px-2 py-1 rounded-bl-xl uppercase tracking-wider animate-pulse z-20">
-                                                    {promoData.name} ATTIVA
-                                                </div>
-                                            )}
-                                            <h4 className="text-sm font-bold text-cyan-400 uppercase tracking-wider mb-2">STANDARD MESE</h4>
-                                            <div className="mb-4 relative">
-                                                {promoData ? (
-                                                    <>
-                                                        <div className="flex items-baseline gap-2">
-                                                            <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
-                                                                € {parseFloat(promoData.cost).toFixed(2).replace('.', ',')}
-                                                            </p>
-                                                            <p className="text-lg font-bold text-slate-500 line-through decoration-red-500 decoration-2">
-                                                                € {parseFloat(globalDefaultCost).toFixed(2).replace('.', ',')}
-                                                            </p>
+                                            return (
+                                                <div className={`relative p-8 rounded-3xl transition-all flex flex-col ${isCurrentPlan
+                                                        ? 'bg-gradient-to-br from-blue-600 to-blue-800 border-4 border-blue-400 shadow-2xl shadow-blue-900/50 scale-105'
+                                                        : isDisabled
+                                                            ? 'bg-slate-900/50 border-2 border-slate-800 opacity-50 cursor-not-allowed'
+                                                            : 'bg-slate-900 border-3 border-slate-700 hover:border-blue-500 hover:shadow-xl'
+                                                    }`}>
+                                                    {isCurrentPlan && (
+                                                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-black text-xs font-black px-4 py-2 rounded-full uppercase tracking-wider shadow-lg animate-pulse">
+                                                            ★ PIANO ATTUALE ★
                                                         </div>
-                                                        <p className="text-xs text-purple-300 font-bold mb-1">
-                                                            Offerta valida per {promoData.duration}
-                                                        </p>
-                                                        {/* Timer Inline */}
-                                                        <PromoTimer deadlineHours={promoData.deadlineHours || '72'} lastUpdated={promoData.lastUpdated} />
-                                                    </>
-                                                ) : (
-                                                    <p className="text-4xl font-black text-white">€ {parseFloat(globalDefaultCost).toFixed(2).replace('.', ',')}</p>
-                                                )}
-                                                <p className="text-xs text-slate-500">/mese</p>
-                                            </div>
-                                            <ul className="space-y-2 mb-6 flex-1 text-sm">
-                                                <li className="flex items-center gap-2 text-slate-300">
-                                                    <Check size={16} className="text-cyan-500" /> Tutte le funzionalità
-                                                </li>
-                                                <li className="flex items-center gap-2 text-slate-300">
-                                                    <Check size={16} className="text-cyan-500" /> Multi Device Sync
-                                                </li>
-                                                <li className="flex items-center gap-2 text-slate-300">
-                                                    <Check size={16} className="text-cyan-500" /> Aggiornamenti inclusi
-                                                </li>
-                                            </ul>
-                                            <button onClick={() => openPaymentInstructions(promoData ? `Promo ${promoData.name}` : 'Standard Mensile', parseFloat(promoData ? promoData.cost : globalDefaultCost).toFixed(2).replace('.', ','))} className={`w-full py-3 ${promoData ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-lg shadow-purple-900/20' : 'bg-slate-800 hover:bg-cyan-600'} text-white font-bold rounded-xl border ${promoData ? 'border-transparent' : 'border-slate-700 hover:border-cyan-500'} transition-all`}>
-                                                {promoData ? `Attiva ${promoData.name}` : 'Attiva Mensile'}
-                                            </button>
-                                        </div>
+                                                    )}
+                                                    <h4 className={`text-lg font-black uppercase tracking-wider mb-3 ${isCurrentPlan ? 'text-blue-100' : 'text-blue-400'}`}>TRIAL</h4>
+                                                    <div className="mb-6">
+                                                        <p className={`text-5xl font-black ${isCurrentPlan ? 'text-white' : 'text-white'}`}>Gratis</p>
+                                                        <p className={`text-sm ${isCurrentPlan ? 'text-blue-200' : 'text-slate-500'}`}>15 Giorni</p>
+                                                    </div>
+                                                    <ul className="space-y-3 mb-8 flex-1 text-base">
+                                                        <li className={`flex items-center gap-3 ${isCurrentPlan ? 'text-white' : 'text-slate-300'}`}>
+                                                            <Check size={20} className={isCurrentPlan ? 'text-yellow-300' : 'text-blue-500'} /> Tutte le funzionalità
+                                                        </li>
+                                                        <li className={`flex items-center gap-3 ${isCurrentPlan ? 'text-white' : 'text-slate-300'}`}>
+                                                            <Check size={20} className={isCurrentPlan ? 'text-yellow-300' : 'text-blue-500'} /> Menu Digitale
+                                                        </li>
+                                                        <li className={`flex items-center gap-3 ${isCurrentPlan ? 'text-white' : 'text-slate-300'}`}>
+                                                            <Check size={20} className={isCurrentPlan ? 'text-yellow-300' : 'text-blue-500'} /> Nessun impegno
+                                                        </li>
+                                                    </ul>
+                                                    {isCurrentPlan ? (
+                                                        <div className="w-full py-4 text-center text-white font-black text-base bg-white/20 rounded-xl border-2 border-white/30 backdrop-blur">
+                                                            ✓ PIANO ATTIVO
+                                                        </div>
+                                                    ) : isDisabled ? (
+                                                        <div className="w-full py-4 text-center text-slate-600 font-bold text-sm bg-slate-800/50 rounded-xl border-2 border-dashed border-slate-700">
+                                                            Non Disponibile
+                                                        </div>
+                                                    ) : null}
+                                                </div>
+                                            );
+                                        })()}
 
-                                        {/* STANDARD ANNO - BEST VALUE */}
-                                        <div className="bg-gradient-to-br from-orange-600 to-red-600 p-6 rounded-2xl border-2 border-orange-500 flex flex-col relative transform lg:-translate-y-2 shadow-2xl shadow-orange-900/30">
-                                            <div className="absolute -top-3 -right-3 bg-yellow-400 text-black text-xs font-black px-3 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
-                                                BEST VALUE
-                                            </div>
-                                            <h4 className="text-sm font-bold text-orange-100 uppercase tracking-wider mb-2">STANDARD ANNO</h4>
-                                            <div className="mb-4">
-                                                <p className="text-4xl font-black text-white">€ {(parseFloat(globalDefaultCost) * 10).toFixed(0)}</p>
-                                                <p className="text-xs text-orange-100">/anno</p>
-                                            </div>
-                                            <div className="bg-green-500/20 text-green-300 text-xs font-bold px-2 py-1 rounded mb-4 inline-block">
-                                                🎁 2 MESI GRATIS
-                                            </div>
-                                            <ul className="space-y-2 mb-6 flex-1 text-sm">
-                                                <li className="flex items-center gap-2 text-white">
-                                                    <Check size={16} className="text-yellow-300" /> Tutte le funzionalità
-                                                </li>
-                                                <li className="flex items-center gap-2 text-white">
-                                                    <Check size={16} className="text-yellow-300" /> AI Menu Intelligence
-                                                </li>
-                                                <li className="flex items-center gap-2 text-white">
-                                                    <Check size={16} className="text-yellow-300" /> Priorità Supporto
-                                                </li>
-                                                <li className="flex items-center gap-2 text-white">
-                                                    <Check size={16} className="text-yellow-300" /> Setup Gratuito
-                                                </li>
-                                            </ul>
-                                            <button onClick={() => openPaymentInstructions('Standard Annuale', (parseFloat(globalDefaultCost) * 10).toFixed(2).replace('.', ','))} className="w-full py-4 bg-white hover:bg-yellow-400 text-orange-600 font-black rounded-xl shadow-lg transition-all transform hover:scale-105 active:scale-95">
-                                                ATTIVA ANNUALE
-                                            </button>
-                                        </div>
+                                        {/* BASIC - Piano Base */}
+                                        {(() => {
+                                            const currentPlan = (appSettings.restaurantProfile?.planType || 'Trial').toLowerCase();
+                                            const isCurrentPlan = currentPlan === 'basic';
+                                            const isDisabled = currentPlan === 'pro' || currentPlan.includes('standard');
+                                            const canUpgrade = currentPlan === 'trial' || subscriptionExpired;
 
-                                        {/* VIP - Contattaci */}
-                                        <div className="bg-gradient-to-br from-purple-900 to-purple-800 p-6 rounded-2xl border border-purple-500 hover:border-purple-400 transition-all flex flex-col">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <Crown className="text-yellow-400" size={20} />
-                                                <h4 className="text-sm font-bold text-purple-200 uppercase tracking-wider">VIP</h4>
-                                            </div>
-                                            <div className="mb-4">
-                                                <p className="text-3xl font-black text-white">Contattaci</p>
-                                                <p className="text-xs text-purple-300">Soluzioni su misura</p>
-                                            </div>
-                                            <ul className="space-y-2 mb-6 flex-1 text-sm">
-                                                <li className="flex items-center gap-2 text-purple-200">
-                                                    <Crown size={16} className="text-yellow-400" /> Funzioni Maggiori
-                                                </li>
-                                                <li className="flex items-center gap-2 text-purple-200">
-                                                    <Crown size={16} className="text-yellow-400" /> Assistenza Dedicata
-                                                </li>
-                                                <li className="flex items-center gap-2 text-purple-200">
-                                                    <Crown size={16} className="text-yellow-400" /> Modifiche Custom
-                                                </li>
-                                                <li className="flex items-center gap-2 text-purple-200">
-                                                    <Crown size={16} className="text-yellow-400" /> Whitelabel
-                                                </li>
-                                            </ul>
-                                            <button onClick={() => window.open(`mailto:${adminContactEmail}?subject=Richiesta Piano VIP`, '_blank')} className="w-full py-3 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-xl border border-purple-500 transition-all">
-                                                Richiedi Info
-                                            </button>
-                                        </div>
+                                            return (
+                                                <div className={`relative p-8 rounded-3xl transition-all flex flex-col ${isCurrentPlan
+                                                        ? 'bg-gradient-to-br from-cyan-600 to-cyan-800 border-4 border-cyan-400 shadow-2xl shadow-cyan-900/50 scale-105'
+                                                        : isDisabled
+                                                            ? 'bg-slate-900/50 border-2 border-slate-800 opacity-50 cursor-not-allowed'
+                                                            : 'bg-slate-900 border-3 border-slate-700 hover:border-cyan-500 hover:shadow-xl'
+                                                    }`}>
+                                                    {isCurrentPlan && (
+                                                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-black text-xs font-black px-4 py-2 rounded-full uppercase tracking-wider shadow-lg animate-pulse">
+                                                            ★ PIANO ATTUALE ★
+                                                        </div>
+                                                    )}
+                                                    {promoData && !isDisabled && (
+                                                        <div className="absolute top-4 right-4 bg-purple-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider animate-pulse z-20">
+                                                            {promoData.name}
+                                                        </div>
+                                                    )}
+                                                    <h4 className={`text-lg font-black uppercase tracking-wider mb-3 ${isCurrentPlan ? 'text-cyan-100' : 'text-cyan-400'}`}>BASIC</h4>
+                                                    <div className="mb-6 relative">
+                                                        {promoData && !isDisabled ? (
+                                                            <>
+                                                                <div className="flex items-baseline gap-3">
+                                                                    <p className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+                                                                        € {parseFloat(promoData.cost).toFixed(2).replace('.', ',')}
+                                                                    </p>
+                                                                    <p className="text-2xl font-bold text-slate-500 line-through decoration-red-500 decoration-2">
+                                                                        € {parseFloat(globalDefaultCost).toFixed(2).replace('.', ',')}
+                                                                    </p>
+                                                                </div>
+                                                                <p className="text-xs text-purple-300 font-bold">
+                                                                    Offerta {promoData.duration}
+                                                                </p>
+                                                            </>
+                                                        ) : (
+                                                            <p className={`text-5xl font-black ${isCurrentPlan ? 'text-white' : 'text-white'}`}>€ {parseFloat(globalDefaultCost).toFixed(2).replace('.', ',')}</p>
+                                                        )}
+                                                        <p className={`text-sm ${isCurrentPlan ? 'text-cyan-200' : 'text-slate-500'}`}>/mese</p>
+                                                    </div>
+                                                    <ul className="space-y-3 mb-8 flex-1 text-base">
+                                                        <li className={`flex items-center gap-3 ${isCurrentPlan ? 'text-white' : 'text-slate-300'}`}>
+                                                            <Check size={20} className={isCurrentPlan ? 'text-yellow-300' : 'text-cyan-500'} /> 1 Reparto
+                                                        </li>
+                                                        <li className={`flex items-center gap-3 ${isCurrentPlan ? 'text-white' : 'text-slate-300'}`}>
+                                                            <Check size={20} className={isCurrentPlan ? 'text-yellow-300' : 'text-cyan-500'} /> Multi Device Sync
+                                                        </li>
+                                                        <li className={`flex items-center gap-3 ${isCurrentPlan ? 'text-white' : 'text-slate-300'}`}>
+                                                            <Check size={20} className={isCurrentPlan ? 'text-yellow-300' : 'text-cyan-500'} /> Aggiornamenti inclusi
+                                                        </li>
+                                                    </ul>
+                                                    {isCurrentPlan ? (
+                                                        <div className="w-full py-4 text-center text-white font-black text-base bg-white/20 rounded-xl border-2 border-white/30 backdrop-blur">
+                                                            ✓ PIANO ATTIVO
+                                                        </div>
+                                                    ) : isDisabled ? (
+                                                        <div className="w-full py-4 text-center text-slate-600 font-bold text-sm bg-slate-800/50 rounded-xl border-2 border-dashed border-slate-700">
+                                                            Non Disponibile
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => openPaymentInstructions(promoData ? `Promo ${promoData.name}` : 'Basic Mensile', parseFloat(promoData ? promoData.cost : globalDefaultCost).toFixed(2).replace('.', ','))}
+                                                            className={`w-full py-4 text-lg ${promoData ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-xl shadow-purple-900/30' : 'bg-cyan-600 hover:bg-cyan-500 shadow-xl shadow-cyan-900/30'} text-white font-black rounded-xl border-2 ${promoData ? 'border-purple-400' : 'border-cyan-400'} transition-all transform hover:scale-105 active:scale-95`}
+                                                        >
+                                                            {canUpgrade ? '🚀 ATTIVA BASIC' : '♻ RINNOVA'}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
+
+                                        {/* PRO - Piano Professionale */}
+                                        {(() => {
+                                            const currentPlan = (appSettings.restaurantProfile?.planType || 'Trial').toLowerCase();
+                                            const isCurrentPlan = currentPlan === 'pro' || currentPlan.includes('standard');
+                                            const canUpgrade = currentPlan === 'trial' || currentPlan === 'basic' || subscriptionExpired;
+
+                                            return (
+                                                <div className={`relative p-8 rounded-3xl transition-all flex flex-col transform lg:-translate-y-4 ${isCurrentPlan
+                                                        ? 'bg-gradient-to-br from-orange-600 to-red-600 border-4 border-orange-400 shadow-2xl shadow-orange-900/50 scale-110'
+                                                        : 'bg-gradient-to-br from-orange-600 to-red-600 border-3 border-orange-500 hover:border-orange-400 hover:shadow-2xl shadow-xl shadow-orange-900/30'
+                                                    }`}>
+                                                    {isCurrentPlan ? (
+                                                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-black text-xs font-black px-4 py-2 rounded-full uppercase tracking-wider shadow-lg animate-pulse">
+                                                            ★ PIANO ATTUALE ★
+                                                        </div>
+                                                    ) : (
+                                                        <div className="absolute -top-4 -right-4 bg-yellow-400 text-black text-sm font-black px-4 py-2 rounded-full uppercase tracking-wider shadow-lg">
+                                                            ⭐ BEST VALUE
+                                                        </div>
+                                                    )}
+                                                    <h4 className="text-lg font-black text-orange-100 uppercase tracking-wider mb-3">PRO</h4>
+                                                    <div className="mb-6">
+                                                        <p className="text-5xl font-black text-white">€ {(parseFloat(globalDefaultCost) * 10).toFixed(0)}</p>
+                                                        <p className="text-sm text-orange-100">/anno</p>
+                                                    </div>
+                                                    <div className="bg-green-500 text-white text-sm font-black px-3 py-2 rounded-lg mb-6 inline-block shadow-lg">
+                                                        🎁 2 MESI GRATIS
+                                                    </div>
+                                                    <ul className="space-y-3 mb-8 flex-1 text-base">
+                                                        <li className="flex items-center gap-3 text-white">
+                                                            <Check size={20} className="text-yellow-300" /> Reparti Illimitati
+                                                        </li>
+                                                        <li className="flex items-center gap-3 text-white">
+                                                            <Check size={20} className="text-yellow-300" /> AI Menu Intelligence
+                                                        </li>
+                                                        <li className="flex items-center gap-3 text-white">
+                                                            <Check size={20} className="text-yellow-300" /> Priorità Supporto
+                                                        </li>
+                                                        <li className="flex items-center gap-3 text-white">
+                                                            <Check size={20} className="text-yellow-300" /> Setup Gratuito
+                                                        </li>
+                                                    </ul>
+                                                    {isCurrentPlan ? (
+                                                        <div className="w-full py-4 text-center text-white font-black text-base bg-white/20 rounded-xl border-2 border-white/30 backdrop-blur">
+                                                            ✓ PIANO ATTIVO
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => openPaymentInstructions('Pro Annuale', (parseFloat(globalDefaultCost) * 10).toFixed(2).replace('.', ','))}
+                                                            disabled={!canUpgrade}
+                                                            className={`w-full py-5 text-lg font-black rounded-xl shadow-xl transition-all transform ${canUpgrade
+                                                                    ? 'bg-white hover:bg-yellow-400 text-orange-600 border-2 border-yellow-400 hover:scale-105 active:scale-95'
+                                                                    : 'bg-slate-800/50 text-slate-600 border-2 border-dashed border-slate-700 cursor-not-allowed'
+                                                                }`}
+                                                        >
+                                                            {canUpgrade ? (currentPlan === 'basic' ? '⬆ UPGRADE A PRO' : subscriptionExpired ? '♻ RINNOVA PRO' : '🚀 ATTIVA PRO') : 'Non Disponibile'}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
 
