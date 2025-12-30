@@ -65,7 +65,22 @@ const DepartmentSelectorModal: React.FC<DepartmentSelectorModalProps> = ({
     if (!isOpen) return null;
 
     const isBasicPlan = planType === 'Basic';
-    const formattedEndDate = endDate ? new Date(endDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
+
+    // Calcola la data di scadenza se non fornita
+    let calculatedEndDate = endDate;
+    if (!calculatedEndDate && planType) {
+        const now = new Date();
+        const isAnnual = planType.toLowerCase().includes('annuale') || planType.toLowerCase().includes('yearly');
+        const daysToAdd = isAnnual ? 365 : 30;
+
+        const futureDate = new Date(now);
+        futureDate.setDate(futureDate.getDate() + daysToAdd);
+        calculatedEndDate = futureDate.getTime();
+    }
+
+    const formattedEndDate = calculatedEndDate
+        ? new Date(calculatedEndDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+        : '';
 
     const handleSelect = (deptId: 'kitchen' | 'pizzeria' | 'pub') => {
         setSelectedDept(deptId);
