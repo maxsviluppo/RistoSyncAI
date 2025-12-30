@@ -55,6 +55,37 @@ export const redirectToPaymentLink = async (
         const paymentLinkUrl = paymentLinks[priceId];
 
         if (paymentLinkUrl && paymentLinkUrl.startsWith('http')) {
+            // *** CRUCIALE: Salva i dati del pagamento PRIMA del redirect ***
+            // Determina piano e ciclo di fatturazione dal priceId
+            let plan: 'basic' | 'pro' = 'basic';
+            let billingCycle: 'monthly' | 'yearly' = 'monthly';
+
+            if (priceId === STRIPE_CONFIG.prices.basic.monthly) {
+                plan = 'basic';
+                billingCycle = 'monthly';
+            } else if (priceId === STRIPE_CONFIG.prices.basic.yearly) {
+                plan = 'basic';
+                billingCycle = 'yearly';
+            } else if (priceId === STRIPE_CONFIG.prices.pro.monthly) {
+                plan = 'pro';
+                billingCycle = 'monthly';
+            } else if (priceId === STRIPE_CONFIG.prices.pro.yearly) {
+                plan = 'pro';
+                billingCycle = 'yearly';
+            }
+
+            // Salva in localStorage per recuperare al ritorno da Stripe
+            localStorage.setItem('ristosync_pending_payment', JSON.stringify({
+                plan: plan,
+                billingCycle: billingCycle,
+                timestamp: new Date().toISOString(),
+                completed: false,
+                priceId: priceId
+            }));
+
+            console.log('💾 Dati pagamento salvati in localStorage:', { plan, billingCycle });
+
+            // Redirect a Stripe
             window.location.href = paymentLinkUrl;
             return { success: true };
         }
