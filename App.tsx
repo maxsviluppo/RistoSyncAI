@@ -26,6 +26,7 @@ import { supabase, signOut, isSupabaseConfigured, SUPER_ADMIN_EMAIL } from './se
 import { ToastProvider, useToast } from './components/ToastProvider';
 
 import { askChefAI, generateRestaurantAnalysis, generateDishDescription, generateDishIngredients, generateRestaurantDescription, detectAllergensFromIngredients } from './services/geminiService';
+import { sendPaymentConfirmationEmail, sendAdminPaymentNotification } from './services/emailService';
 import { MenuItem, Category, Department, AppSettings, OrderStatus, Order, RestaurantProfile, OrderItem, NotificationSettings, SocialLinks, DeliveryPlatform } from './types';
 import { useDialog } from './hooks/useDialog';
 import QRCodeGenerator from 'react-qr-code';
@@ -33,7 +34,6 @@ import Tesseract from 'tesseract.js';
 import Papa from 'papaparse';
 import PaymentSuccessModal from './components/PaymentSuccessModal';
 import DepartmentSelectorModal from './components/DepartmentSelectorModal';
-import StripeSuccessHandler from './components/StripeSuccessHandler';
 
 // Promo Timer Component
 const PromoTimer = ({ deadlineHours, lastUpdated }: { deadlineHours: string, lastUpdated: string }) => {
@@ -106,12 +106,15 @@ export function App() {
     const publicMenuId = queryParams.get('menu');
     const showLandingParam = queryParams.get('landing');
 
-    // Landing Page State
+    // Check for Monitor Mode
     const showMonitorParam = queryParams.get('monitor');
 
+    // Check for Stripe Return - MUST bypass landing page!
+    const subscriptionParam = queryParams.get('subscription') || queryParams.get('subscription_checkout');
+
     // Landing Page State
-    // Default to Landing Page (true) unless accessing a public menu, monitor mode, or explicitly disabled
-    const [showLandingPage, setShowLandingPage] = useState(!publicMenuId && !showMonitorParam && showLandingParam !== 'false');
+    // Default to Landing Page (true) unless accessing a public menu, monitor mode, subscription return, or explicitly disabled
+    const [showLandingPage, setShowLandingPage] = useState(!publicMenuId && !showMonitorParam && !subscriptionParam && showLandingParam !== 'false');
 
     const [session, setSession] = useState<any>(null);
     const [loadingSession, setLoadingSession] = useState(true);
@@ -233,8 +236,12 @@ export function App() {
     };
 
     // --- PAYMENT SUCCESS STATE ---
-    const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
-    const [successPlanInfo, setSuccessPlanInfo] = useState({ plan: 'Pro', price: '€99.90', endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() });
+    const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
+    const [paymentSuccessData, setPaymentSuccessData] = useState<{
+        planType: string;
+        endDate: string;
+        price: string;
+    } | null>(null);
 
 
     // --- USE EFFECTS ---
@@ -450,48 +457,195 @@ export function App() {
         }
     }, [showAdmin]);
 
-    // --- MANUAL OVERRIDE FOR EMERGENCY ---
+    // Handle Stripe Success Return
+    // IMPORTANTE: I Payment Links di Stripe NON passano parametri nell'URL
+    // Quindi leggiamo il piano salvato in localStorage PRIMA del redirect
+    // Il redirect URL deve essere configurato in Stripe Dashboard → Payment Links → Edit → After payment
     useEffect(() => {
-        // @ts-ignore
-        window.unlockPremium = (type: 'Basic' | 'Pro' = 'Pro') => {
-            const current = getAppSettings();
-            const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-            const updated = {
-                ...current,
-                restaurantProfile: { ...current.restaurantProfile, planType: type, subscriptionEndDate: endDate },
-                subscription: { planId: type.toLowerCase(), status: 'active', startDate: Date.now(), endDate: new Date(endDate).getTime(), paymentMethod: 'manual_override' }
-            };
-            saveAppSettings(updated);
-            setAppSettingsState(updated);
-            showToast(`✅ SOS: Piano ${type} sbloccato manualmente!`, 'success');
-            setTimeout(() => window.location.href = '/', 1000);
+        const handleStripeReturn = async () => {
+            // Check URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const isSuccessURL = urlParams.get('subscription') === 'success' ||
+                urlParams.has('success') ||
+                urlParams.get('payment_intent') !== null;
+
+            // Check localStorage
+            const pendingPaymentStr = localStorage.getItem('ristosync_pending_payment');
+
+            // IF no success URL AND no pending payment -> Exit
+            if (!isSuccessURL && !pendingPaymentStr) return;
+
+            // IF no session -> Wait for login (React will re-run effect when session changes)
+            if (!session) {
+                console.log('Stripe return detected but waiting for session...');
+                return;
+            }
+
+            console.log('Stripe return detected with active session.');
+
+            // Get pending payment data
+            let pendingPayment = null;
+            try {
+                if (pendingPaymentStr) {
+                    pendingPayment = JSON.parse(pendingPaymentStr);
+                }
+            } catch (e) {
+                console.error("Error parsing pending payment", e);
+            }
+
+            // If we have URL success but no local data -> we can't process safely
+            if (!pendingPayment) {
+                console.warn("Success URL present but missing local payment data.");
+                if (isSuccessURL) window.history.replaceState({}, '', window.location.pathname);
+                return;
+            }
+
+            // AVOID DOUBLE PROCESSING
+            if (pendingPayment.completed) {
+                console.log('Payment already processed locally.');
+                if (isSuccessURL) window.history.replaceState({}, '', window.location.pathname);
+                localStorage.removeItem('ristosync_pending_payment');
+                return;
+            }
+
+            // CHECK EXPIRATION (Rilassiamo il controllo: 24 ore invece di 2 ore per facilitare i test)
+            const paymentTime = new Date(pendingPayment.timestamp).getTime();
+            if (Date.now() - paymentTime > (24 * 60 * 60 * 1000)) {
+                console.log('Pending payment expired (>24h).');
+                localStorage.removeItem('ristosync_pending_payment');
+                return;
+            }
+
+            // Proceed with activation
+            console.log('Processing payment activation...');
+
+            // Mark as completed in local storage
+            pendingPayment.completed = true;
+            localStorage.setItem('ristosync_pending_payment', JSON.stringify(pendingPayment));
+
+            try {
+                const plan = pendingPayment.plan; // 'basic' o 'pro'
+                const billingCycle = pendingPayment.billingCycle || 'monthly';
+
+                // Normalizza planType
+                const planType = plan === 'basic' ? 'Basic' : 'Pro';
+
+                // Calcola date
+                const startDate = new Date();
+                const endDate = new Date(startDate);
+                if (billingCycle === 'yearly') {
+                    endDate.setFullYear(startDate.getFullYear() + 1);
+                } else {
+                    endDate.setMonth(startDate.getMonth() + 1);
+                }
+
+                const endDateMs = endDate.getTime();
+                const endDateISO = endDate.toISOString();
+
+                // 1. UPDATE SUPABASE
+                const currentSettings = { ...appSettings };
+                // Resetta allowedDepartment se piano è Basic, così al primo accesso in dashboard lo chiede
+                const shouldResetDepartment = planType === 'Basic';
+
+                const updatedSettings = {
+                    ...currentSettings,
+                    restaurantProfile: {
+                        ...(currentSettings.restaurantProfile || {}),
+                        planType: planType,
+                        subscriptionStatus: 'active',
+                        subscriptionEndDate: endDateISO,
+                        allowedDepartment: shouldResetDepartment ? undefined : (currentSettings.restaurantProfile?.allowedDepartment)
+                    }
+                };
+
+                const { error: dbError } = await supabase
+                    .from('profiles')
+                    .update({
+                        settings: updatedSettings,
+                        subscription_status: 'active'
+                    })
+                    .eq('id', session.user.id);
+
+                if (dbError) console.error("Errore update DB:", dbError);
+
+                // 2. UPDATE LOCAL STATE & UI NAVIGATION
+                setAppSettingsState(updatedSettings);
+                saveAppSettings(updatedSettings);
+
+                // *** CRUCIALE: PORTA L'UTENTE AL PROFILO ***
+                setAdminTab('profile'); // Vai al profilo
+                setShowAdmin(true);     // Assicurati di vedere l'admin panel
+                setShowSubscriptionManager(false); // Chiudi manager abbonamenti
+
+                // 3. SHOW SUCCESS MODAL (Congratulazioni!)
+                setPaymentSuccessData({
+                    planType: planType,
+                    endDate: endDateISO,
+                    price: billingCycle === 'yearly'
+                        ? (planType === 'Basic' ? '499.00' : '999.00')
+                        : (planType === 'Basic' ? '49.90' : '99.90')
+                });
+                setShowPaymentSuccessModal(true);
+
+                // 4. Se piano Basic, mostra il selettore reparto dopo il modal di successo
+                if (planType === 'Basic' && !updatedSettings.restaurantProfile?.allowedDepartment) {
+                    // Il modal di successo ha un callback onClose che può triggerare il department selector
+                    // Lo impostiamo qui per mostrarlo dopo
+                    setTimeout(() => {
+                        setShowDepartmentSelector(true);
+                    }, 1000);
+                }
+
+                // 5. CLEANUP
+                localStorage.removeItem('ristosync_pending_payment');
+                if (isSuccessURL) {
+                    window.history.replaceState({}, '', window.location.pathname);
+                }
+
+                // 6. SEND EMAILS (Background) - Importa le funzioni dal backup
+                const priceStr = billingCycle === 'yearly'
+                    ? (planType === 'Basic' ? '€499.00' : '€999.00')
+                    : (planType === 'Basic' ? '€49.90' : '€99.90');
+
+                const customerName = updatedSettings.restaurantProfile?.name || session.user.email || 'Cliente';
+
+                // Invia email in background (non bloccare il flusso)
+                try {
+                    // Nota: Queste funzioni devono essere importate da emailService
+                    // Se non esistono, le creiamo dopo
+                    if (typeof sendPaymentConfirmationEmail === 'function') {
+                        await sendPaymentConfirmationEmail(
+                            session.user.email || '',
+                            customerName,
+                            planType,
+                            priceStr,
+                            endDate.toLocaleDateString('it-IT')
+                        );
+                    }
+                    if (typeof sendAdminPaymentNotification === 'function') {
+                        await sendAdminPaymentNotification(
+                            session.user.email || '',
+                            customerName,
+                            planType,
+                            priceStr
+                        );
+                    }
+                } catch (emailError) {
+                    console.error("Email error:", emailError);
+                }
+
+                showToast('✅ Pagamento confermato! Abbonamento attivato.', 'success');
+
+            } catch (error) {
+                console.error('CRITICAL Error activation:', error);
+                showToast('Errore attivazione. Contatta supporto.', 'error');
+            }
         };
-    }, []);
 
-    // Handle Stripe Success Callback via Component (Logic moved to StripeSuccessHandler)
-    const handleStripeSuccess = (plan: 'Basic' | 'Pro', isYearly: boolean) => {
-        // This callback is triggered by StripeSuccessHandler after it saves data
-        const newPlan = plan;
-
-        // Trigger UI Success State
-        setSuccessPlanInfo({
-            plan: newPlan,
-            price: isYearly ? (newPlan === 'Basic' ? '€499.00' : '€999.00') : (newPlan === 'Basic' ? '€49.90' : '€99.90'),
-            endDate: new Date(Date.now() + (isYearly ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString()
-        });
-        setShowPaymentSuccess(true);
-
-        // Trigger Department Selector if Basic
-        if (newPlan === 'Basic') {
-            setShowDepartmentSelector(true);
+        if (session) {
+            handleStripeReturn();
         }
-
-        // Clean URL is handled by the component or reload
-        // Force state refresh
-        const freshSettings = getAppSettings();
-        setAppSettingsState(freshSettings);
-        setProfileForm(freshSettings.restaurantProfile);
-    };
+    }, [session]);
 
     // --- ACTIONS ---
 
@@ -3524,8 +3678,6 @@ export function App() {
                     />
                 )}
 
-                <StripeSuccessHandler onSuccess={handleStripeSuccess} />
-
                 <DepartmentSelectorModal
                     isOpen={showDepartmentSelector}
                     onClose={() => setShowDepartmentSelector(false)}
@@ -3600,6 +3752,48 @@ export function App() {
                     onClose={() => setShowWhatsAppManager(false)}
                     showToast={showToast}
                     showConfirm={showConfirm}
+                />
+            )}
+            {showPaymentSuccessModal && paymentSuccessData && (
+                <PaymentSuccessModal
+                    isOpen={showPaymentSuccessModal}
+                    onClose={() => {
+                        setShowPaymentSuccessModal(false);
+                        // Se è Basic e non ha department, mostra il selettore
+                        if (paymentSuccessData.planType === 'Basic' && !appSettings.restaurantProfile?.allowedDepartment) {
+                            setShowDepartmentSelector(true);
+                        }
+                    }}
+                    planType={paymentSuccessData.planType}
+                    endDate={paymentSuccessData.endDate}
+                    price={paymentSuccessData.price}
+                />
+            )}
+            {showDepartmentSelector && (
+                <DepartmentSelectorModal
+                    isOpen={showDepartmentSelector}
+                    onClose={() => setShowDepartmentSelector(false)}
+                    onSelectDepartment={async (department) => {
+                        // Salva il department selezionato
+                        const updatedProfile = { ...appSettings.restaurantProfile, allowedDepartment: department as any };
+                        const newSettings = { ...appSettings, restaurantProfile: updatedProfile };
+
+                        setAppSettingsState(newSettings);
+                        await saveAppSettings(newSettings);
+
+                        // Aggiorna anche su Supabase
+                        if (session?.user?.id && supabase) {
+                            await supabase
+                                .from('profiles')
+                                .update({
+                                    settings: newSettings
+                                })
+                                .eq('id', session.user.id);
+                        }
+
+                        setShowDepartmentSelector(false);
+                        showToast(`✅ Reparto ${department.toUpperCase()} selezionato con successo!`, 'success');
+                    }}
                 />
             )}
             {showSubscriptionManager && (
