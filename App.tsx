@@ -32,7 +32,8 @@ import { useDialog } from './hooks/useDialog';
 import QRCodeGenerator from 'react-qr-code';
 import Tesseract from 'tesseract.js';
 import Papa from 'papaparse';
-import SubscriptionSuccessModal from './components/SubscriptionSuccessModal';
+import PaymentSuccessModal from './components/PaymentSuccessModal';
+import DepartmentSelectorModal from './components/DepartmentSelectorModal';
 
 // Promo Timer Component
 const PromoTimer = ({ deadlineHours, lastUpdated }: { deadlineHours: string, lastUpdated: string }) => {
@@ -146,6 +147,7 @@ export function App() {
     const [adminTab, setAdminTab] = useState<'profile' | 'subscription' | 'menu' | 'notif' | 'info' | 'ai' | 'analytics' | 'share' | 'receipts' | 'messages' | 'marketing' | 'delivery' | 'customers' | 'whatsapp'>('menu');
     const [showWhatsAppManager, setShowWhatsAppManager] = useState(false);
     const [showSubscriptionManager, setShowSubscriptionManager] = useState(false);
+    const [showDepartmentSelector, setShowDepartmentSelector] = useState(false);
     const [adminViewMode, setAdminViewMode] = useState<'dashboard' | 'app'>('dashboard');
 
     const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
@@ -240,9 +242,9 @@ export function App() {
         document.getElementById('bank-details')?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    // --- SUBSCRIPTION SUCCESS STATE ---
-    const [showSubscriptionSuccessModal, setShowSubscriptionSuccessModal] = useState(false);
-    const [subscriptionSuccessData, setSubscriptionSuccessData] = useState<{
+    // --- PAYMENT SUCCESS STATE ---
+    const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
+    const [paymentSuccessData, setPaymentSuccessData] = useState<{
         planType: string;
         endDate: string;
         price: string;
@@ -354,48 +356,6 @@ export function App() {
                 // Welcome Modal
                 if (!userPrefs?.termsAccepted && !userPrefs?.dontShowWelcomeAgain) {
                     setShowWelcomeModal(true);
-                }
-
-                // Subscription Success Modal - Mostra se c'è un piano Basic/Pro non ancora acknowledged
-                // Questo permette di mostrare il modal anche dopo logout/login
-                // Normalizza il piano per il controllo (gestisce Basic, basic_yearly, Pro, pro_yearly)
-                const normalizedPlan = plan?.toLowerCase().includes('basic') ? 'Basic' :
-                    plan?.toLowerCase().includes('pro') ? 'Pro' : null;
-
-                if (normalizedPlan && !userPrefs?.subscriptionUpgradeAcknowledged) {
-                    // Verifica che ci sia una data di scadenza valida (significa che è un piano attivo)
-                    if (expiry) {
-                        const expiryDate = new Date(expiry);
-                        const now = new Date();
-                        // Mostra solo se il piano è ancora valido
-                        if (expiryDate > now) {
-                            console.log('🎉 Showing subscription success modal for unacknowledged plan:', plan);
-
-                            // Calcola il prezzo in base al piano e alla durata
-                            const startDate = data.settings?.restaurantProfile?.subscriptionStartDate;
-                            let price = '49.90'; // Default Basic Monthly
-
-                            if (startDate && expiry) {
-                                const start = new Date(startDate);
-                                const end = new Date(expiry);
-                                const diffMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-                                const isYearly = diffMonths >= 11; // Considera yearly se >= 11 mesi
-
-                                if (normalizedPlan === 'Pro') {
-                                    price = isYearly ? '999.00' : '99.90';
-                                } else {
-                                    price = isYearly ? '499.00' : '49.90';
-                                }
-                            }
-
-                            setSubscriptionSuccessData({
-                                planType: normalizedPlan,
-                                endDate: expiry,
-                                price: price
-                            });
-                            setShowSubscriptionSuccessModal(true);
-                        }
-                    }
                 }
 
                 // Piano Free/Demo = sempre attivo
@@ -519,24 +479,16 @@ export function App() {
             // Check localStorage
             const pendingPaymentStr = localStorage.getItem('ristosync_pending_payment');
 
-            // DEBUG: Log detection state
-            console.log('🔍 STRIPE HANDLER CHECK:', {
-                isSuccessURL,
-                hasPendingPayment: !!pendingPaymentStr,
-                hasSession: !!session,
-                url: window.location.href
-            });
-
             // IF no success URL AND no pending payment -> Exit
             if (!isSuccessURL && !pendingPaymentStr) return;
 
             // IF no session -> Wait for login (React will re-run effect when session changes)
             if (!session) {
-                console.log('⏳ Stripe return detected but waiting for session...');
+                console.log('Stripe return detected but waiting for session...');
                 return;
             }
 
-            console.log('✅ Stripe return detected with active session. Processing...');
+            console.log('Stripe return detected with active session.');
 
             // Get pending payment data
             let pendingPayment = null;
@@ -596,11 +548,10 @@ export function App() {
 
                 const endDateMs = endDate.getTime();
                 const endDateISO = endDate.toISOString();
-                const startDateISO = startDate.toISOString();
 
                 // 1. UPDATE SUPABASE
                 const currentSettings = { ...appSettings };
-                // Resetta allowedDepartment se piano è Basic, così lo chiede nel modal
+                // Resetta allowedDepartment se piano è Basic, così al primo accesso in dashboard lo chiede
                 const shouldResetDepartment = planType === 'Basic';
 
                 const updatedSettings = {
@@ -609,13 +560,8 @@ export function App() {
                         ...(currentSettings.restaurantProfile || {}),
                         planType: planType,
                         subscriptionStatus: 'active',
-                        subscriptionStartDate: startDateISO, // Salva data inizio
                         subscriptionEndDate: endDateISO,
-                        allowedDepartment: shouldResetDepartment ? undefined : (currentSettings.restaurantProfile?.allowedDepartment),
-                        userPreferences: {
-                            ...(currentSettings.restaurantProfile?.userPreferences || {}),
-                            subscriptionUpgradeAcknowledged: false // Imposta a false per mostrare il modal
-                        }
+                        allowedDepartment: shouldResetDepartment ? undefined : (currentSettings.restaurantProfile?.allowedDepartment)
                     }
                 };
 
@@ -633,40 +579,35 @@ export function App() {
                 setAppSettingsState(updatedSettings);
                 saveAppSettings(updatedSettings);
 
-                // *** CRUCIALE: PORTA L'UTENTE ALLA DASHBOARD ***
+                // *** CRUCIALE: PORTA L'UTENTE AL PROFILO ***
                 setAdminTab('profile'); // Vai al profilo
                 setShowAdmin(true);     // Assicurati di vedere l'admin panel
                 setShowSubscriptionManager(false); // Chiudi manager abbonamenti
                 setShowLandingPage(false); // Assicurati che la landing page sia chiusa
 
-                console.log('🎉 STRIPE SUCCESS: Preparing to show congratulations modal...');
-                console.log('📊 Payment Data:', { planType, billingCycle, startDateISO, endDateISO });
-
                 // 3. SHOW SUCCESS MODAL (Congratulazioni!) - CON DELAY per dare tempo all'UI
                 setTimeout(() => {
-                    console.log('⏰ Timeout reached, triggering modal...');
-                    setSubscriptionSuccessData({
+                    setPaymentSuccessData({
                         planType: planType,
                         endDate: endDateISO,
                         price: billingCycle === 'yearly'
                             ? (planType === 'Basic' ? '499.00' : '999.00')
                             : (planType === 'Basic' ? '49.90' : '99.90')
                     });
-                    setShowSubscriptionSuccessModal(true);
-                    console.log('✅ SUCCESS MODAL TRIGGERED! showSubscriptionSuccessModal = true');
+                    setShowPaymentSuccessModal(true);
+                }, 800); // Aumentato a 800ms per maggiore stabilità
 
-                    // CLEANUP - DOPO che il modal è stato attivato
-                    localStorage.removeItem('ristosync_pending_payment');
-                    console.log('🧹 Cleaned up pending payment from localStorage');
-                }, 1500);
+                // 4. NON mostrare subito il department selector
+                // Lo mostreremo quando l'utente chiude il modal congratulazioni
+                // Questo crea un flusso più fluido e professionale
 
-                // URL cleanup immediato per evitare refresh problematici
+                // 5. CLEANUP
+                localStorage.removeItem('ristosync_pending_payment');
                 if (isSuccessURL) {
                     window.history.replaceState({}, '', window.location.pathname);
-                    console.log('🔗 URL cleaned up');
                 }
 
-                // 4. SEND EMAILS (Background)
+                // 6. SEND EMAILS (Background) - Importa le funzioni dal backup
                 const priceStr = billingCycle === 'yearly'
                     ? (planType === 'Basic' ? '€499.00' : '€999.00')
                     : (planType === 'Basic' ? '€49.90' : '€99.90');
@@ -675,6 +616,8 @@ export function App() {
 
                 // Invia email in background (non bloccare il flusso)
                 try {
+                    // Nota: Queste funzioni devono essere importate da emailService
+                    // Se non esistono, le creiamo dopo
                     if (typeof sendPaymentConfirmationEmail === 'function') {
                         await sendPaymentConfirmationEmail(
                             session.user.email || '',
@@ -696,7 +639,7 @@ export function App() {
                     console.error("Email error:", emailError);
                 }
 
-                // RIMOSSO IL TOAST - Ora usiamo solo il modal
+                showToast('✅ Pagamento confermato! Abbonamento attivato.', 'success');
 
             } catch (error) {
                 console.error('CRITICAL Error activation:', error);
@@ -797,54 +740,6 @@ export function App() {
         } catch (error) {
             console.error('Error saving preferences:', error);
             showToast('Errore nel salvataggio delle preferenze', 'error');
-        }
-    };
-
-    const handleSubscriptionAcknowledge = async (selectedDepartment?: string) => {
-        try {
-            if (!supabase || !session) return;
-
-            // Get current settings
-            const { data: currentProfile } = await supabase
-                .from('profiles')
-                .select('settings')
-                .eq('id', session.user.id)
-                .single();
-
-            const updatedSettings = {
-                ...currentProfile?.settings,
-                restaurantProfile: {
-                    ...currentProfile?.settings?.restaurantProfile,
-                    // Se è stato selezionato un reparto (Basic plan), salvalo
-                    ...(selectedDepartment ? { allowedDepartment: selectedDepartment } : {}),
-                    userPreferences: {
-                        ...currentProfile?.settings?.restaurantProfile?.userPreferences,
-                        subscriptionUpgradeAcknowledged: true // Marca come acknowledged
-                    }
-                }
-            };
-
-            // Update profile
-            await supabase
-                .from('profiles')
-                .update({ settings: updatedSettings })
-                .eq('id', session.user.id);
-
-            // Update local state
-            setAppSettingsState(updatedSettings);
-            saveAppSettings(updatedSettings);
-
-            setShowSubscriptionSuccessModal(false);
-
-            // Mostra messaggio di conferma
-            if (selectedDepartment) {
-                showToast(`✅ Perfetto! Hai attivato il reparto ${selectedDepartment.toUpperCase()}`, 'success');
-            } else {
-                showToast('✅ Benvenuto nel tuo nuovo piano!', 'success');
-            }
-        } catch (error) {
-            console.error('Error saving subscription acknowledgement:', error);
-            showToast('Errore nel salvataggio', 'error');
         }
     };
 
@@ -3852,16 +3747,56 @@ export function App() {
                     showConfirm={showConfirm}
                 />
             )}
-            {showSubscriptionSuccessModal && subscriptionSuccessData && (
-                <SubscriptionSuccessModal
-                    onClose={() => setShowSubscriptionSuccessModal(false)}
-                    onAcknowledge={handleSubscriptionAcknowledge}
-                    planType={subscriptionSuccessData.planType}
-                    endDate={subscriptionSuccessData.endDate}
-                    price={subscriptionSuccessData.price}
+            {showPaymentSuccessModal && paymentSuccessData && (
+                <PaymentSuccessModal
+                    isOpen={showPaymentSuccessModal}
+                    onClose={() => {
+                        setShowPaymentSuccessModal(false);
+                        // Se è Basic e non ha department, mostra il selettore con delay per transizione fluida
+                        if (paymentSuccessData.planType === 'Basic' && !appSettings.restaurantProfile?.allowedDepartment) {
+                            setTimeout(() => {
+                                setShowDepartmentSelector(true);
+                            }, 300); // Delay per transizione fluida tra i modal
+                        }
+                    }}
+                    planType={paymentSuccessData.planType}
+                    endDate={paymentSuccessData.endDate}
+                    price={paymentSuccessData.price}
                 />
             )}
+            {showDepartmentSelector && (
+                <DepartmentSelectorModal
+                    isOpen={showDepartmentSelector}
+                    onClose={() => setShowDepartmentSelector(false)}
+                    onSelectDepartment={async (department) => {
+                        // Salva il department selezionato
+                        const updatedProfile = { ...appSettings.restaurantProfile, allowedDepartment: department as any };
+                        const newSettings = { ...appSettings, restaurantProfile: updatedProfile };
 
+                        setAppSettingsState(newSettings);
+                        await saveAppSettings(newSettings);
+
+                        // Aggiorna anche su Supabase
+                        if (session?.user?.id && supabase) {
+                            await supabase
+                                .from('profiles')
+                                .update({
+                                    settings: newSettings
+                                })
+                                .eq('id', session.user.id);
+                        }
+
+                        setShowDepartmentSelector(false);
+                        showToast(`✅ Reparto ${department.toUpperCase()} selezionato con successo!`, 'success');
+
+                        // *** ENTRA AUTOMATICAMENTE NEL REPARTO SELEZIONATO ***
+                        if (department === 'kitchen') setRole('kitchen');
+                        else if (department === 'pizzeria') setRole('pizzeria');
+                        else if (department === 'pub') setRole('pub');
+                        else if (department === 'delivery') setRole('delivery');
+                    }}
+                />
+            )}
             {showSubscriptionManager && (
                 <SubscriptionManager
                     onClose={() => setShowSubscriptionManager(false)}

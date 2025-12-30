@@ -324,8 +324,6 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onEnterApp })
         if (!supabase || !viewingProfile) return;
 
         const currentSettings = viewingProfile.settings || {};
-        const oldPlan = currentSettings.restaurantProfile?.planType;
-        const isPlanChanged = oldPlan !== subPlan;
 
         const updatedSettings = {
             ...currentSettings,
@@ -335,12 +333,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onEnterApp })
                 subscriptionEndDate: subDate,
                 subscriptionCost: subCost,
                 planType: subPlan,
-                userPreferences: {
-                    ...(currentSettings.restaurantProfile?.userPreferences || {}),
-                    // Se il piano cambia, richiedi di nuovo l'acknowledgement (mostra modal congratulazioni)
-                    ...(isPlanChanged ? { subscriptionUpgradeAcknowledged: false } : {})
-                },
-                restaurant_name: viewingProfile.restaurant_name, // Mantiene coerenza col nome esterno
+                name: viewingProfile.restaurant_name,
                 agent: {
                     name: agentName,
                     iban: agentIban,

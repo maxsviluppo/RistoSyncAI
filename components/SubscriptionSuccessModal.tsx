@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, CheckCircle, Crown, Zap, Trophy, ChefHat, Pizza, Wine, Bike } from 'lucide-react';
+import { X, Sparkles, CheckCircle, Crown, Zap, Trophy, ChefHat, Pizza, Wine, Bike, Store, Rocket } from 'lucide-react';
 
 interface SubscriptionSuccessModalProps {
     onClose: () => void;
@@ -7,6 +7,7 @@ interface SubscriptionSuccessModalProps {
     planType: string; // 'Basic' or 'Pro'
     endDate: string;
     price: string;
+    restaurantName: string;
 }
 
 const SubscriptionSuccessModal: React.FC<SubscriptionSuccessModalProps> = ({
@@ -14,7 +15,8 @@ const SubscriptionSuccessModal: React.FC<SubscriptionSuccessModalProps> = ({
     onAcknowledge,
     planType,
     endDate,
-    price
+    price,
+    restaurantName
 }) => {
     const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
     const isBasicPlan = planType === 'Basic';
@@ -47,131 +49,113 @@ const SubscriptionSuccessModal: React.FC<SubscriptionSuccessModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-slate-900 border-2 border-orange-500/30 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
+        <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in font-sans">
+            <div className="bg-slate-900 border-2 border-orange-500/30 rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-y-auto animate-slide-up relative">
                 {/* HEADER */}
-                <div className={`relative bg-gradient-to-br ${planType === 'Pro' ? 'from-purple-600 to-indigo-600' : 'from-orange-600 to-red-600'} p-8 rounded-t-3xl text-center`}>
-                    <div className="absolute top-4 right-4">
+                <div className={`relative bg-gradient-to-br ${planType === 'Pro' ? 'from-purple-600 via-indigo-700 to-blue-800' : 'from-orange-600 via-red-600 to-pink-700'} p-10 pb-12 rounded-t-[2.5rem] text-center overflow-hidden`}>
+                    {/* Background Effects */}
+                    <div className="absolute top-0 left-0 w-full h-full opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                    <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/20 rounded-full blur-3xl"></div>
+                    <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-black/20 rounded-full blur-3xl"></div>
+
+                    <div className="absolute top-6 right-6 z-20">
                         <button
                             onClick={onClose}
-                            className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+                            className="p-3 bg-black/20 hover:bg-white/20 rounded-full transition-colors backdrop-blur-md"
                             title="Chiudi"
                         >
                             <X size={20} className="text-white" />
                         </button>
                     </div>
 
-                    <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-4 animate-bounce">
-                        {planType === 'Pro' ? (
-                            <Crown size={40} className="text-white" />
-                        ) : (
-                            <Zap size={40} className="text-white" />
-                        )}
-                    </div>
+                    <div className="relative z-10 flex flex-col items-center">
+                        <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center mb-6 shadow-2xl border border-white/20 animate-bounce">
+                            {planType === 'Pro' ? (
+                                <Crown size={48} className="text-yellow-300 drop-shadow-md" />
+                            ) : (
+                                <Zap size={48} className="text-white drop-shadow-md" />
+                            )}
+                        </div>
 
-                    <h1 className="text-3xl font-black text-white mb-2">
-                        🎉 Congratulazioni!
-                    </h1>
-                    <p className="text-white/90 text-lg font-bold">
-                        Hai attivato il Piano {planType}
-                    </p>
+                        <h1 className="text-4xl md:text-5xl font-black text-white mb-2 drop-shadow-xl tracking-tight">
+                            Benvenuto!
+                        </h1>
+
+                        <div className="inline-flex items-center gap-2 bg-black/30 backdrop-blur-md px-6 py-2 rounded-full mb-6 border border-white/10 shadow-lg">
+                            <Store size={18} className="text-white/80" />
+                            <span className="text-lg font-bold text-white tracking-wide uppercase">{restaurantName}</span>
+                        </div>
+
+                        <p className="text-white/90 text-xl font-medium max-w-md mx-auto leading-relaxed">
+                            Congratulazioni, hai attivato con successo il Piano <span className="font-black text-white bg-white/20 px-2 py-0.5 rounded-lg">{planType.toUpperCase()}</span>
+                        </p>
+                    </div>
                 </div>
 
                 {/* CONTENT */}
-                <div className="p-8 space-y-6">
-                    {/* SUBSCRIPTION INFO */}
-                    <div className={`bg-gradient-to-br ${planType === 'Pro' ? 'from-purple-600/10 to-indigo-600/10 border-purple-500/30' : 'from-orange-600/10 to-red-600/10 border-orange-500/30'} border rounded-2xl p-6`}>
-                        <div className="flex items-start gap-4">
-                            <div className={`w-12 h-12 bg-gradient-to-br ${planType === 'Pro' ? 'from-purple-600 to-indigo-600' : 'from-orange-600 to-red-600'} rounded-xl flex items-center justify-center shrink-0`}>
-                                <Trophy size={24} className="text-white" />
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-white font-black text-lg mb-3">
-                                    Dettagli Abbonamento
-                                </h3>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-slate-400">Piano:</span>
-                                        <span className="text-white font-bold">{planType}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-slate-400">Prezzo:</span>
-                                        <span className="text-white font-bold">€{price}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-slate-400">Valido fino al:</span>
-                                        <span className="text-white font-bold">{formatDate(endDate)}</span>
-                                    </div>
-                                </div>
-                            </div>
+                <div className="px-8 py-8 space-y-8 -mt-6 relative z-20 bg-slate-900 rounded-t-[2.5rem]">
+
+                    {/* SUBSCRIPTION DETAILS */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700 flex flex-col items-center justify-center text-center">
+                            <p className="text-slate-400 text-xs font-bold uppercase mb-1">Scadenza</p>
+                            <p className="text-white font-mono font-bold text-sm">{formatDate(endDate)}</p>
+                        </div>
+                        <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700 flex flex-col items-center justify-center text-center">
+                            <p className="text-slate-400 text-xs font-bold uppercase mb-1">Prezzo</p>
+                            <p className="text-white font-mono font-bold text-sm">€{price}/mo</p>
                         </div>
                     </div>
 
                     {/* PLAN FEATURES */}
-                    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
-                        <h3 className="text-white font-bold text-base mb-4 flex items-center gap-2">
-                            <Sparkles size={18} className={planType === 'Pro' ? 'text-purple-500' : 'text-orange-500'} />
-                            {planType === 'Pro' ? 'Funzionalità Premium Sbloccate' : 'Cosa Include il Piano Basic'}
+                    <div className="space-y-4">
+                        <h3 className="text-white font-black text-xl flex items-center gap-2">
+                            <Rocket size={24} className={planType === 'Pro' ? 'text-purple-500' : 'text-orange-500'} />
+                            I tuoi Nuovi Vantaggi
                         </h3>
-                        <ul className="space-y-3 text-sm text-slate-300">
-                            {planType === 'Pro' ? (
-                                <>
-                                    <li className="flex items-start gap-3">
-                                        <CheckCircle size={16} className="text-green-500 shrink-0 mt-0.5" />
-                                        <span><strong className="text-white">Tutti i Reparti</strong> - Accesso illimitato a Cucina, Pizzeria, Pub e Delivery</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <CheckCircle size={16} className="text-green-500 shrink-0 mt-0.5" />
-                                        <span><strong className="text-white">Gestione Completa</strong> - Ordini, prenotazioni e clienti senza limiti</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <CheckCircle size={16} className="text-green-500 shrink-0 mt-0.5" />
-                                        <span><strong className="text-white">Marketing WhatsApp</strong> - Campagne illimitate e automazioni</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <CheckCircle size={16} className="text-green-500 shrink-0 mt-0.5" />
-                                        <span><strong className="text-white">Analisi AI Avanzate</strong> - Insights e suggerimenti personalizzati</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <CheckCircle size={16} className="text-green-500 shrink-0 mt-0.5" />
-                                        <span><strong className="text-white">Supporto Prioritario</strong> - Assistenza dedicata 7/7</span>
-                                    </li>
-                                </>
-                            ) : (
-                                <>
-                                    <li className="flex items-start gap-3">
-                                        <CheckCircle size={16} className="text-green-500 shrink-0 mt-0.5" />
-                                        <span><strong className="text-white">Un Reparto a Scelta</strong> - Scegli tra Cucina, Pizzeria, Pub o Delivery</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <CheckCircle size={16} className="text-green-500 shrink-0 mt-0.5" />
-                                        <span><strong className="text-white">Gestione Ordini</strong> - Sistema completo per il reparto selezionato</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <CheckCircle size={16} className="text-green-500 shrink-0 mt-0.5" />
-                                        <span><strong className="text-white">Menu Digitale</strong> - QR code e menu online personalizzato</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <CheckCircle size={16} className="text-green-500 shrink-0 mt-0.5" />
-                                        <span><strong className="text-white">Statistiche Base</strong> - Monitora le performance del tuo reparto</span>
-                                    </li>
-                                </>
-                            )}
-                        </ul>
+                        <div className="bg-slate-950/50 border border-slate-800 rounded-3xl p-6">
+                            <ul className="space-y-4">
+                                {planType === 'Pro' ? (
+                                    <>
+                                        <li className="flex items-start gap-4">
+                                            <div className="bg-green-500/20 p-1.5 rounded-full"><CheckCircle size={18} className="text-green-500" /></div>
+                                            <div><strong className="text-white block text-lg">Tutti i Reparti Sbloccati</strong><span className="text-slate-400 text-sm">Accesso illimitato a Cucina, Pizzeria, Pub e Delivery.</span></div>
+                                        </li>
+                                        <li className="flex items-start gap-4">
+                                            <div className="bg-green-500/20 p-1.5 rounded-full"><CheckCircle size={18} className="text-green-500" /></div>
+                                            <div><strong className="text-white block text-lg">Marketing & AI</strong><span className="text-slate-400 text-sm">WhatsApp marketing e analisi avanzate inclusi.</span></div>
+                                        </li>
+                                    </>
+                                ) : (
+                                    <>
+                                        <li className="flex items-start gap-4">
+                                            <div className="bg-green-500/20 p-1.5 rounded-full"><CheckCircle size={18} className="text-green-500" /></div>
+                                            <div><strong className="text-white block text-lg">1 Reparto a Scelta</strong><span className="text-slate-400 text-sm">Scegli tra Cucina, Pizzeria, Pub o Delivery.</span></div>
+                                        </li>
+                                        <li className="flex items-start gap-4">
+                                            <div className="bg-green-500/20 p-1.5 rounded-full"><CheckCircle size={18} className="text-green-500" /></div>
+                                            <div><strong className="text-white block text-lg">Menu Digitale Incluso</strong><span className="text-slate-400 text-sm">QR code e menu online per i tuoi clienti.</span></div>
+                                        </li>
+                                    </>
+                                )}
+                            </ul>
+                        </div>
                     </div>
 
                     {/* DEPARTMENT SELECTOR FOR BASIC PLAN */}
                     {isBasicPlan && (
-                        <div className="bg-gradient-to-br from-blue-600/10 to-cyan-600/10 border border-blue-500/30 rounded-2xl p-6">
-                            <h3 className="text-white font-bold text-base mb-4 flex items-center gap-2">
-                                <Zap size={18} className="text-blue-400" />
-                                Seleziona il Tuo Reparto
+                        <div className="bg-slate-800 border-2 border-blue-500/50 rounded-3xl p-6 shadow-xl shadow-blue-900/20 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+
+                            <h3 className="text-white font-black text-xl mb-2 flex items-center gap-2 relative z-10">
+                                <Zap size={24} className="text-blue-400 fill-blue-400" />
+                                Scelta Reparto
                             </h3>
-                            <p className="text-slate-300 text-sm mb-4 leading-relaxed">
-                                Il Piano Basic include <strong className="text-white">un solo reparto</strong>. Scegli quello più importante per la tua attività. Potrai sempre passare al Piano Pro per sbloccare tutti i reparti.
+                            <p className="text-slate-300 text-sm mb-6 leading-relaxed relative z-10">
+                                Il Piano Basic include <strong>un solo reparto</strong> attivo. Seleziona quale vuoi utilizzare:
                             </p>
 
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-3 relative z-10">
                                 {departments.map((dept) => {
                                     const Icon = dept.icon;
                                     const isSelected = selectedDepartment === dept.id;
@@ -180,18 +164,18 @@ const SubscriptionSuccessModal: React.FC<SubscriptionSuccessModalProps> = ({
                                         <button
                                             key={dept.id}
                                             onClick={() => setSelectedDepartment(dept.id)}
-                                            className={`relative p-4 rounded-xl border-2 transition-all ${isSelected
-                                                    ? `bg-gradient-to-br ${dept.color} border-white shadow-lg scale-105`
-                                                    : 'bg-slate-800/50 border-slate-700 hover:border-slate-600 hover:bg-slate-800'
+                                            className={`relative p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center gap-2 ${isSelected
+                                                ? `bg-blue-600 border-blue-400 shadow-lg shadow-blue-600/30 scale-105 z-20`
+                                                : 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:bg-slate-800 opacity-80 hover:opacity-100'
                                                 }`}
                                         >
                                             {isSelected && (
-                                                <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                                <div className="absolute -top-3 -right-3 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-4 border-slate-900 shadow-sm">
                                                     <CheckCircle size={16} className="text-white" />
                                                 </div>
                                             )}
-                                            <Icon size={32} className={isSelected ? 'text-white mx-auto mb-2' : 'text-slate-400 mx-auto mb-2'} />
-                                            <p className={`text-sm font-bold text-center ${isSelected ? 'text-white' : 'text-slate-300'}`}>
+                                            <Icon size={32} className={isSelected ? 'text-white' : 'text-slate-400'} />
+                                            <p className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-slate-300'}`}>
                                                 {dept.label}
                                             </p>
                                         </button>
@@ -200,41 +184,41 @@ const SubscriptionSuccessModal: React.FC<SubscriptionSuccessModalProps> = ({
                             </div>
 
                             {!selectedDepartment && (
-                                <div className="mt-4 bg-yellow-600/10 border border-yellow-500/30 rounded-lg p-3">
-                                    <p className="text-yellow-400 text-xs text-center font-bold">
-                                        ⚠️ Seleziona un reparto per continuare
+                                <div className="mt-6 text-center animate-pulse">
+                                    <p className="text-blue-300 text-xs font-bold uppercase tracking-wider">
+                                        Seleziona un'opzione per continuare
                                     </p>
                                 </div>
                             )}
                         </div>
                     )}
 
-                    {/* UPGRADE CTA FOR BASIC */}
-                    {isBasicPlan && (
-                        <div className="bg-gradient-to-r from-purple-600/10 to-indigo-600/10 border border-purple-500/30 rounded-2xl p-6">
-                            <p className="text-slate-300 text-sm text-center leading-relaxed">
-                                Vuoi sbloccare <strong className="text-white">tutti i reparti</strong>? Passa al <span className="text-purple-400 font-bold">Piano Pro</span> in qualsiasi momento dalle impostazioni!
-                            </p>
-                        </div>
-                    )}
-
                     {/* ACTION BUTTON */}
-                    <div className="flex gap-3 pt-4">
+                    <div className="pt-4 pb-4">
                         <button
                             onClick={handleAcknowledge}
                             disabled={!canProceed}
-                            className={`flex-1 py-4 rounded-xl font-black text-lg transition-all shadow-lg ${canProceed
-                                    ? `bg-gradient-to-r ${planType === 'Pro' ? 'from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 shadow-purple-500/30' : 'from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-orange-500/30'} text-white active:scale-95`
-                                    : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                            className={`w-full py-5 rounded-2xl font-black text-xl tracking-wide transition-all shadow-xl flex items-center justify-center gap-3 ${canProceed
+                                ? `bg-gradient-to-r ${planType === 'Pro' ? 'from-purple-600 via-indigo-600 to-blue-600 hover:scale-[1.02]' : 'from-orange-500 via-red-600 to-pink-600 hover:scale-[1.02]'} text-white`
+                                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                                 }`}
                         >
-                            {canProceed ? '🚀 Inizia Ora' : '⚠️ Seleziona un Reparto'}
+                            {canProceed ? (
+                                <>
+                                    🚀 INIZIA A LAVORARE
+                                </>
+                            ) : (
+                                <>
+                                    SELEZIONA UN REPARTO
+                                </>
+                            )}
                         </button>
+                        {isBasicPlan && !selectedDepartment && (
+                            <p className="text-center text-xs text-slate-500 mt-2 font-medium">
+                                * Potrai cambiare piano in qualsiasi momento
+                            </p>
+                        )}
                     </div>
-
-                    <p className="text-xs text-slate-500 text-center mt-4">
-                        Puoi modificare queste impostazioni in qualsiasi momento dal tuo profilo
-                    </p>
                 </div>
             </div>
         </div>
