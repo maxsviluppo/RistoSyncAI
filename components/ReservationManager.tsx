@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, Clock, Users, Phone, Mail, MapPin, Euro, CreditCard, X, Check, Edit2, Trash2, AlertCircle, User, History, Plus, Search, Filter, ChevronDown, Baby, Gift, Briefcase, Heart, XCircle, ChevronLeft, ChevronRight, LayoutGrid, Utensils } from 'lucide-react';
+import { Calendar, Clock, Users, Phone, Mail, MapPin, Euro, CreditCard, X, Check, Edit2, Trash2, AlertCircle, User, History, Plus, Search, Filter, ChevronDown, Baby, Gift, Briefcase, Heart, XCircle, ChevronLeft, ChevronRight, LayoutGrid, Utensils, Printer } from 'lucide-react';
 import { Reservation, Customer, ReservationStatus, PaymentMethod, Deposit, Order, OrderStatus } from '../types';
 import { getReservationsFromCloud, getCustomersFromCloud, saveReservationToCloud, saveCustomerToCloud, generateUUID, getOrders } from '../services/storageService';
 
@@ -563,6 +563,156 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
         }
     };
 
+    const handlePrint = () => {
+        // Filter reservations for selected date
+        const dailyReservations = reservations.filter(r => r.reservationDate === selectedDate && r.status !== 'Cancellato' && r.status !== 'Non Presentato');
+
+        // Sort by time
+        dailyReservations.sort((a, b) => a.reservationTime.localeCompare(b.reservationTime));
+
+        // Calculate Summary Stats
+        const totalReservations = dailyReservations.length;
+        const totalPax = dailyReservations.reduce((acc, r) => acc + r.numberOfGuests, 0);
+        const totalChildren = dailyReservations.reduce((acc, r) => acc + (r.numberOfChildren || 0), 0);
+
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Briefing Sala - ${new Date(selectedDate).toLocaleDateString('it-IT')}</title>
+                    <style>
+                        @page { size: A4; margin: 10mm; }
+                        body { font-family: 'Segoe UI', sans-serif; padding: 20px; color: #1a1a1a; max-width: 210mm; margin: 0 auto; }
+                        
+                        /* Header */
+                        .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+                        .header-left h1 { margin: 0; font-size: 24px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+                        .header-left p { margin: 5px 0 0; color: #555; font-size: 14px; }
+                        .header-right { text-align: right; }
+                        .date-box { font-size: 18px; font-weight: bold; border: 2px solid #000; padding: 5px 15px; border-radius: 4px; }
+
+                        /* Summary Cards */
+                        .summary { display: flex; gap: 15px; margin-bottom: 25px; }
+                        .card { flex: 1; background: #f8f9fa; border: 1px solid #ddd; padding: 10px; border-radius: 8px; text-align: center; }
+                        .card-value { font-size: 24px; font-weight: 800; color: #000; display: block; }
+                        .card-label { font-size: 11px; text-transform: uppercase; color: #666; font-weight: 600; letter-spacing: 0.5px; }
+
+                        /* Table */
+                        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+                        th { background: #000; color: #fff; padding: 10px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; text-align: left; }
+                        td { border-bottom: 1px solid #eee; padding: 12px 10px; vertical-align: middle; }
+                        
+                        /* Rows */
+                        tr:nth-child(even) { background-color: #fafafa; }
+                        
+                        /* Specific Columns */
+                        .col-time { font-weight: bold; font-size: 15px; width: 60px; }
+                        .col-table { font-weight: 900; font-size: 18px; text-align: center; width: 60px; border: 2px solid #000; border-radius: 4px; }
+                        .col-pax { text-align: center; font-weight: bold; width: 50px; }
+                        
+                        /* Elements */
+                        .customer-name { font-weight: bold; font-size: 15px; display: block; margin-bottom: 3px; }
+                        .customer-phone { color: #666; font-size: 12px; }
+                        
+                        .tag { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-right: 5px; }
+                        .tag-green { background: #e6f4ea; color: #1e7e34; border: 1px solid #c3e6cb; }
+                        .tag-blue { background: #e8f0fe; color: #1967d2; border: 1px solid #b3d7ff; }
+                        .tag-orange { background: #feefe3; color: #b05c0d; border: 1px solid #f8dec2; }
+                        .tag-red { background: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; }
+
+                        .notes { font-style: italic; color: #555; background: #fff8e1; padding: 4px 8px; border-radius: 4px; margin-top: 4px; border-left: 3px solid #ffcc00; font-size: 12px; }
+
+                        .checkbox { width: 20px; height: 20px; border: 2px solid #ccc; border-radius: 4px; display: inline-block; }
+
+                        @media print {
+                            body { -webkit-print-color-adjust: exact; padding: 0; }
+                            .no-print { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="header-left">
+                            <h1>Briefing Sala</h1>
+                            <p>Lista Prenotazioni e Gestione Tavoli</p>
+                        </div>
+                        <div class="header-right">
+                            <div class="date-box">
+                                ${new Date(selectedDate).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="summary">
+                        <div class="card">
+                            <span class="card-value">${totalReservations}</span>
+                            <span class="card-label">Prenotazioni Totali</span>
+                        </div>
+                        <div class="card">
+                            <span class="card-value">${totalPax}</span>
+                            <span class="card-label">Coperti Totali</span>
+                        </div>
+                        <div class="card">
+                            <span class="card-value">${totalChildren}</span>
+                            <span class="card-label">Bambini</span>
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Ora</th>
+                                <th>Arrivo</th>
+                                <th>Tavolo</th>
+                                <th>Cliente</th>
+                                <th style="text-align: center;">Pax</th>
+                                <th>Dettagli & Note</th>
+                                <th>Acconto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${dailyReservations.map(r => `
+                                <tr>
+                                    <td class="col-time">${r.reservationTime.substring(0, 5)}</td>
+                                    <td><div class="checkbox"></div></td>
+                                    <td style="padding: 5px;"><div class="col-table">${r.tableNumber || '?'}</div></td>
+                                    <td>
+                                        <span class="customer-name">${r.customerName}</span>
+                                        <span class="customer-phone">${r.customerPhone}</span>
+                                    </td>
+                                    <td class="col-pax">
+                                        ${r.numberOfGuests}
+                                        ${r.numberOfChildren ? `<div style="font-size: 10px; color: #666; margin-top: 2px;">+${r.numberOfChildren} Bimbi</div>` : ''}
+                                    </td>
+                                    <td>
+                                        ${r.highChair ? `<span class="tag tag-orange">Seggiolone</span>` : ''}
+                                        ${r.occasion ? `<span class="tag tag-blue">${r.occasion}</span>` : ''}
+                                        ${r.specialRequests ? `<div class="notes">${r.specialRequests}</div>` : ''}
+                                    </td>
+                                    <td>
+                                        ${r.depositAmount ? `<span class="tag tag-green">€${r.depositAmount}</span>` : '<span style="color:#ccc; font-size: 20px;">-</span>'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <div style="margin-top: 40px; padding-top: 10px; border-top: 1px dotted #ccc; display: flex; justify-content: space-between; font-size: 11px; color: #888;">
+                        <div>Note Staff: _________________________________________________________________________________</div>
+                        <div>Stampato il ${new Date().toLocaleString('it-IT')}</div>
+                    </div>
+
+                    <script>
+                        window.onload = function() { window.print(); window.close(); }
+                    </script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-slate-900 rounded-3xl w-full max-w-7xl h-[90vh] flex flex-col border border-slate-800 shadow-2xl">
@@ -579,6 +729,15 @@ const ReservationManager: React.FC<ReservationManagerProps> = ({ onClose, showTo
                     </div>
 
                     <div className="flex items-center gap-3">
+                        {/* Print Button */}
+                        <button
+                            onClick={handlePrint}
+                            className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white p-3 rounded-xl transition-all shadow-lg border border-slate-700 hover:border-slate-500"
+                            title="Stampa lista prenotazioni"
+                        >
+                            <Printer size={20} />
+                        </button>
+
                         <div className="relative">
                             <button
                                 onClick={() => setShowDatePicker(!showDatePicker)}

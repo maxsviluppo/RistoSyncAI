@@ -34,7 +34,7 @@ import Tesseract from 'tesseract.js';
 import Papa from 'papaparse';
 import PaymentSuccessModal from './components/PaymentSuccessModal';
 import DepartmentSelectorModal from './components/DepartmentSelectorModal';
-import { handleStripeSuccess } from './services/stripeSuccessHandler';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
 
 // Promo Timer Component
 const PromoTimer = ({ deadlineHours, lastUpdated }: { deadlineHours: string, lastUpdated: string }) => {
@@ -149,6 +149,7 @@ export function App() {
     const [showWhatsAppManager, setShowWhatsAppManager] = useState(false);
     const [showSubscriptionManager, setShowSubscriptionManager] = useState(false);
     const [showDepartmentSelector, setShowDepartmentSelector] = useState(false);
+    const [showAnalytics, setShowAnalytics] = useState(false);
     const [adminViewMode, setAdminViewMode] = useState<'dashboard' | 'app'>('dashboard');
 
     const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
@@ -249,7 +250,6 @@ export function App() {
         planType: string;
         endDate: string;
         price: string;
-        restaurantName?: string;
     } | null>(null);
 
 
@@ -808,52 +808,9 @@ export function App() {
 
         if (plan.includes('basic') && hasNoDept) {
             // console.log("⚡ Auto-triggering Department Selector for Basic plan");
-            setShowDepartmentSelector(true);
+            // setShowDepartmentSelector(true);
         }
     }, [session, appSettings.restaurantProfile?.planType, appSettings.restaurantProfile?.allowedDepartment, appSettings.restaurantProfile?.showPlanChangeModal, showPaymentSuccessModal, showDepartmentSelector]);
-
-    // --- STRIPE SUCCESS HANDLER ---
-    useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const subscriptionParam = urlParams.get('subscription');
-        const planParam = urlParams.get('plan');
-        const sessionIdParam = urlParams.get('session_id');
-
-        if (subscriptionParam === 'success' && session?.user?.id && planParam) {
-            console.log('🎉 Stripe success detected:', { plan: planParam, sessionId: sessionIdParam });
-
-            handleStripeSuccess(
-                sessionIdParam,
-                planParam,
-                session.user.id,
-                session.user.email || '',
-                (successMsg) => {
-                    console.log('✅ Stripe success handled:', successMsg);
-
-                    // Ricarica i settings aggiornati
-                    const settings = getAppSettings();
-                    const profile = settings.restaurantProfile;
-
-                    // Prepara i dati per il modal a slide
-                    setPaymentSuccessData({
-                        planType: profile?.planType || 'Basic',
-                        endDate: profile?.subscriptionEndDate || '',
-                        price: profile?.subscriptionCost || '',
-                        restaurantName: profile?.name || restaurantName
-                    });
-
-                    // Mostra il nuovo modal a slide (con congratulazioni + selezione reparto)
-                    setShowDepartmentSelector(true);
-
-                    showToast(successMsg, 'success');
-                },
-                (errorMsg) => {
-                    console.error('❌ Stripe error:', errorMsg);
-                    showToast(errorMsg, 'error');
-                }
-            );
-        }
-    }, [session, restaurantName]);
 
     // --- ACTIONS ---
 
@@ -3187,7 +3144,7 @@ export function App() {
                                                             <div className="bg-slate-100 p-4 border-b border-dashed border-slate-300 flex justify-between items-center">
                                                                 <div>
                                                                     <span className="block text-xs text-slate-500 font-bold uppercase tracking-wider">Tavolo</span>
-                                                                    <span className="text-2xl font-black text-slate-800">{order.tableNumber.replace('_HISTORY', '')}</span>
+                                                                    <span className="text-2xl font-black text-slate-800">{order.tableNumber.replace(/_HISTORY/gi, '')}</span>
                                                                 </div>
                                                                 <div className="text-right">
                                                                     <span className="block text-xs text-slate-500 font-bold uppercase tracking-wider">{orderTime}</span>
@@ -3930,8 +3887,7 @@ export function App() {
                     showConfirm={showConfirm}
                 />
             )}
-            {/* VECCHIO PAYMENT SUCCESS MODAL - SOSTITUITO DAL SISTEMA A SLIDE */}
-            {/* {showPaymentSuccessModal && paymentSuccessData && (
+            {showPaymentSuccessModal && paymentSuccessData && (
                 <PaymentSuccessModal
                     isOpen={showPaymentSuccessModal}
                     onClose={() => {
@@ -3948,55 +3904,56 @@ export function App() {
                     price={paymentSuccessData.price}
                     restaurantName={paymentSuccessData.restaurantName || restaurantName}
                 />
-            )} */}
+            )}
+            {showDepartmentSelector && (
+                <DepartmentSelectorModal
+                    isOpen={showDepartmentSelector}
+                    onClose={() => setShowDepartmentSelector(false)}
+                    onSelectDepartment={async (department) => {
+                        // Salva il department selezionato
+                        const updatedProfile = { ...appSettings.restaurantProfile, allowedDepartment: department as any };
+                        const newSettings = { ...appSettings, restaurantProfile: updatedProfile };
 
+                        setAppSettingsState(newSettings);
+                        await saveAppSettings(newSettings);
+
+                        // Aggiorna anche su Supabase
+                        if (session?.user?.id && supabase) {
+                            await supabase
+                                .from('profiles')
+                                .update({
+                                    settings: newSettings
+                                })
+                                .eq('id', session.user.id);
+                        }
+
+                        setShowDepartmentSelector(false);
+                        showToast(`✅ Reparto ${department.toUpperCase()} selezionato con successo!`, 'success');
+
+                        // *** ENTRA AUTOMATICAMENTE NEL REPARTO SELEZIONATO ***
+                        if (department === 'kitchen') setRole('kitchen');
+                        else if (department === 'pizzeria') setRole('pizzeria');
+                        else if (department === 'pub') setRole('pub');
+                        // else if (department === 'delivery') setRole('delivery'); // RIMOSSO (incluso in Basic)
+                    }}
+                />
+            )}
             {showSubscriptionManager && (
                 <SubscriptionManager
                     onClose={() => setShowSubscriptionManager(false)}
                     showToast={showToast}
                 />
             )}
-
-            <DepartmentSelectorModal
-                isOpen={showDepartmentSelector}
-                onClose={() => setShowDepartmentSelector(false)}
-                currentDepartment={appSettings.restaurantProfile?.allowedDepartment}
-                onSelectDepartment={async (dept) => {
-                    console.log('🎯 Selected department for Basic plan:', dept);
-                    // Salva il department selezionato
-                    const updatedProfile = { ...appSettings.restaurantProfile, allowedDepartment: dept };
-                    const newSettings = { ...appSettings, restaurantProfile: updatedProfile };
-
-                    setAppSettingsState(newSettings);
-                    await saveAppSettings(newSettings);
-
-                    // Aggiorna anche su Supabase
-                    if (session?.user?.id && supabase) {
-                        await supabase
-                            .from('profiles')
-                            .update({ settings: newSettings })
-                            .eq('id', session.user.id);
-                    }
-
-                    setShowDepartmentSelector(false);
-                    showToast(`✅ Reparto ${dept.toUpperCase()} selezionato con successo!`, 'success');
-
-                    // Entra automaticamente nel reparto se selezionato
-                    if (dept === 'kitchen') setRole('kitchen');
-                    else if (dept === 'pizzeria') setRole('pizzeria');
-                    else if (dept === 'pub') setRole('pub');
-                }}
-                // NUOVE PROPS per il sistema a slide
-                planType={paymentSuccessData?.planType as any}
-                endDate={paymentSuccessData?.endDate ? new Date(paymentSuccessData.endDate).getTime() : undefined}
-                price={paymentSuccessData?.price}
-                restaurantName={paymentSuccessData?.restaurantName || restaurantName}
-            />
+            {showAnalytics && (
+                <AnalyticsDashboard
+                    onClose={() => setShowAnalytics(false)}
+                    showToast={showToast}
+                    isIntegrated={false}
+                />
+            )}
         </>
     );
 }
-
-
 
 // Wrapper for Provider
 export default function AppWrapper() {

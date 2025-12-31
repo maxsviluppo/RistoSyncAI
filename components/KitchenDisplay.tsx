@@ -94,7 +94,7 @@ const generateReceiptHtml = (items: OrderItem[], dept: string, table: string, wa
             </style>
         </head>
         <body>
-            <div class="header"><div class="title">${restaurantName}</div><div class="dept">${dept}</div><div class="meta">TAVOLO: ${table}</div><div class="meta">Staff: ${waiter}</div><div style="font-size: 12px; margin-top:5px;">${date} - ${time}</div></div>
+            <div class="header"><div class="title">${restaurantName}</div><div class="dept">${dept}</div><div class="meta">TAVOLO: ${table.replace(/_?history_?/gi, '').trim()}</div><div class="meta">Staff: ${waiter}</div><div style="font-size: 12px; margin-top:5px;">${date} - ${time}</div></div>
             ${items.map(item => {
         let subItemsHtml = '';
         // Resolve sub-items for Menu Combo

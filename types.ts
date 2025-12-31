@@ -372,6 +372,7 @@ export interface Expense {
   amount: number;
   date: string; // YYYY-MM-DD
   paymentMethod: PaymentMethod;
+  deductFrom?: 'cassa' | 'acconti'; // Specificare da dove detrarre la spesa
   receipt?: string; // Base64 image or URL
   notes?: string;
   createdAt: number;
