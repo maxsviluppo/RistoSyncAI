@@ -20,7 +20,7 @@ const getDepartmentByCategory = (cat: Category): Department => {
     switch (cat) {
         case Category.PIZZE: return 'Pizzeria';
         case Category.PANINI: return 'Pub';
-        case Category.BEVANDE: return 'Pub'; // Spesso le bevande le fa il bar/pub
+        case Category.BEVANDE: return 'Sala'; // Le bevande vanno in Sala
         case Category.PRIMI:
         case Category.SECONDI:
         case Category.ANTIPASTI:
@@ -126,29 +126,25 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose,
             setOrders(Array.from(orderMap.values()));
 
             // 2. RESERVATIONS (for Deposits)
-            // Fetch reservations created in this period to count cash flow from deposits
-            let fetchedReservations: any[] = [];
-            if (supabase) {
-                const { data, error } = await supabase
-                    .from('reservations')
-                    .select('*')
-                    .gte('created_at', startDate.toISOString())
-                    .lte('created_at', endDate.toISOString());
+            // Load from localStorage since reservations are not yet in Supabase
+            const { getReservations } = await import('../services/storageService');
+            const allReservations = getReservations();
 
-                if (data && !error) {
-                    fetchedReservations = data;
-                }
-            }
+            // Filter by date range
+            const fetchedReservations = allReservations.filter(r => {
+                const createdTime = r.createdAt || 0;
+                return createdTime >= startDate.getTime() && createdTime <= endDate.getTime();
+            });
 
             // Extract valid deposits from reservations
             const validDeposits: Deposit[] = fetchedReservations
-                .filter(r => r.depositAmount && Number(r.depositAmount) > 0 && r.status !== 'Cancellato' && r.status !== 'CANCELLED')
+                .filter(r => r.depositAmount && Number(r.depositAmount) > 0 && r.status !== 'Cancellato' && r.status !== 'CANCELLED' && r.status !== ReservationStatus.CANCELLED)
                 .map(r => ({
                     id: r.id + '_deposit',
                     reservationId: r.id,
                     amount: Number(r.depositAmount),
                     paymentMethod: r.depositMethod || 'cash',
-                    paidAt: new Date(r.created_at).getTime(),
+                    paidAt: r.createdAt || Date.now(),
                     notes: `Acconto ${r.customerName} (Tav. ${r.tableNumber})`
                 }));
 
