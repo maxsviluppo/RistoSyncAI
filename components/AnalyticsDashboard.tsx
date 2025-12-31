@@ -197,10 +197,13 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose,
             'Cucina': 0, 'Pizzeria': 0, 'Pub': 0, 'Sala': 0
         };
 
+        // Table Stats Accumulator
+        const tableStatsMap: Record<string, { revenue: number, count: number }> = {};
+
         orders.forEach(order => {
             const orderTotal = order.items?.reduce((sum, item) => sum + (item.menuItem.price * item.quantity), 0) || 0;
             totalRevenue += orderTotal;
-            // totalCovers += (order.coperti || 0); // Coperti not in Order type yet
+            // totalCovers += (order.coperti || 0);
 
             // Hourly Distribution
             const hour = new Date(order.timestamp).getHours();
@@ -219,9 +222,28 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose,
                 itemSales[key].count += item.quantity;
                 itemSales[key].revenue += (item.menuItem.price * item.quantity);
             });
+
+            // Table Stats Logic
+            let cleanTableNumber = (order.tableNumber || '')
+                .replace(/_HISTORY/gi, '')
+                .replace(/undefined/gi, '')
+                .trim();
+
+            const lowerTable = cleanTableNumber.toLowerCase();
+            if (lowerTable.includes('delivery') || lowerTable.includes('consegna')) {
+                cleanTableNumber = 'Delivery';
+            } else if (lowerTable.includes('asporto') || lowerTable.includes('takeaway')) {
+                cleanTableNumber = 'Asporto';
+            }
+
+            const tName = cleanTableNumber || 'Altro';
+
+            if (!tableStatsMap[tName]) tableStatsMap[tName] = { revenue: 0, count: 0 };
+            tableStatsMap[tName].revenue += orderTotal;
+            tableStatsMap[tName].count += 1;
         });
 
-        // Add Deposits to Revenue (if confirmed)
+        // Add Deposits to Revenue
         const totalDeposits = deposits.reduce((sum, d) => sum + d.amount, 0);
 
         // Expenses
@@ -230,8 +252,12 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose,
         const expensesAcconti = expenses.filter(e => e.deductFrom === 'acconti').reduce((sum, e) => sum + e.amount, 0);
 
         const netCashFlow = totalRevenue + totalDeposits - expensesCassa - expensesAcconti;
-        // Logic for netDepositsFlow can be refined
         const netDepositsFlow = totalDeposits - expensesAcconti;
+
+        // Convert table stats to array and sort
+        const tableStats = Object.entries(tableStatsMap)
+            .map(([name, data]) => ({ name, ...data }))
+            .sort((a, b) => b.revenue - a.revenue);
 
         return {
             totalRevenue,
@@ -245,8 +271,9 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose,
             totalExpenses,
             expensesCassa,
             expensesAcconti,
-            netCashFlow: netCashFlow,
-            netDepositsFlow
+            netCashFlow,
+            netDepositsFlow,
+            tableStats // Exported
         };
     }, [orders, deposits, expenses]);
 
@@ -473,6 +500,58 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose,
                                         </p>
                                     </div>
                                 )}
+                            </div>
+                        )}
+
+                        {/* TAB: TABLES */}
+                        {activeTab === 'tables' && (
+                            <div className="space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {stats.tableStats.slice(0, 3).map((t, i) => (
+                                        <div key={t.name} className="bg-slate-900 p-6 rounded-2xl border border-slate-800 relative overflow-hidden group">
+                                            <div className="absolute -right-4 -top-4 p-4 opacity-5 group-hover:opacity-10 transition-opacity font-black text-8xl text-indigo-500">#{i + 1}</div>
+                                            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                                                <span className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold ${i === 0 ? 'bg-yellow-500 text-black' : i === 1 ? 'bg-slate-300 text-black' : 'bg-orange-700 text-white'}`}>
+                                                    #{i + 1}
+                                                </span>
+                                                {t.name}
+                                            </h3>
+                                            <p className="text-3xl font-black text-indigo-400">€ {t.revenue.toFixed(2)}</p>
+                                            <p className="text-slate-500 text-sm mt-1">{t.count} ordini • Media € {(t.revenue / t.count).toFixed(2)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
+                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                        <ShoppingBag className="text-indigo-500" />
+                                        Performance Tavoli
+                                    </h3>
+                                    <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                                        {stats.tableStats.map((t, idx) => {
+                                            const maxRev = stats.tableStats[0]?.revenue || 1;
+                                            const percent = (t.revenue / maxRev) * 100;
+                                            return (
+                                                <div key={t.name} className="flex items-center gap-4 hover:bg-slate-800/30 p-2 rounded-xl transition-colors">
+                                                    <div className="w-8 text-slate-500 font-mono text-sm">#{idx + 1}</div>
+                                                    <div className="w-24 font-bold text-slate-300 truncate" title={t.name}>{t.name}</div>
+                                                    <div className="flex-1 bg-slate-800 rounded-full h-3 overflow-hidden relative">
+                                                        <div className="bg-indigo-600 h-full rounded-full transition-all duration-1000" style={{ width: `${percent}%` }}></div>
+                                                    </div>
+                                                    <div className="w-40 text-right">
+                                                        <span className="block font-bold text-white">€ {t.revenue.toFixed(2)}</span>
+                                                        <div className="flex justify-end gap-2 text-xs text-slate-500">
+                                                            <span>{t.count} ordini</span>
+                                                            <span>•</span>
+                                                            <span>Media € {(t.revenue / t.count).toFixed(0)}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        {stats.tableStats.length === 0 && <p className="text-slate-500 text-center py-10">Nessun dato disponibile per il periodo selezionato.</p>}
+                                    </div>
+                                </div>
                             </div>
                         )}
 
