@@ -35,6 +35,7 @@ import Papa from 'papaparse';
 import PaymentSuccessModal from './components/PaymentSuccessModal';
 import DepartmentSelectorModal from './components/DepartmentSelectorModal';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
+import { ExpenseManager } from './components/ExpenseManager';
 
 // Promo Timer Component
 const PromoTimer = ({ deadlineHours, lastUpdated }: { deadlineHours: string, lastUpdated: string }) => {
@@ -145,7 +146,7 @@ export function App() {
 
     // Admin State
     const [showAdmin, setShowAdmin] = useState(false);
-    const [adminTab, setAdminTab] = useState<'profile' | 'subscription' | 'menu' | 'notif' | 'info' | 'ai' | 'analytics' | 'share' | 'receipts' | 'messages' | 'marketing' | 'delivery' | 'customers' | 'whatsapp'>('menu');
+    const [adminTab, setAdminTab] = useState<'profile' | 'subscription' | 'menu' | 'notif' | 'info' | 'ai' | 'analytics' | 'share' | 'receipts' | 'messages' | 'marketing' | 'delivery' | 'customers' | 'whatsapp' | 'expenses'>('menu');
     const [showWhatsAppManager, setShowWhatsAppManager] = useState(false);
     const [showSubscriptionManager, setShowSubscriptionManager] = useState(false);
     const [showDepartmentSelector, setShowDepartmentSelector] = useState(false);
@@ -1762,6 +1763,8 @@ export function App() {
                             <button onClick={() => setAdminTab('notif')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'notif' ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Bell size={18} /> Notifiche & Reparti</button>
                             <button onClick={() => setShowSubscriptionManager(true)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-slate-400 hover:bg-slate-800 hover:text-white bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-500/30`}><CreditCard size={18} className="text-purple-400" /> Abbonamento</button>
                             <button onClick={() => setAdminTab('analytics')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'analytics' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><BarChart3 size={18} /> Statistiche</button>
+                            <button onClick={() => setAdminTab('administration')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'administration' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Wallet size={18} /> Amministrazione</button>
+                            <button onClick={() => setAdminTab('expenses')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'expenses' ? 'bg-red-600 text-white shadow-lg shadow-red-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><CreditCard size={18} /> Gestione Spese</button>
                             <button onClick={() => setAdminTab('receipts')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${adminTab === 'receipts' ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><Receipt size={18} /> Scontrini Cassa</button>
                             <button
                                 onClick={() => setAdminTab('ai')}
@@ -3022,6 +3025,44 @@ export function App() {
                                     </div>
                                 </div>
                             </div>
+                        )}
+                        {adminTab === 'analytics' && (
+                            <div className="max-w-7xl mx-auto space-y-8 animate-fade-in pb-24">
+                                <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800">
+                                    <h2 className="text-3xl font-black text-white flex items-center gap-3 mb-6">
+                                        <BarChart3 className="text-emerald-500" size={36} />
+                                        Statistiche e Analytics
+                                    </h2>
+                                    <p className="text-slate-400 text-lg">
+                                        Dashboard analytics in fase di integrazione...
+                                    </p>
+                                    <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="bg-slate-950 p-6 rounded-xl border border-slate-800">
+                                            <p className="text-slate-500 text-sm font-bold uppercase mb-2">Test Card 1</p>
+                                            <p className="text-2xl font-black text-white">€ 0.00</p>
+                                        </div>
+                                        <div className="bg-slate-950 p-6 rounded-xl border border-slate-800">
+                                            <p className="text-slate-500 text-sm font-bold uppercase mb-2">Test Card 2</p>
+                                            <p className="text-2xl font-black text-white">0</p>
+                                        </div>
+                                        <div className="bg-slate-950 p-6 rounded-xl border border-slate-800">
+                                            <p className="text-slate-500 text-sm font-bold uppercase mb-2">Test Card 3</p>
+                                            <p className="text-2xl font-black text-white">-</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {adminTab === 'administration' && (
+                            <div className="max-w-7xl mx-auto pb-24">
+                                <AnalyticsDashboard
+                                    showToast={showToast}
+                                    isIntegrated={true}
+                                />
+                            </div>
+                        )}
+                        {adminTab === 'expenses' && (
+                            <ExpenseManager showToast={showToast} />
                         )}
                         {adminTab === 'receipts' && (
                             <div className="max-w-7xl mx-auto space-y-8 animate-fade-in pb-24">

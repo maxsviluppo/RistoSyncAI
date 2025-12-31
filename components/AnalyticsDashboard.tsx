@@ -649,15 +649,37 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose,
                                         <tbody className="text-sm">
                                             {(() => {
                                                 const allTransactions = [
-                                                    ...orders.map(o => ({
-                                                        id: o.id,
-                                                        date: o.timestamp,
-                                                        desc: `Ordine #${o.id.slice(-4)} - Tavolo ${o.tableNumber}`,
-                                                        category: 'Vendita',
-                                                        in: o.items.reduce((sum, i) => sum + (i.menuItem.price * i.quantity), 0),
-                                                        out: 0,
-                                                        type: 'order'
-                                                    })),
+                                                    ...orders.map(o => {
+                                                        // Pulisci il numero tavolo da _HISTORY e undefined
+                                                        let cleanTableNumber = (o.tableNumber || '')
+                                                            .replace(/_HISTORY/gi, '')
+                                                            .replace(/undefined/gi, '')
+                                                            .trim();
+
+                                                        // Determina il tipo di ordine dal numero tavolo
+                                                        let orderType = 'Ordine Tavolo';
+                                                        const lowerTable = cleanTableNumber.toLowerCase();
+                                                        if (lowerTable.includes('delivery') || lowerTable.includes('consegna')) {
+                                                            orderType = 'Ordine Delivery';
+                                                        } else if (lowerTable.includes('asporto') || lowerTable.includes('takeaway')) {
+                                                            orderType = 'Ordine Asporto';
+                                                        }
+
+                                                        // Se il tavolo è vuoto, mostra ID ordine
+                                                        const description = cleanTableNumber
+                                                            ? `${orderType} ${cleanTableNumber}`
+                                                            : `Ordine #${o.id.slice(-4)}`;
+
+                                                        return {
+                                                            id: o.id,
+                                                            date: o.timestamp,
+                                                            desc: description,
+                                                            category: 'Vendita',
+                                                            in: o.items.reduce((sum, i) => sum + (i.menuItem.price * i.quantity), 0),
+                                                            out: 0,
+                                                            type: 'order'
+                                                        };
+                                                    }),
                                                     ...deposits.map(d => ({
                                                         id: d.id,
                                                         date: d.paidAt || new Date().getTime(),

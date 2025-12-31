@@ -391,3 +391,17 @@ export interface InventoryItem {
   minQuantity?: number; // Soglia minima per alert
   expiryDate?: string; // YYYY-MM-DD
 }
+
+export interface DailyClosure {
+  id: string;
+  date: string; // YYYY-MM-DD
+  totalSales: number;
+  totalExpenses: number;
+  startCash: number;
+  endCash: number; // Theoretical end cash
+  actualCash: number; // Counted cash
+  difference: number;
+  notes?: string;
+  closedAt: string; // ISO String
+  closedBy?: string;
+}
